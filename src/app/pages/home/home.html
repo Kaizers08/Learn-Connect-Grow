@@ -1,0 +1,171 @@
+<!-- Header -->
+<header class="header">
+  <div class="container">
+    <div class="nav">
+      <div class="logo">
+        <img src="/landing page logo.png" alt="EdTech Logo" class="logo-img">
+      </div>
+      <nav class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#how-it-works">How It Works</a>
+      </nav>
+      <button class="btn-primary">Start Learning</button>
+    </div>
+  </div>
+</header>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-left">
+        <h1 class="hero-title">
+          <span class="text-blue">Learn</span>, <span class="text-cyan">Connect</span>, <span class="text-green">Grow.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Your Mentoring Platform for<br>
+          <span class="text-blue">Students</span>, <span class="text-green">Mentee & Mentors</span>
+        </p>
+        <div class="hero-buttons">
+          <button class="btn-primary">Find a Mentor</button>
+          <button class="btn-secondary">Become a Mentor</button>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-image">
+          <img src="/firstpicinlandingpage.jpg" alt="Collaborative Learning Environment" class="hero-img">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wave-bottom">
+    <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="white"/>
+    </svg>
+  </div>
+</section>
+
+<!-- What We Offer Section -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">What We Offer?</h2>
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <div class="feature-card">
+          <div class="feature-image">
+            @if (feature.image === 'feedback-mentorship') {
+              <img src="/chooseyourmentor.png" alt="Feedback Mentorship" class="feature-img">
+            }
+            @if (feature.image === 'expert-mentorship') {
+              <img src="/expertmentorship.png" alt="Expert Mentorship" class="feature-img">
+            }
+            @if (feature.image === 'progress-tracking') {
+              <img src="/progresstracking.png" alt="Progress Tracking" class="feature-img">
+            }
+          </div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-description">{{ feature.description }}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Services Bar -->
+    <div class="services-bar">
+      @for (service of services; track service.title) {
+        <div class="service-item">
+          <div class="service-icon">
+            @if (service.icon === 'message') {
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#00BCD4" opacity="0.2"/>
+                <path d="M12 14H28V24H16L12 28V14Z" stroke="#00BCD4" stroke-width="2" fill="none"/>
+              </svg>
+            }
+            @if (service.icon === 'video') {
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#0066FF" opacity="0.2"/>
+                <rect x="12" y="14" width="12" height="12" rx="2" stroke="#0066FF" stroke-width="2" fill="none"/>
+                <path d="M24 17L28 14V26L24 23V17Z" fill="#0066FF"/>
+              </svg>
+            }
+            @if (service.icon === 'chart') {
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#00D084" opacity="0.2"/>
+                <path d="M12 28L18 20L22 24L28 14" stroke="#00D084" stroke-width="2" fill="none"/>
+                <path d="M24 14H28V18" stroke="#00D084" stroke-width="2" fill="none"/>
+              </svg>
+            }
+          </div>
+          <span class="service-title">{{ service.title }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section class="section section-gray">
+  <div class="container">
+    <h2 class="section-title">Why Choose Us?</h2>
+    <div class="benefits-grid">
+      @for (benefit of benefits; track benefit.title) {
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            @if (benefit.icon === 'expert') {
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="60" fill="#FFF4E6"/>
+                <circle cx="60" cy="45" r="15" fill="#FF9800"/>
+                <path d="M40 75C40 65 48 60 60 60C72 60 80 65 80 75V85H40V75Z" fill="#FF9800"/>
+                <rect x="35" y="35" width="15" height="8" rx="4" fill="#FFB74D"/>
+                <rect x="70" y="35" width="15" height="8" rx="4" fill="#FFB74D"/>
+              </svg>
+            }
+            @if (benefit.icon === 'projects') {
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="60" fill="#E3F2FD"/>
+                <rect x="35" y="35" width="50" height="50" rx="4" fill="#2196F3" opacity="0.3"/>
+                <rect x="40" y="45" width="15" height="3" rx="1.5" fill="#2196F3"/>
+                <rect x="40" y="52" width="25" height="3" rx="1.5" fill="#2196F3"/>
+                <rect x="40" y="59" width="20" height="3" rx="1.5" fill="#2196F3"/>
+                <circle cx="75" cy="75" r="8" fill="#4CAF50"/>
+                <path d="M72 75L74 77L78 73" stroke="white" stroke-width="2" fill="none"/>
+              </svg>
+            }
+            @if (benefit.icon === 'community') {
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="60" fill="#E8F5E9"/>
+                <circle cx="45" cy="50" r="12" fill="#4CAF50" opacity="0.6"/>
+                <circle cx="75" cy="50" r="12" fill="#4CAF50" opacity="0.6"/>
+                <circle cx="60" cy="70" r="12" fill="#4CAF50" opacity="0.6"/>
+                <circle cx="35" cy="70" r="10" fill="#66BB6A" opacity="0.6"/>
+                <circle cx="85" cy="70" r="10" fill="#66BB6A" opacity="0.6"/>
+              </svg>
+            }
+          </div>
+          <h3 class="benefit-title">{{ benefit.title }}</h3>
+          <p class="benefit-description">{{ benefit.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="wave-top">
+    <svg viewBox="0 0 1440 100" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,50 Q360,0 720,50 T1440,50 L1440,0 L0,0 Z" fill="white"/>
+    </svg>
+  </div>
+  <div class="container">
+    <h2 class="cta-title">Start Your Learning Journey Today!</h2>
+    <button class="btn-cta">Get Started Now</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2026 EdTech. All rights reserved.</p>
+  </div>
+</footer>
