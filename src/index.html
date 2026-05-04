@@ -2,12 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>EdtechMentoring</title>
+  <title>EdTech Mentoring</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    /* Prevent FOUC - hide content until Angular loads */
+    body {
+      visibility: hidden;
+      background: #dff0fb;
+    }
+    app-root:not(:empty) ~ * {
+      visibility: visible;
+    }
+  </style>
 </head>
 <body>
   <app-root></app-root>
+  <script>
+    // Show content once Angular has bootstrapped
+    document.addEventListener('DOMContentLoaded', function () {
+      const observer = new MutationObserver(function () {
+        const root = document.querySelector('app-root');
+        if (root && root.children.length > 0) {
+          document.body.style.visibility = 'visible';
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.querySelector('app-root'), { childList: true });
+    });
+  </script>
 </body>
 </html>
