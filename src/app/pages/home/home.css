@@ -16,7 +16,7 @@
 ===================== */
 .header {
   background: white;
-  padding: 0.5rem 0;
+  padding: 0.5rem 4rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
@@ -28,6 +28,13 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+  position: relative;
+}
+
+.header .container {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .nav {
@@ -35,6 +42,7 @@
   justify-content: space-between;
   align-items: center;
   min-height: 64px;
+  width: 100%;
 }
 
 .logo {
@@ -52,20 +60,32 @@
 
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
 }
 
 .nav-links a {
   text-decoration: none;
-  color: #333;
+  color: #555;
   font-weight: 500;
   font-size: 0.95rem;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .nav-links a:hover {
   color: #043E92;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
 }
 
 /* =====================
