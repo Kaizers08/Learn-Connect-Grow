@@ -11,7 +11,7 @@
           <a href="#about">About</a>
           <a href="#how-it-works">How It Works</a>
         </nav>
-        <button class="btn-start">Start Learning</button>
+        <button class="btn-start" (click)="goToLogin()">Start Learning</button>
       </div>
     </div>
   </div>
@@ -31,13 +31,13 @@
           <span class="text-blue">Students</span>, <span class="text-green">Mentee &amp; Mentors</span>
         </p>
         <div class="hero-buttons">
-          <button class="btn-findmentor">
+          <button class="btn-findmentor" (click)="goToLogin()">
             Find a Mentor
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button class="btn-secondary">Become a Mentor</button>
+          <button class="btn-secondary" (click)="goToLogin()">Become a Mentor</button>
         </div>
       </div>
 

@@ -11,7 +11,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: #333;
   line-height: 1.6;
-  background: #dff0fb; /* matches hero bg so no white flash */
 }
 
 html, body {

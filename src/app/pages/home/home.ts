@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -8,6 +9,12 @@ import { CommonModule } from '@angular/common';
   styleUrl: './home.css'
 })
 export class HomeComponent {
+  constructor(private router: Router) {}
+
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
+
   features = [
     {
       image: 'feedback-mentorship',
@@ -27,18 +34,9 @@ export class HomeComponent {
   ];
 
   services = [
-    {
-      icon: 'message',
-      title: 'Personalized Mentorship'
-    },
-    {
-      icon: 'video',
-      title: 'Live Sessions'
-    },
-    {
-      icon: 'chart',
-      title: 'Track Progress'
-    }
+    { icon: 'message', title: 'Personalized Mentorship' },
+    { icon: 'video',   title: 'Live Sessions' },
+    { icon: 'chart',   title: 'Track Progress' }
   ];
 
   benefits = [

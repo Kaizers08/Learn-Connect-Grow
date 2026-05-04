@@ -1,27 +1,13 @@
 /* =====================
-   PAGE LOAD - Prevent FOUC
-===================== */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-:host {
-  display: block;
-  animation: fadeIn 0.4s ease forwards;
-}
-
-/* =====================
    HEADER
 ===================== */
 .header {
   background: white;
-  padding: 0.5rem 4rem;
+  padding: 0.5rem 6rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
   z-index: 100;
-  animation: fadeIn 0.3s ease forwards;
 }
 
 .container {
