@@ -18,7 +18,9 @@ export class CompleteProfileComponent {
   }
 
   onNext() {
-    if (this.selectedRole) {
+    if (this.selectedRole === 'mentee') {
+      this.router.navigate(['/mentee-profile']);
+    } else if (this.selectedRole === 'mentor') {
       this.router.navigate(['/dashboard']);
     }
   }

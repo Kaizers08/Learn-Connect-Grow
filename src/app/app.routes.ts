@@ -18,6 +18,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/complete-profile/complete-profile').then(m => m.CompleteProfileComponent)
   },
   {
+    path: 'mentee-profile',
+    loadComponent: () => import('./pages/mentee-profile/mentee-profile').then(m => m.MenteeProfileComponent)
+  },
+  {
+    path: 'journey',
+    loadComponent: () => import('./pages/journey/journey').then(m => m.JourneyComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

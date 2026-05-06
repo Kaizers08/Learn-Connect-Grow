@@ -1,0 +1,135 @@
+<div class="journey-page">
+  <div class="wave-top-left"></div>
+  <div class="wave-bottom-right"></div>
+
+  <div class="journey-container">
+
+    <!-- Logo -->
+    <div class="journey-logo">
+      <img src="/landing page logo.png" alt="EdTech Logo" class="journey-logo-img">
+    </div>
+
+    <!-- Title -->
+    <h2 class="journey-title">
+      Let's start your journey in <span class="text-blue">Ed</span><span class="text-green">Tech</span>
+    </h2>
+
+    <!-- Card -->
+    <div class="journey-card">
+
+      <!-- Profile Photo -->
+      <div class="photo-section">
+        <div class="photo-wrapper">
+          <div class="photo-preview" (click)="photoInput.click()">
+            @if (profilePhoto) {
+              <img [src]="profilePhoto" alt="Profile" class="photo-img">
+              <div class="photo-overlay">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+            } @else {
+              <div class="photo-placeholder">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#04A2D7" stroke-width="1.5">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span class="photo-hint">Upload Photo</span>
+              </div>
+            }
+          </div>
+          @if (profilePhoto) {
+            <button class="remove-photo" (click)="removePhoto()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          }
+        </div>
+        <div class="photo-info">
+          <p class="photo-title">Your profile photo</p>
+          <p class="photo-desc">Click to upload a photo.<br>JPG, PNG or GIF (max 5MB)</p>
+        </div>
+        <input
+          #photoInput
+          type="file"
+          accept="image/*"
+          class="photo-input"
+          (change)="onPhotoChange($event)"
+        >
+      </div>
+
+      <div class="divider-line"></div>
+
+      <!-- Date of Birth -->
+      <div class="form-group">
+        <label class="field-label">Date of Birth</label>
+        <input
+          type="date"
+          class="form-input"
+          [(ngModel)]="dateOfBirth"
+          name="dateOfBirth"
+        >
+      </div>
+
+      <!-- Country -->
+      <div class="form-group">
+        <label class="field-label">Country</label>
+        <select class="form-input form-select" [(ngModel)]="country" name="country" (ngModelChange)="onCountryChange()">
+          <option value="" disabled selected>Select your country</option>
+          @for (c of countries; track c.name) {
+            <option [value]="c.name">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Phone Number -->
+      <div class="form-group">
+        <label class="field-label">Phone Number</label>
+        <div class="phone-wrapper">
+          <select class="dial-select" [(ngModel)]="selectedDialCode" name="dialCode">
+            @for (code of dialCodes; track code) {
+              <option [value]="code">{{ code }}</option>
+            }
+          </select>
+          <input
+            type="tel"
+            class="phone-input"
+            placeholder="912 345 6789"
+            [(ngModel)]="phoneNumber"
+            name="phoneNumber"
+          >
+        </div>
+      </div>
+
+      <!-- Gender -->
+      <div class="form-group">
+        <label class="field-label">Gender</label>
+        <div class="gender-group">
+          <label class="radio-label">
+            <input type="radio" name="gender" value="male" [(ngModel)]="gender" class="radio-input">
+            <span class="radio-custom"></span>
+            <span class="radio-text">Male</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="gender" value="female" [(ngModel)]="gender" class="radio-input">
+            <span class="radio-custom"></span>
+            <span class="radio-text">Female</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="gender" value="prefer-not" [(ngModel)]="gender" class="radio-input">
+            <span class="radio-custom"></span>
+            <span class="radio-text">Prefer not to say</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Next Button -->
+    <button class="btn-next" (click)="onNext()">Next</button>
+
+  </div>
+</div>

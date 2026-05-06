@@ -1,0 +1,460 @@
+.journey-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 2rem;
+}
+
+.wave-top-left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #04A2D7, #21AA3A);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 0% 0%);
+}
+
+.wave-bottom-right {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #21AA3A, #04A2D7);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 100% 100%);
+}
+
+.journey-container {
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* Logo */
+.journey-logo {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.journey-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Title */
+.journey-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 1.75rem 0;
+  line-height: 1.4;
+}
+
+.text-blue  { color: #043E92; }
+.text-green { color: #21AA3A; }
+
+/* Card */
+.journey-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+/* Profile Photo */
+.photo-section {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.photo-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.photo-preview {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid #e8f4fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: #f0faff;
+  position: relative;
+}
+
+.photo-preview:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 4px rgba(4, 162, 215, 0.15);
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  height: 100%;
+}
+
+.photo-hint {
+  font-size: 0.65rem;
+  color: #04A2D7;
+  font-weight: 500;
+  text-align: center;
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.photo-preview:hover .photo-overlay {
+  opacity: 1;
+}
+
+.remove-photo {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  background: #ff4d4d;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+.remove-photo:hover {
+  background: #e03333;
+}
+
+.photo-input {
+  display: none;
+}
+
+.photo-info {
+  flex: 1;
+}
+
+.photo-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.3rem 0;
+}
+
+.photo-desc {
+  font-size: 0.8rem;
+  color: #999;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.divider-line {
+  height: 1px;
+  background: #f0f0f0;
+  margin-bottom: 1.5rem;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4, 162, 215, 0.1);
+}
+
+.form-input::placeholder {
+  color: #bbb;
+}
+
+/* Country Dropdown */
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+/* Phone Number */
+.phone-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dial-select {
+  width: 95px;
+  flex-shrink: 0;
+  padding: 0.85rem 0.5rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dial-select:focus {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4, 162, 215, 0.1);
+}
+
+.phone-input {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  box-sizing: border-box;
+}
+
+.phone-input:focus {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4, 162, 215, 0.1);
+}
+
+.phone-input::placeholder {
+  color: #bbb;
+}
+
+/* Gender Radio */
+.gender-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.radio-input {
+  display: none;
+}
+
+.radio-custom {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: white;
+}
+
+.radio-input:checked + .radio-custom {
+  border-color: #04A2D7;
+}
+
+.radio-input:checked + .radio-custom::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  background: #04A2D7;
+  border-radius: 50%;
+  display: block;
+}
+
+.radio-text {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Next Button */
+.btn-next {
+  width: 100%;
+  padding: 1rem;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
+  margin-top: -1.5rem;
+}
+
+.btn-next:hover {
+  background: #0390c0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
+}
+
+/* Responsive */
+
+/* Large screens */
+@media (min-width: 1200px) {
+  .journey-container {
+    max-width: 540px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 300px;
+    height: 170px;
+  }
+
+  .journey-page {
+    padding: 1.5rem;
+  }
+
+  .journey-title {
+    font-size: 1.4rem;
+  }
+
+  .journey-card {
+    padding: 1.75rem 2rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .journey-page {
+    align-items: flex-start;
+    padding: 3rem 1rem 2rem 1rem;
+  }
+
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 200px;
+    height: 130px;
+  }
+
+  .journey-logo-img {
+    height: 50px;
+  }
+
+  .journey-title {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .journey-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .photo-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+
+  .photo-preview {
+    width: 80px;
+    height: 80px;
+  }
+
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .dial-select {
+    width: 80px;
+    padding: 0.75rem 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  .phone-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .gender-group {
+    gap: 1rem;
+  }
+
+  .btn-next {
+    padding: 0.9rem;
+    font-size: 1rem;
+    width: 100%;
+    margin-top: -0.75rem;
+  }
+}

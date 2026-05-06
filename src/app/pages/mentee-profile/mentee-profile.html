@@ -1,0 +1,76 @@
+<div class="mentee-page">
+  <div class="wave-top-left"></div>
+  <div class="wave-bottom-right"></div>
+
+  <div class="mentee-container">
+
+    <!-- Logo -->
+    <div class="mentee-logo">
+      <img src="/landing page logo.png" alt="EdTech Logo" class="mentee-logo-img">
+    </div>
+
+    <!-- Title -->
+    <h2 class="mentee-title">Complete your profile</h2>
+    <p class="mentee-subtitle">Tells us about yourself to get started</p>
+
+    <!-- Card -->
+    <div class="mentee-card">
+
+      <!-- I am a -->
+      <div class="form-section">
+        <label class="section-label">I am a ...</label>
+        <select class="form-input" [(ngModel)]="selectedType" name="type">
+          @for (type of types; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Student: University -->
+      @if (isStudent) {
+        <div class="form-section">
+          <label class="field-label">Which university are you from?</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="e.g. Bulacan State University Malolos"
+            [(ngModel)]="university"
+            name="university"
+          >
+        </div>
+      }
+
+      <!-- Working Professional / Entrepreneur: Job Position + Company -->
+      @if (isWorkingOrEntrepreneur) {
+        <div class="form-section">
+          <label class="field-label">Job Position</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="e.g. Software Engineer"
+            [(ngModel)]="jobPosition"
+            name="jobPosition"
+          >
+        </div>
+        <div class="form-section">
+          <label class="field-label">Company</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="e.g. Google"
+            [(ngModel)]="company"
+            name="company"
+          >
+        </div>
+      }
+
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn-previous" (click)="onPrevious()">Previous</button>
+      <button class="btn-next" (click)="onNext()">Next</button>
+    </div>
+
+  </div>
+</div>

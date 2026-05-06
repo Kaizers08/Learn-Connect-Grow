@@ -1,0 +1,310 @@
+.mentee-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 2rem;
+}
+
+.wave-top-left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #04A2D7, #21AA3A);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 0% 0%);
+}
+
+.wave-bottom-right {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #21AA3A, #04A2D7);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 100% 100%);
+}
+
+.mentee-container {
+  width: 100%;
+  max-width: 580px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* Logo */
+.mentee-logo {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.mentee-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Title */
+.mentee-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.4rem 0;
+}
+
+.mentee-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0 0 1.75rem 0;
+}
+
+/* Card */
+.mentee-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #222;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Radio Buttons */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.radio-input {
+  display: none;
+}
+
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: white;
+}
+
+.radio-input:checked + .radio-custom {
+  border-color: #04A2D7;
+  background: white;
+}
+
+.radio-input:checked + .radio-custom::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #04A2D7;
+  border-radius: 50%;
+  display: block;
+}
+
+.radio-text {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Text Input & Select */
+.form-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4, 162, 215, 0.1);
+}
+
+.form-input::placeholder {
+  color: #bbb;
+}
+
+/* Dropdown only */
+select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  cursor: pointer;
+  padding-right: 2.5rem;
+}
+
+/* Buttons */
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: -2rem;
+}
+
+.btn-previous {
+  width: 100%;
+  padding: 0.9rem;
+  background: white;
+  color: #04A2D7;
+  border: 2px solid #04A2D7;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-previous:hover {
+  background: #f0faff;
+}
+
+.btn-next {
+  width: 100%;
+  padding: 0.9rem;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
+}
+
+.btn-next:hover {
+  background: #0390c0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
+}
+
+/* Responsive */
+
+/* Large screens */
+@media (min-width: 1200px) {
+  .mentee-container {
+    max-width: 580px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 300px;
+    height: 170px;
+  }
+
+  .mentee-page {
+    padding: 1.5rem;
+  }
+
+  .mentee-title {
+    font-size: 1.5rem;
+  }
+
+  .mentee-card {
+    padding: 1.75rem 2rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .mentee-page {
+    align-items: flex-start;
+    padding: 3rem 1rem 2rem 1rem;
+  }
+
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 200px;
+    height: 130px;
+  }
+
+  .mentee-logo-img {
+    height: 50px;
+  }
+
+  .mentee-title {
+    font-size: 1.3rem;
+  }
+
+  .mentee-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .mentee-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-row {
+    grid-template-columns: 1fr;
+    margin-top: -1rem;
+    gap: 0.75rem;
+  }
+
+  .btn-previous,
+  .btn-next {
+    padding: 0.85rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+}

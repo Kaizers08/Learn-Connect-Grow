@@ -173,14 +173,91 @@
   box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
 }
 
+/* Responsive */
+
+/* Large screens */
+@media (min-width: 1200px) {
+  .profile-container {
+    max-width: 580px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 300px;
+    height: 170px;
+  }
+
+  .profile-page {
+    padding: 1.5rem;
+  }
+
+  .profile-title {
+    font-size: 1.5rem;
+  }
+
+  .role-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Mobile */
 @media (max-width: 480px) {
-  .role-options {
-    grid-template-columns: 1fr;
+  .profile-page {
+    align-items: flex-start;
+    padding: 3rem 1rem 2rem 1rem;
   }
 
   .wave-top-left,
   .wave-bottom-right {
-    width: 250px;
-    height: 150px;
+    width: 200px;
+    height: 130px;
+  }
+
+  .profile-logo-img {
+    height: 50px;
+  }
+
+  .profile-title {
+    font-size: 1.3rem;
+  }
+
+  .profile-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .role-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .role-card-title {
+    font-size: 1.1rem;
+  }
+
+  .role-options {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+
+  .role-option {
+    padding: 1.25rem 1rem;
+  }
+
+  .role-name {
+    font-size: 0.95rem;
+  }
+
+  .role-description {
+    font-size: 0.8rem;
+  }
+
+  .btn-next {
+    padding: 0.9rem;
+    font-size: 1rem;
+    width: 100%;
   }
 }

@@ -273,19 +273,90 @@
   color: #333;
 }
 
-@media (max-width: 520px) {
+/* Responsive */
+
+/* Large screens */
+@media (min-width: 1200px) {
   .register-card {
-    padding: 2rem 1.5rem;
-    margin: 1rem;
+    max-width: 520px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 300px;
+    height: 170px;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
+  .register-card {
+    padding: 2rem 2rem;
+  }
+
+  .register-title {
+    font-size: 1.4rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .register-page {
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+
+  .register-card {
+    padding: 1.75rem 1.25rem;
+    margin: 0 1rem 2rem 1rem;
+    border-radius: 16px;
   }
 
   .wave-top-left,
   .wave-bottom-right {
-    width: 250px;
-    height: 150px;
+    width: 200px;
+    height: 130px;
+  }
+
+  .register-logo-img {
+    height: 50px;
+  }
+
+  .register-title {
+    font-size: 1.3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-signup {
+    padding: 0.85rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .btn-google {
+    padding: 0.7rem;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .checkbox-text {
+    font-size: 0.82rem;
+  }
+
+  .register-footer {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
   }
 }
