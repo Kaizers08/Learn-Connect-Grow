@@ -1,5 +1,4 @@
-/* Login Page */
-.login-page {
+.register-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -10,7 +9,6 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Wave decorations */
 .wave-top-left {
   position: fixed;
   top: 0;
@@ -18,7 +16,6 @@
   width: 420px;
   height: 220px;
   background: linear-gradient(135deg, #04A2D7, #21AA3A);
-  border-radius: 0 0 60% 0;
   z-index: 0;
   clip-path: ellipse(100% 80% at 0% 0%);
 }
@@ -30,64 +27,56 @@
   width: 420px;
   height: 220px;
   background: linear-gradient(135deg, #21AA3A, #04A2D7);
-  border-radius: 60% 0 0 0;
   z-index: 0;
   clip-path: ellipse(100% 80% at 100% 100%);
 }
 
-/* Card */
-.login-card {
+.register-card {
   background: white;
   border-radius: 20px;
   padding: 2.5rem 3rem;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   position: relative;
   z-index: 1;
   text-align: center;
 }
 
-/* Logo */
-.login-logo {
-  margin-bottom: 1.5rem;
+.register-logo {
+  margin-bottom: 1.25rem;
   display: flex;
   justify-content: center;
 }
 
-.login-logo-img {
+.register-logo-img {
   height: 60px;
   width: auto;
   object-fit: contain;
 }
 
-/* Title */
-.login-title {
+.register-title {
   font-size: 1.6rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
 }
 
 .text-blue  { color: #043E92; font-weight: 700; }
-.text-cyan  { color: #04A2D7; }
 .text-green { color: #21AA3A; font-weight: 700; }
 
-.link {
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-
-/* Form */
-.login-form {
+.register-form {
   text-align: left;
 }
 
+/* Two columns row */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.1rem;
 }
 
 .form-group label {
@@ -141,26 +130,54 @@
   align-items: center;
 }
 
-/* Forgot Password */
-.forgot-password {
-  text-align: right;
-  margin-bottom: 1.5rem;
-  margin-top: -0.5rem;
+/* Checkbox */
+.checkbox-group {
+  margin-bottom: 1.25rem;
+  margin-top: 0.1rem;
 }
 
-.forgot-password a {
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+  accent-color: #04A2D7;
+  margin: 0;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.checkmark {
+  display: none;
+}
+
+.checkbox-text {
   font-size: 0.875rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.checkbox-text a {
   color: #04A2D7;
   text-decoration: none;
   font-weight: 500;
 }
 
-.forgot-password a:hover {
+.checkbox-text a:hover {
   text-decoration: underline;
 }
 
-/* Sign In Button */
-.btn-signin {
+.btn-signup {
   width: 100%;
   padding: 0.9rem;
   background: #04A2D7;
@@ -172,32 +189,31 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
+  margin-top: 0.5rem;
 }
 
-.btn-signin:hover {
-  background-color: #83cde6;
+.btn-signup:hover {
+  background: #83cde6;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
 }
 
-/* Sign Up */
-.signup-text {
+.signin-text {
   margin-top: 1.25rem;
   font-size: 0.9rem;
   color: #666;
 }
 
-.signup-text a {
-  color: #21AA3A;
+.link {
+  cursor: pointer;
   font-weight: 700;
   text-decoration: none;
 }
 
-.signup-text a:hover {
+.link:hover {
   text-decoration: underline;
 }
 
-/* Divider */
 .divider {
   display: flex;
   align-items: center;
@@ -215,7 +231,6 @@
   background: #e0e0e0;
 }
 
-/* Google Button */
 .btn-google {
   width: 100%;
   padding: 0.75rem;
@@ -239,8 +254,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Footer */
-.login-footer {
+.register-footer {
   margin-top: 1.5rem;
   display: flex;
   justify-content: center;
@@ -249,21 +263,24 @@
   color: #999;
 }
 
-.login-footer a {
+.register-footer a {
   color: #999;
   text-decoration: none;
   transition: color 0.2s;
 }
 
-.login-footer a:hover {
+.register-footer a:hover {
   color: #333;
 }
 
-/* Responsive */
 @media (max-width: 520px) {
-  .login-card {
+  .register-card {
     padding: 2rem 1.5rem;
     margin: 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 
   .wave-top-left,
@@ -271,9 +288,4 @@
     width: 250px;
     height: 150px;
   }
-
-.text-blue  { color: #043E92; }
-.text-cyan  { color: #04A2D7; }
-.text-green { color: #21AA3A; }
-
 }

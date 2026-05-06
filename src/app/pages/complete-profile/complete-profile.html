@@ -1,0 +1,94 @@
+<div class="profile-page">
+  <!-- Same background waves as register -->
+  <div class="wave-top-left"></div>
+  <div class="wave-bottom-right"></div>
+
+  <div class="profile-container">
+
+    <!-- Logo -->
+    <div class="profile-logo">
+      <img src="/landing page logo.png" alt="EdTech Logo" class="profile-logo-img">
+    </div>
+
+    <!-- Title -->
+    <h2 class="profile-title">Complete your profile</h2>
+    <p class="profile-subtitle">Tells us about yourself to get started</p>
+
+    <!-- Role Card -->
+    <div class="role-card">
+      <h3 class="role-card-title">Choose Your Role</h3>
+      <p class="role-card-subtitle">Please select how you want to participate in our mentoring platform</p>
+
+      <div class="role-options">
+
+        <!-- Mentee -->
+        <div
+          class="role-option"
+          [class.selected]="selectedRole === 'mentee'"
+          (click)="selectRole('mentee')"
+        >
+          @if (selectedRole === 'mentee') {
+            <div class="role-check">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#04A2D7"/>
+                <path d="M7 12L10 15L17 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          }
+          <div class="role-icon">
+            <!-- Student/Mentee icon -->
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="26" fill="#EEF6FF"/>
+              <circle cx="26" cy="20" r="7" fill="#5B8DEF"/>
+              <path d="M13 38C13 31.373 18.373 26 25 26H27C33.627 26 39 31.373 39 38" stroke="#5B8DEF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M20 14L26 11L32 14V19L26 22L20 19V14Z" fill="#FFB300" opacity="0.9"/>
+              <path d="M26 11L32 14" stroke="#E69900" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <h4 class="role-name">Mentee</h4>
+          <p class="role-description">Learn and grow with guidance from experienced mentors</p>
+        </div>
+
+        <!-- Mentor -->
+        <div
+          class="role-option"
+          [class.selected]="selectedRole === 'mentor'"
+          (click)="selectRole('mentor')"
+        >
+          @if (selectedRole === 'mentor') {
+            <div class="role-check">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#04A2D7"/>
+                <path d="M7 12L10 15L17 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          }
+          <div class="role-icon">
+            <!-- Mentor/Teacher icon -->
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="26" cy="26" r="26" fill="#FFF3E0"/>
+              <circle cx="26" cy="19" r="6" fill="#FF7043"/>
+              <path d="M14 37C14 30.925 19.373 26 26 26C32.627 26 38 30.925 38 37" stroke="#FF7043" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <!-- Star badge -->
+              <circle cx="36" cy="16" r="6" fill="#FFB300"/>
+              <path d="M36 12L37 15H40L37.5 17L38.5 20L36 18L33.5 20L34.5 17L32 15H35L36 12Z" fill="white"/>
+            </svg>
+          </div>
+          <h4 class="role-name">Mentor</h4>
+          <p class="role-description">Share your knowledge and guide future professionals</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Next Button -->
+    <button
+      class="btn-next"
+      [class.active]="selectedRole !== null"
+      (click)="onNext()"
+    >
+      Next
+    </button>
+
+  </div>
+</div>

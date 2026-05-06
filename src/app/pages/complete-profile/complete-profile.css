@@ -1,0 +1,186 @@
+.profile-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 2rem;
+}
+
+/* Same waves as register/login */
+.wave-top-left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #04A2D7, #21AA3A);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 0% 0%);
+}
+
+.wave-bottom-right {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #21AA3A, #04A2D7);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 100% 100%);
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 580px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo */
+.profile-logo {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Title */
+.profile-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.4rem 0;
+}
+
+.profile-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0 0 1.75rem 0;
+}
+
+/* Role Card */
+.role-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.role-card-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.4rem 0;
+}
+
+.role-card-subtitle {
+  font-size: 0.875rem;
+  color: #888;
+  margin: 0 0 1.75rem 0;
+}
+
+/* Role Options */
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.role-option {
+  border: 2px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 1.75rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-align: center;
+  background: white;
+}
+
+.role-option:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.1);
+}
+
+.role-option.selected {
+  border-color: #04A2D7;
+  background: #f0faff;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.15);
+}
+
+.role-icon {
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.role-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.4rem 0;
+}
+
+.role-description {
+  font-size: 0.82rem;
+  color: #888;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.role-check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+/* Next Button */
+.btn-next {
+  width: 100%;
+  padding: 1rem;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.btn-next.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.btn-next.active:hover {
+  background: #0390c0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
+}
+
+@media (max-width: 480px) {
+  .role-options {
+    grid-template-columns: 1fr;
+  }
+
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 250px;
+    height: 150px;
+  }
+}

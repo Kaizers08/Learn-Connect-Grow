@@ -4,15 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-register',
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.html',
-  styleUrl: './login.css'
+  templateUrl: './register.html',
+  styleUrl: './register.css'
 })
-export class LoginComponent {
+export class RegisterComponent {
+  firstName = '';
+  middleName = '';
+  lastName = '';
   email = '';
   password = '';
   showPassword = false;
+  agree = false;
 
   constructor(private router: Router) {}
 
@@ -20,11 +24,11 @@ export class LoginComponent {
     this.showPassword = !this.showPassword;
   }
 
-  onSignIn() {
-    // handle sign in
+  onSignUp() {
+    this.router.navigate(['/complete-profile']);
   }
 
-  goToRegister() {
-    this.router.navigate(['/register']);
+  goToLogin() {
+    this.router.navigate(['/login']);
   }
 }
