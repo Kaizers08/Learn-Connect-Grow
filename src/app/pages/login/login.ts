@@ -21,7 +21,8 @@ export class LoginComponent {
   }
 
   onSignIn() {
-    // handle sign in
+    // TODO: add real auth logic here
+    this.router.navigate(['/dashboard']);
   }
 
   goToRegister() {

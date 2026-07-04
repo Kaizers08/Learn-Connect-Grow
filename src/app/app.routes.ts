@@ -26,6 +26,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/journey/journey').then(m => m.JourneyComponent)
   },
   {
+    path: 'dashboard',
+    loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.DashboardComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }
