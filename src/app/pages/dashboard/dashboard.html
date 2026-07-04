@@ -140,7 +140,10 @@
     </header>
 
     <!-- Page Body -->
-    <div class="page-body">
+    <div class="page-body" [class.find-mentors-layout]="activeNavItem === 'search'">
+
+      <!-- ── DASHBOARD VIEW ─────────────────────────────────────────────── -->
+      @if (activeNavItem === 'dashboard') {
 
       <!-- Left: Main Feed -->
       <section class="feed">
@@ -193,7 +196,7 @@
           @for (mentor of recommendedMentors; track mentor.name) {
             <div class="mentor-card">
               <div class="mentor-avatar-wrap">
-                <div class="mentor-avatar" [attr.data-initials]="getInitials(mentor.name)">
+                <div class="mentor-avatar">
                   <span>{{ getInitials(mentor.name) }}</span>
                 </div>
               </div>
@@ -295,6 +298,158 @@
         </div>
 
       </aside>
+
+      } <!-- end dashboard view -->
+
+      <!-- ── FIND MENTORS VIEW ──────────────────────────────────────────── -->
+      @if (activeNavItem === 'search') {
+      <div class="fm-wrapper">
+
+        <!-- Page Header -->
+        <div class="fm-header">
+          <h1 class="fm-title">Find Mentors</h1>
+          <p class="fm-subtitle">Connect with experienced mentors and accelerate your learning journey</p>
+        </div>
+
+        <div class="fm-body">
+
+          <!-- Filters Panel -->
+          <aside class="fm-filters">
+            <div class="fm-filters-header">
+              <span class="fm-filters-title">Filters</span>
+              <button class="fm-reset-btn" (click)="resetFilters()">Reset</button>
+            </div>
+
+            <!-- Search by name -->
+            <div class="fm-filter-group">
+              <label class="fm-filter-label">Search</label>
+              <div class="fm-search-input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="#aaa" stroke-width="2"/>
+                  <path d="M20 20L16.5 16.5" stroke="#aaa" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text" placeholder="Search by name" class="fm-search-input" [(ngModel)]="mentorSearchQuery">
+              </div>
+            </div>
+
+            <!-- Expertise -->
+            <div class="fm-filter-group">
+              <label class="fm-filter-label">Expertise</label>
+              <div class="fm-select-wrap">
+                <select class="fm-select" [(ngModel)]="selectedExpertise">
+                  <option value="">Select Expertise</option>
+                  @for (opt of expertiseOptions; track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                </select>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 9L12 15L18 9" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Technical Skills -->
+            <div class="fm-filter-group">
+              <label class="fm-filter-label">Technical Skills</label>
+              <div class="fm-select-wrap">
+                <select class="fm-select">
+                  <option value="">Select Skills</option>
+                  @for (opt of skillOptions; track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                </select>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 9L12 15L18 9" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+
+              <!-- Selected skill tags -->
+              @if (selectedSkills.length > 0) {
+                <div class="fm-skill-tags">
+                  @for (skill of selectedSkills; track skill) {
+                    <span class="fm-skill-tag">
+                      {{ skill }}
+                      <button class="fm-tag-remove" (click)="removeSkill(skill)">✕</button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Expertise Level -->
+            <div class="fm-filter-group">
+              <label class="fm-filter-label">Expertise Level</label>
+              <div class="fm-checkbox-list">
+                @for (level of levelOptions; track level) {
+                  <label class="fm-checkbox-label">
+                    <input type="checkbox"
+                      class="fm-checkbox"
+                      [checked]="expertiseLevels.includes(level)"
+                      (change)="toggleLevel(level)">
+                    <span class="fm-checkbox-custom"></span>
+                    <span>{{ level }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </aside>
+
+          <!-- Mentor List -->
+          <div class="fm-results">
+            <div class="fm-mentor-list">
+              @for (mentor of filteredMentors; track mentor.name) {
+                <div class="fm-mentor-card">
+                  <div class="fm-mentor-avatar">
+                    <span>{{ getInitials(mentor.name) }}</span>
+                  </div>
+                  <div class="fm-mentor-info">
+                    <h3 class="fm-mentor-name">{{ mentor.name }}</h3>
+                    <p class="fm-mentor-role">{{ mentor.role }}</p>
+                    <div class="fm-mentor-rating">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                      </svg>
+                      <span class="fm-rating-val">{{ mentor.rating }}</span>
+                      <span class="fm-rating-count">({{ mentor.reviews }} reviews)</span>
+                    </div>
+                    <p class="fm-mentor-bio">{{ mentor.bio }}</p>
+                    <div class="fm-mentor-skills">
+                      @for (skill of mentor.skills; track skill) {
+                        <span class="fm-mentor-skill-tag">{{ skill }}</span>
+                      }
+                    </div>
+                    <div class="fm-mentor-actions">
+                      <button class="fm-btn-view" (click)="onViewProfile(mentor)">View Profile</button>
+                      <button class="fm-btn-connect" (click)="onConnect(mentor)">Connect</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Pagination -->
+            <div class="fm-pagination">
+              <button class="fm-page-btn fm-page-arrow" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+              @for (page of getPages(); track page) {
+                <button class="fm-page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+              <button class="fm-page-btn fm-page-arrow" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      } <!-- end find mentors view -->
 
     </div>
   </main>
