@@ -160,6 +160,8 @@
   box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
   opacity: 0.5;
   pointer-events: none;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-next.active {
@@ -171,6 +173,24 @@
   background: #0390c0;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
+}
+
+.btn-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Error Message */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #ef9a9a;
 }
 
 /* Responsive */

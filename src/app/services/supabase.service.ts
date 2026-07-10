@@ -7,6 +7,7 @@ export type UserRole = 'mentee' | 'mentor' | 'admin';
 export interface MenteeProfile {
   id?: string;
   user_id?: string;
+  full_name?: string;
   type: string;
   university?: string;
   job_position?: string;
@@ -273,27 +274,55 @@ export class SupabaseService {
 
   // ── Matchmaking ─────────────────────────────────────────────────────────────
   // Mentee browses mentors whose expertise / skills match what the mentee wants.
+  // Match if: expertise matches OR any skill overlaps (at least 1 skill in common)
   async findMentorsForMentee(desiredExpertise?: string, desiredSkills: string[] = []) {
-    let q = this.client.from('mentor_profiles').select('*');
-    const filters: string[] = [];
-    if (desiredExpertise) filters.push(`expertise.eq.${desiredExpertise}`);
-    if (desiredSkills.length) filters.push(`skills.cs.{${desiredSkills.join(',')}}`);
-    if (filters.length) q = q.or(filters.join(','));
-    const { data, error } = await q;
-    if (error) this.logError('findMentorsForMentee', error);
-    return { data, error };
+    const { data, error } = await this.client.from('mentor_profiles').select('*');
+    
+    if (error) {
+      this.logError('findMentorsForMentee', error);
+      return { data: [], error };
+    }
+
+    // Filter client-side for skill overlap
+    const filtered = (data || []).filter((mentor: any) => {
+      // Match if expertise matches
+      if (desiredExpertise && mentor.expertise === desiredExpertise) return true;
+      
+      // Match if any skill overlaps
+      if (desiredSkills.length && mentor.skills?.length) {
+        return desiredSkills.some(skill => mentor.skills.includes(skill));
+      }
+      
+      return false;
+    });
+
+    return { data: filtered, error };
   }
 
   // Mentor browses mentees whose desired expertise / skills match the mentor's.
+  // Match if: desired expertise matches OR any skill overlaps (at least 1 skill in common)
   async findMenteesForMentor(expertise?: string, skills: string[] = []) {
-    let q = this.client.from('mentee_profiles').select('*');
-    const filters: string[] = [];
-    if (expertise) filters.push(`desired_expertise.eq.${expertise}`);
-    if (skills.length) filters.push(`desired_skills.cs.{${skills.join(',')}}`);
-    if (filters.length) q = q.or(filters.join(','));
-    const { data, error } = await q;
-    if (error) this.logError('findMenteesForMentor', error);
-    return { data, error };
+    const { data, error } = await this.client.from('mentee_profiles').select('*');
+    
+    if (error) {
+      this.logError('findMenteesForMentor', error);
+      return { data: [], error };
+    }
+
+    // Filter client-side for skill overlap
+    const filtered = (data || []).filter((mentee: any) => {
+      // Match if desired expertise matches
+      if (expertise && mentee.desired_expertise === expertise) return true;
+      
+      // Match if any skill overlaps
+      if (skills.length && mentee.desired_skills?.length) {
+        return skills.some(skill => mentee.desired_skills.includes(skill));
+      }
+      
+      return false;
+    });
+
+    return { data: filtered, error };
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────

@@ -157,7 +157,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-top: -2rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-previous {

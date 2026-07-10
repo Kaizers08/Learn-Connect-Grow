@@ -50,7 +50,11 @@
         </div>
         <div class="photo-info">
           <p class="photo-title">Your profile photo</p>
-          <p class="photo-desc">Click to upload a photo.<br>JPG, PNG or GIF (max 5MB)</p>
+          @if (profilePhoto) {
+            <p class="photo-desc">Photo already uploaded. Click to change it.<br>JPG, PNG or GIF (max 5MB)</p>
+          } @else {
+            <p class="photo-desc">Click to upload a photo (optional).<br>JPG, PNG or GIF (max 5MB)</p>
+          }
         </div>
         <input
           #photoInput

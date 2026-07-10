@@ -65,18 +65,27 @@
 
       <!-- Area of Expertise -->
       <div class="form-section">
-        <label class="field-label">Area of Expertise</label>
-        <select class="form-input" [(ngModel)]="expertise" name="expertise">
+        <label class="field-label">Area of Expertise <span class="required">*</span></label>
+        <select 
+          class="form-input" 
+          [class.input-error]="showErrors && !expertise"
+          [(ngModel)]="expertise" 
+          name="expertise" 
+          required
+        >
           <option value="" disabled selected>Select your expertise</option>
           @for (exp of expertiseOptions; track exp) {
             <option [value]="exp">{{ exp }}</option>
           }
         </select>
+        @if (showErrors && !expertise) {
+          <div class="field-error">Please select your area of expertise</div>
+        }
       </div>
 
       <!-- Technical Skills -->
       <div class="form-section">
-        <label class="field-label">Technical Skills</label>
+        <label class="field-label">Technical Skills <span class="required">*</span></label>
         <div class="skill-tags">
           @for (skill of skills; track skill) {
             <span class="skill-tag">
@@ -89,6 +98,7 @@
           <input
             type="text"
             class="form-input"
+            [class.input-error]="showErrors && skills.length === 0"
             placeholder="Type a skill and press Enter"
             [(ngModel)]="skillInput"
             name="skillInput"
@@ -96,6 +106,9 @@
           >
           <button type="button" class="btn-add-skill" (click)="addSkill()">Add</button>
         </div>
+        @if (showErrors && skills.length === 0) {
+          <div class="field-error">Please add at least one technical skill</div>
+        }
         <div class="skill-suggestions">
           @for (skill of skillOptions; track skill) {
             @if (!skills.includes(skill)) {
@@ -107,15 +120,20 @@
 
       <!-- Years of Experience -->
       <div class="form-section">
-        <label class="field-label">Years of Experience</label>
+        <label class="field-label">Years of Experience <span class="required">*</span></label>
         <input
           type="number"
           min="0"
           class="form-input"
+          [class.input-error]="showErrors && (yearsExperience === null || yearsExperience === undefined)"
           placeholder="e.g. 5"
           [(ngModel)]="yearsExperience"
           name="yearsExperience"
+          required
         >
+        @if (showErrors && (yearsExperience === null || yearsExperience === undefined)) {
+          <div class="field-error">Please enter your years of experience</div>
+        }
       </div>
 
       <!-- Short Bio -->
@@ -136,10 +154,14 @@
         <input
           type="tel"
           class="form-input"
+          [class.input-error]="showErrors && !phoneNumber.trim()"
           placeholder="e.g. +63 912 345 6789"
           [(ngModel)]="phoneNumber"
           name="phoneNumber"
         >
+        @if (showErrors && !phoneNumber.trim()) {
+          <div class="field-error">Please enter your phone number</div>
+        }
       </div>
 
       <!-- Social Media / GitHub -->

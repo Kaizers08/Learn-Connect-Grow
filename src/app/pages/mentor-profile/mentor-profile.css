@@ -143,9 +143,6 @@ select.form-input {
   position: relative;
   z-index: 2;
 }
-  gap: 1rem;
-  margin-top: -2rem;
-}
 
 .btn-previous {
   width: 100%;
@@ -411,4 +408,28 @@ select.form-input {
   border: 1.5px solid #ffc8c8; border-radius: 10px;
   padding: 0.65rem 1rem; font-size: 0.85rem; font-weight: 500;
   margin-top: 0.5rem;
+}
+
+.input-error {
+  border-color: #e74c3c !important;
+  background-color: #fff5f5;
+}
+
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.field-error::before {
+  content: '⚠';
+  font-size: 0.85rem;
 }

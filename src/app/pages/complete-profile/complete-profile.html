@@ -81,13 +81,19 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    @if (errorMsg) {
+      <div class="error-message">{{ errorMsg }}</div>
+    }
+
     <!-- Next Button -->
     <button
       class="btn-next"
       [class.active]="selectedRole !== null"
+      [disabled]="isLoading || selectedRole === null"
       (click)="onNext()"
     >
-      Next
+      {{ isLoading ? 'Loading...' : 'Next' }}
     </button>
 
   </div>

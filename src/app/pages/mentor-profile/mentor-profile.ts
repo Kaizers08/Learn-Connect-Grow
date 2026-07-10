@@ -24,6 +24,7 @@ export class MentorProfileComponent implements OnInit {
   linkedinUrl = '';
   twitterUrl = '';
   errorMsg = '';
+  showErrors = false;  // Show validation errors
 
   skills: string[] = [];
   skillInput = '';
@@ -85,12 +86,29 @@ export class MentorProfileComponent implements OnInit {
 
   async onNext() {
     this.errorMsg = '';
+    this.showErrors = true;
 
     // Required field validation
-    if (!this.expertise) { this.errorMsg = 'Area of Expertise is required.'; return; }
-    if (!this.skills.length) { this.errorMsg = 'Please add at least one technical skill.'; return; }
-    if (this.yearsExperience === null || this.yearsExperience === undefined) { this.errorMsg = 'Years of Experience is required.'; return; }
-    if (!this.phoneNumber.trim()) { this.errorMsg = 'Phone number is required.'; return; }
+    if (!this.expertise) { 
+      this.errorMsg = 'Area of Expertise is required.'; 
+      this.scrollToTop();
+      return; 
+    }
+    if (!this.skills.length) { 
+      this.errorMsg = 'Please add at least one technical skill.'; 
+      this.scrollToTop();
+      return; 
+    }
+    if (this.yearsExperience === null || this.yearsExperience === undefined) { 
+      this.errorMsg = 'Years of Experience is required.'; 
+      this.scrollToTop();
+      return; 
+    }
+    if (!this.phoneNumber.trim()) { 
+      this.errorMsg = 'Phone number is required.'; 
+      this.scrollToTop();
+      return; 
+    }
 
     const userId = await this.supabase.getCurrentUserId();
 
@@ -120,9 +138,14 @@ export class MentorProfileComponent implements OnInit {
     if (error) {
       console.error('Failed to save mentor profile:', error);
       this.errorMsg = 'Failed to save profile. Please try again.';
+      this.scrollToTop();
       return;
     }
 
     this.router.navigate(['/mentor-documents']);
+  }
+
+  private scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

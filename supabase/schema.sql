@@ -6,6 +6,7 @@
 create table if not exists public.mentee_profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade unique,
+  full_name text,
   type text,
   university text,
   job_position text,
@@ -134,6 +135,7 @@ create policy "Admin update mentor_profiles"
   with check (auth.uid() in (select user_id from public.admins));
 
 -- ── Alter existing tables (run if tables already exist) ──────────────────────
+alter table public.mentee_profiles add column if not exists full_name text;
 alter table public.mentee_profiles add column if not exists phone_number text;
 alter table public.mentee_profiles add column if not exists country text;
 alter table public.mentee_profiles add column if not exists gender text;

@@ -82,6 +82,72 @@
   margin-bottom: 1.5rem;
 }
 
+.profile-photo-section {
+  text-align: center;
+}
+
+.profile-photo-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-photo-preview {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px dashed #d0d0d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f9fb;
+}
+
+.profile-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-photo-placeholder {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.profile-photo-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-upload {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #04A2D7;
+  border: 1.5px solid #04A2D7;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #f0faff;
+}
+
+.btn-remove-photo {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #e74c3c;
+  border: 1.5px solid #e74c3c;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .section-label {
   font-size: 1rem;
   font-weight: 700;
@@ -189,7 +255,9 @@ select.form-input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-top: -2rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-previous {

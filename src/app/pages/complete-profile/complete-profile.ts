@@ -12,6 +12,8 @@ import { SupabaseService } from '../../services/supabase.service';
 })
 export class CompleteProfileComponent {
   selectedRole: 'mentee' | 'mentor' | null = null;
+  isLoading = false;
+  errorMsg = '';
 
   constructor(
     private router: Router,
@@ -21,17 +23,47 @@ export class CompleteProfileComponent {
 
   selectRole(role: 'mentee' | 'mentor') {
     this.selectedRole = role;
+    this.errorMsg = '';
   }
 
   async onNext() {
-    if (this.selectedRole === 'mentee') {
-      this.userService.role.set('mentee');
-      await this.supabase.updateUserMeta({ role: 'mentee' });
-      this.router.navigate(['/mentee-profile']);
-    } else if (this.selectedRole === 'mentor') {
-      this.userService.role.set('mentor');
-      await this.supabase.updateUserMeta({ role: 'mentor' });
-      this.router.navigate(['/mentor-profile']);
+    if (!this.selectedRole) {
+      this.errorMsg = 'Please select a role first.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMsg = '';
+
+    try {
+      console.log('Selected role:', this.selectedRole);
+      
+      // Update user metadata in Supabase
+      const { error } = await this.supabase.updateUserMeta({ role: this.selectedRole });
+      
+      if (error) {
+        console.error('Failed to update user metadata:', error);
+        this.errorMsg = 'Failed to save your role. Please try again.';
+        this.isLoading = false;
+        return;
+      }
+
+      // Update local user service
+      this.userService.role.set(this.selectedRole);
+      
+      console.log('Role saved successfully, navigating to profile page...');
+
+      // Navigate to appropriate profile page
+      if (this.selectedRole === 'mentee') {
+        await this.router.navigate(['/mentee-profile']);
+      } else if (this.selectedRole === 'mentor') {
+        await this.router.navigate(['/mentor-profile']);
+      }
+    } catch (error) {
+      console.error('Error in onNext:', error);
+      this.errorMsg = 'An unexpected error occurred. Please try again.';
+    } finally {
+      this.isLoading = false;
     }
   }
 }

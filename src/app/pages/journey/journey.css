@@ -354,7 +354,9 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
-  margin-top: -1.5rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-next:hover {

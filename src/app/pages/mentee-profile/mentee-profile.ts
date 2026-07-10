@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,8 +10,9 @@ import { SupabaseService } from '../../services/supabase.service';
   templateUrl: './mentee-profile.html',
   styleUrls: ['./mentee-profile.css']
 })
-export class MenteeProfileComponent {
+export class MenteeProfileComponent implements OnInit {
   selectedType: string = 'student';
+  fullName: string = '';
   university: string = '';
   jobPosition: string = '';
   company: string = '';
@@ -20,7 +21,7 @@ export class MenteeProfileComponent {
   desiredExpertise: string = '';
   desiredSkills: string[] = [];
   skillInput = '';
-
+  
   types = [
     { value: 'student', label: 'Student' },
     { value: 'working-professional', label: 'Working professional' },
@@ -73,6 +74,12 @@ export class MenteeProfileComponent {
     private supabase: SupabaseService
   ) {}
 
+  async ngOnInit() {
+    // Get full_name from auth metadata (from registration)
+    const meta = await this.supabase.getCurrentUserMeta();
+    if (meta.fullName) this.fullName = meta.fullName;
+  }
+
   get isStudent(): boolean {
     return this.selectedType === 'student';
   }
@@ -115,8 +122,10 @@ export class MenteeProfileComponent {
     }
 
     const userId = await this.supabase.getCurrentUserId();
+
     const { error } = await this.supabase.saveMenteeProfile({
       user_id: userId,
+      full_name: this.fullName || undefined,
       type: this.selectedType,
       university: this.university || undefined,
       job_position: this.jobPosition || undefined,

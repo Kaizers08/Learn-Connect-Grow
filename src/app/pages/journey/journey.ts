@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,7 +11,7 @@ import { UserService } from '../../services/user.service';
   templateUrl: './journey.html',
   styleUrls: ['./journey.css']
 })
-export class JourneyComponent {
+export class JourneyComponent implements OnInit {
   profilePhoto: string | null = null;  // preview URL (object URL)
   profileFile: File | null = null;     // actual File for upload
   dateOfBirth: string = '';
@@ -115,6 +115,25 @@ export class JourneyComponent {
   }
 
   constructor(private router: Router, private userService: UserService, private supabase: SupabaseService) {}
+
+  async ngOnInit() {
+    // Load existing profile picture from database
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
+    const role = this.userService.role();
+    const table = role === 'mentor' ? 'mentor_profiles' : 'mentee_profiles';
+
+    const { data } = await this.supabase.getClient()
+      .from(table)
+      .select('profile_picture')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (data?.profile_picture) {
+      this.profilePhoto = data.profile_picture;
+    }
+  }
 
   onPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];

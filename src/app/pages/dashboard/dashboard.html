@@ -137,7 +137,7 @@
             }
           </div>
           <div class="user-info">
-            <span class="user-name-sm">{{ userName }}</span>
+            <span class="user-name-sm">{{ userName || 'User' }}</span>
             <span class="user-role-sm">{{ userRole }}</span>
           </div>
           <svg class="user-chevron" [class.open]="showUserMenu" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -187,7 +187,7 @@
             }
           </div>
           <div class="welcome-text">
-            <h1 class="welcome-title">Welcome back, {{ userName }}! 👋</h1>
+            <h1 class="welcome-title">Welcome back, {{ userName || 'User' }}! 👋</h1>
             <p class="welcome-subtitle">Keep learning, keep growing. Your journey to becoming a better learner starts here.</p>
           </div>
         </div>
@@ -259,8 +259,8 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
-                <span class="rating-value">4.9</span>
-                <span class="rating-count">(New)</span>
+                <span class="rating-value">{{ mentor.rating || 0 }}</span>
+                <span class="rating-count">({{ mentor.reviews || 0 }} reviews)</span>
               </div>
 
               @if (!isConnectedTo(mentor.user_id)) {
@@ -876,6 +876,53 @@
           <!-- MENTEE-SPECIFIC FIELDS -->
           @if (!isMentor) {
           <div class="st-section">
+            <h3 class="st-section-title">About You</h3>
+            <div class="st-form-grid">
+              <div class="st-form-group st-full">
+                <label class="st-label">I am a ...</label>
+                <select class="st-input" [(ngModel)]="settingsMenteeType">
+                  <option value="">Select type</option>
+                  <option value="student">Student</option>
+                  <option value="working-professional">Working professional</option>
+                  <option value="entrepreneur">Entrepreneur</option>
+                  <option value="unemployed">Unemployed</option>
+                  <option value="fresh-graduate">Fresh graduate</option>
+                </select>
+              </div>
+              
+              @if (settingsMenteeType === 'student') {
+                <div class="st-form-group st-full">
+                  <label class="st-label">University</label>
+                  <input class="st-input" type="text" [(ngModel)]="settingsUniversity" placeholder="e.g. Bulacan State University">
+                </div>
+              }
+              
+              @if (settingsMenteeType === 'working-professional' || settingsMenteeType === 'entrepreneur') {
+                <div class="st-form-group">
+                  <label class="st-label">Job Position</label>
+                  <input class="st-input" type="text" [(ngModel)]="settingsMenteeJobPosition" placeholder="e.g. Software Engineer">
+                </div>
+                <div class="st-form-group">
+                  <label class="st-label">Company</label>
+                  <input class="st-input" type="text" [(ngModel)]="settingsMenteeCompany" placeholder="Company name">
+                </div>
+              }
+              
+              @if (settingsMenteeType === 'unemployed' || settingsMenteeType === 'fresh-graduate') {
+                <div class="st-form-group st-full">
+                  <label class="st-label">Are you looking for a job?</label>
+                  <select class="st-input" [(ngModel)]="settingsLookingForJob">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="st-divider"></div>
+
+          <div class="st-section">
             <h3 class="st-section-title">Learning Profile</h3>
             <div class="st-form-grid">
               <div class="st-form-group st-full">
@@ -936,12 +983,42 @@
           <div class="st-section">
             <h3 class="st-section-title st-danger-title">Danger Zone</h3>
             <p class="st-danger-desc">Once you delete your account, there is no going back. Please be certain.</p>
-            <button class="st-btn-danger">Delete Account</button>
+            <button class="st-btn-danger" (click)="deleteAccount()">Delete Account</button>
           </div>
 
           <div class="st-actions">
             <button class="st-btn-save" (click)="saveSettings()">Save Changes</button>
           </div>
+
+          <!-- Delete Account Confirmation Modal -->
+          @if (showDeleteConfirm) {
+          <div class="delete-confirm-modal-backdrop" (click)="closeDeleteConfirm()">
+            <div class="delete-confirm-modal" (click)="$event.stopPropagation()">
+              <h2 class="dcm-title">Delete Account?</h2>
+              <p class="dcm-warning">⚠️ This action cannot be undone. All your data will be permanently deleted.</p>
+              
+              <div class="dcm-form">
+                <label class="dcm-label">Enter your password to confirm:</label>
+                <input 
+                  class="dcm-input" 
+                  [type]="'password'" 
+                  [(ngModel)]="deleteAccountPassword" 
+                  placeholder="Enter password"
+                  (keydown.enter)="confirmDeleteAccount()"
+                >
+              </div>
+
+              <div class="dcm-actions">
+                <button class="dcm-btn-cancel" (click)="closeDeleteConfirm()" [disabled]="isDeleting">
+                  Cancel
+                </button>
+                <button class="dcm-btn-delete" (click)="confirmDeleteAccount()" [disabled]="isDeleting">
+                  {{ isDeleting ? 'Deleting...' : 'Delete Account' }}
+                </button>
+              </div>
+            </div>
+          </div>
+          }
         </div>
         }
 

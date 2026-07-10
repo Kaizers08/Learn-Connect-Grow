@@ -14,12 +14,13 @@ import { SupabaseService } from '../../services/supabase.service';
 export class DashboardComponent implements OnInit, OnDestroy {
 
   // ─── General ───────────────────────────────────────────────────────────────
-  userName = 'User';
+  userName = '';
   userRole = 'Mentee';
   showUserMenu = false;
   profilePicture: string | null = null;
   currentUserId = '';
   private lastSeenInterval: any;
+  isLoading = true;
 
   get isMentor(): boolean { return this.userService.role() === 'mentor'; }
 
@@ -74,9 +75,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   levelOptions = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 
   allMentors = [
-    { name: 'Julian Hernandez', role: 'UI/UX Designer', rating: 4.9, reviews: 32, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Janine Hernandez', role: 'UI/UX Designer', rating: 2.9, reviews: 3, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Michael Jackson', role: 'UI/UX Designer', rating: 3.9, reviews: 3, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] }
+    { name: 'Julian Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
+    { name: 'Janine Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
+    { name: 'Michael Jackson', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] }
   ];
 
   get filteredMentors() {
@@ -139,10 +140,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // ─── Mentors & Feedback ────────────────────────────────────────────────────
   myMentors = [
-    { name: 'Emily Johnson', specialty: 'UI/UX', rating: 4.9, reviews: 32 },
-    { name: 'Peter Parker', specialty: 'Fullstack Developer', rating: 4.9, reviews: 32 },
-    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 4.9, reviews: 32 },
-    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 4.9, reviews: 32 }
+    { name: 'Emily Johnson', specialty: 'UI/UX', rating: 0, reviews: 0 },
+    { name: 'Peter Parker', specialty: 'Fullstack Developer', rating: 0, reviews: 0 },
+    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 0, reviews: 0 },
+    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 0, reviews: 0 }
   ];
 
   feedbackList = [
@@ -177,6 +178,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   settingsTechnicalSkills: string[] = [];
 
   settingsMenteeType = '';
+  settingsUniversity = '';
+  settingsMenteeJobPosition = '';
+  settingsMenteeCompany = '';
+  settingsLookingForJob = 'no';
   settingsDesiredExpertise = '';
   settingsDesiredSkills: string[] = [];
 
@@ -187,6 +192,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showNewPass = false;
   showConfirmPass = false;
   passwordError = '';
+  
+  deleteAccountPassword = '';
+  showDeleteConfirm = false;
+  isDeleting = false;
 
   settingsCountries = [
     'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia',
@@ -233,12 +242,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    await this.loadUserProfile();
-    await this.loadMatchedUsers();
-    await this.loadConnections();
+    this.isLoading = true;
+    await Promise.all([
+      this.loadUserProfile(),
+      this.loadMatchedUsers(),
+      this.loadConnections()
+    ]);
     // Update last_seen every 2 minutes
     await this.supabase.updateLastSeen();
     this.lastSeenInterval = setInterval(() => this.supabase.updateLastSeen(), 120000);
+    this.isLoading = false;
   }
 
   ngOnDestroy() {
@@ -255,7 +268,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onLogout() { this.showUserMenu = false; this.router.navigate(['/login']); }
 
   getInitials(name: string): string {
-    if (!name) return '?';
+    if (!name || name === '') return '?';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
 
@@ -275,7 +288,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const expertise = (data as any)?.expertise;
       const skills: string[] = (data as any)?.skills || [];
       const { data: matched } = await this.supabase.findMenteesForMentor(expertise, skills);
-      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId);
+      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId).map((m: any) => ({
+        ...m,
+        rating: 0,
+        reviews: 0
+      }));
     } else {
       const { data } = await this.supabase.getClient()
         .from('mentee_profiles')
@@ -287,7 +304,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const desiredSkills: string[] = (data as any)?.desired_skills || [];
       const { data: matched } = await this.supabase.findMentorsForMentee(desiredExpertise, desiredSkills);
       // Only show approved mentors
-      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId && m.status === 'approved');
+      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId && m.status === 'approved').map((m: any) => ({
+        ...m,
+        rating: 0,
+        reviews: 0
+      }));
     }
   }
 
@@ -377,8 +398,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   // ─── Profile Modal ─────────────────────────────────────────────────────────
-  openProfile(user: any) {
-    this.selectedProfile = user;
+  async openProfile(user: any) {
+    // Load full profile data including social media links
+    const userId = user.user_id;
+    const role = this.userService.role();
+    
+    // Determine which table to query based on opposite role
+    const table = role === 'mentor' ? 'mentee_profiles' : 'mentor_profiles';
+    
+    const { data } = await this.supabase.getClient()
+      .from(table)
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    // Merge the full data with existing user data
+    this.selectedProfile = data ? { ...user, ...data } : user;
     this.showProfileModal = true;
   }
 
@@ -398,16 +433,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const role = this.userService.role();
     const authUser = await this.supabase.getClient().auth.getUser();
     this.settingsEmail = authUser.data.user?.email || '';
+    
+    // Get full_name from auth metadata (set during registration)
+    const meta = await this.supabase.getCurrentUserMeta();
+    const authFullName = meta.fullName || '';
 
     if (role === 'mentor') {
       const { data } = await this.supabase.getClient()
         .from('mentor_profiles')
-        .select('full_name, profile_picture, job_position, company, expertise, years_experience, bio, skills')
+        .select('full_name, profile_picture, job_position, company, expertise, years_experience, bio, skills, phone_number, country, gender, date_of_birth')
         .eq('user_id', userId)
         .maybeSingle();
       if (data) {
         const d = data as any;
-        if (d.full_name) this.userName = this.stripMiddleName(d.full_name);
+        // Prefer full_name from mentor_profiles, fallback to auth metadata
+        const fullName = d.full_name || authFullName;
+        if (fullName) this.userName = this.stripMiddleName(fullName);
         this.profilePicture          = d.profile_picture || null;
         this.settingsJobPosition     = d.job_position    || '';
         this.settingsCompany         = d.company         || '';
@@ -415,21 +456,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.settingsYearsExperience = d.years_experience ?? null;
         this.settingsBio             = d.bio             || '';
         this.settingsTechnicalSkills = d.skills          || [];
+        this.settingsPhone           = d.phone_number    || '';
+        this.settingsCountry         = d.country         || '';
+        this.settingsGender          = d.gender          || '';
+        this.settingsDateOfBirth     = d.date_of_birth   || '';
+      } else if (authFullName) {
+        this.userName = this.stripMiddleName(authFullName);
       }
       this.userRole = 'Mentor';
     } else {
-      const meta = await this.supabase.getCurrentUserMeta();
-      if (meta.fullName) this.userName = this.stripMiddleName(meta.fullName);
+      // For mentees, check profile table first, then fall back to auth metadata
       const { data } = await this.supabase.getClient()
         .from('mentee_profiles')
-        .select('profile_picture, desired_expertise, desired_skills')
+        .select('*')
         .eq('user_id', userId)
         .maybeSingle();
       if (data) {
         const d = data as any;
+        // Prefer full_name from mentee_profiles, fallback to auth metadata
+        const fullName = d.full_name || authFullName;
+        if (fullName) this.userName = this.stripMiddleName(fullName);
         this.profilePicture           = d.profile_picture   || null;
+        this.settingsMenteeType       = d.type              || '';
+        this.settingsUniversity       = d.university        || '';
+        this.settingsMenteeJobPosition= d.job_position      || '';
+        this.settingsMenteeCompany    = d.company           || '';
+        this.settingsLookingForJob    = d.looking_for_job   || 'no';
         this.settingsDesiredExpertise = d.desired_expertise || '';
         this.settingsDesiredSkills    = d.desired_skills    || [];
+        this.settingsPhone            = d.phone_number      || '';
+        this.settingsCountry          = d.country           || '';
+        this.settingsGender           = d.gender            || '';
+        this.settingsDateOfBirth      = d.date_of_birth     || '';
+      } else if (authFullName) {
+        this.userName = this.stripMiddleName(authFullName);
       }
       this.userRole = 'Mentee';
     }
@@ -441,46 +501,100 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async saveSettings() {
     const userId = await this.supabase.getCurrentUserId();
-    if (!userId) return;
+    if (!userId) {
+      alert('Error: Could not identify user.');
+      return;
+    }
     const role = this.userService.role();
     const newName = `${this.settingsFirstName} ${this.settingsLastName}`.trim();
 
-    // Upload new photo to Storage if one was selected
-    if (this.settingsPhotoFile) {
-      const url = await this.supabase.uploadProfilePicture(userId, this.settingsPhotoFile);
-      if (url) this.profilePicture = url;
-      this.settingsPhotoFile = null;
-    }
+    try {
+      // Upload new photo to Storage if one was selected
+      if (this.settingsPhotoFile) {
+        const url = await this.supabase.uploadProfilePicture(userId, this.settingsPhotoFile);
+        if (url) this.profilePicture = url;
+        this.settingsPhotoFile = null;
+      }
 
-    this.userName = newName;
+      this.userName = newName;
 
-    if (role === 'mentor') {
-      await this.supabase.getClient()
-        .from('mentor_profiles')
-        .update({
-          full_name:        newName,
-          job_position:     this.settingsJobPosition     || null,
-          company:          this.settingsCompany         || null,
-          expertise:        this.settingsExpertise       || null,
-          years_experience: this.settingsYearsExperience ?? null,
-          bio:              this.settingsBio             || null,
-          skills:           this.settingsTechnicalSkills,
-          profile_picture:  this.profilePicture          || null,
-        })
-        .eq('user_id', userId);
-    } else {
-      await this.supabase.getClient()
-        .from('mentee_profiles')
-        .update({
-          desired_expertise: this.settingsDesiredExpertise || null,
-          desired_skills:    this.settingsDesiredSkills,
-          profile_picture:   this.profilePicture           || null,
-        })
-        .eq('user_id', userId);
-      await this.supabase.updateUserMeta({ full_name: newName });
+      // Update email if changed (Account tab)
+      if (this.settingsTab === 'account') {
+        const authUser = await this.supabase.getClient().auth.getUser();
+        const currentEmail = authUser.data.user?.email || '';
+        
+        if (this.settingsEmail && this.settingsEmail !== currentEmail) {
+          const { error: emailError } = await this.supabase.getClient().auth.updateUser({
+            email: this.settingsEmail
+          });
+          
+          if (emailError) {
+            alert(`Failed to update email: ${emailError.message}`);
+            return;
+          } else {
+            alert('Email updated! Please check your new email for verification.');
+          }
+        }
+      }
+
+      if (role === 'mentor') {
+        const { error } = await this.supabase.getClient()
+          .from('mentor_profiles')
+          .update({
+            full_name:        newName,
+            job_position:     this.settingsJobPosition     || null,
+            company:          this.settingsCompany         || null,
+            expertise:        this.settingsExpertise       || null,
+            years_experience: this.settingsYearsExperience ?? null,
+            bio:              this.settingsBio             || null,
+            skills:           this.settingsTechnicalSkills,
+            profile_picture:  this.profilePicture          || null,
+            phone_number:     this.settingsPhone           || null,
+            country:          this.settingsCountry         || null,
+            gender:           this.settingsGender          || null,
+            date_of_birth:    this.settingsDateOfBirth     || null,
+          })
+          .eq('user_id', userId);
+        
+        if (error) {
+          console.error('Failed to save mentor profile:', error);
+          alert(`Failed to save: ${error.message}`);
+          return;
+        }
+      } else {
+        const { error } = await this.supabase.getClient()
+          .from('mentee_profiles')
+          .update({
+            type:              this.settingsMenteeType         || null,
+            university:        this.settingsUniversity         || null,
+            job_position:      this.settingsMenteeJobPosition  || null,
+            company:           this.settingsMenteeCompany      || null,
+            looking_for_job:   this.settingsLookingForJob      || null,
+            desired_expertise: this.settingsDesiredExpertise   || null,
+            desired_skills:    this.settingsDesiredSkills,
+            profile_picture:   this.profilePicture             || null,
+            phone_number:      this.settingsPhone              || null,
+            country:           this.settingsCountry            || null,
+            gender:            this.settingsGender             || null,
+            date_of_birth:     this.settingsDateOfBirth        || null,
+          })
+          .eq('user_id', userId);
+        
+        if (error) {
+          console.error('Failed to save mentee profile:', error);
+          alert(`Failed to save: ${error.message}`);
+          return;
+        }
+
+        await this.supabase.updateUserMeta({ full_name: newName });
+      }
+
+      this.settingsSaved = true;
+      setTimeout(() => this.settingsSaved = false, 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('An error occurred while saving. Please try again.');
     }
-    this.settingsSaved = true;
-    setTimeout(() => this.settingsSaved = false, 3000);
   }
 
   async savePassword() {
@@ -503,5 +617,61 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const parts = fullName.trim().split(/\s+/);
     if (parts.length <= 2) return fullName.trim();
     return `${parts[0]} ${parts[parts.length - 1]}`;
+  }
+
+  async deleteAccount() {
+    this.showDeleteConfirm = true;
+  }
+
+  closeDeleteConfirm() {
+    this.showDeleteConfirm = false;
+    this.deleteAccountPassword = '';
+  }
+
+  async confirmDeleteAccount() {
+    if (!this.deleteAccountPassword) {
+      alert('Please enter your password to confirm account deletion.');
+      return;
+    }
+
+    this.isDeleting = true;
+
+    try {
+      // Verify password first
+      const authUser = await this.supabase.getClient().auth.getUser();
+      const email = authUser.data.user?.email || '';
+
+      const { error: signInError } = await this.supabase.signIn(email, this.deleteAccountPassword);
+      if (signInError) {
+        alert('Password is incorrect.');
+        this.isDeleting = false;
+        return;
+      }
+
+      // Get user ID
+      const userId = await this.supabase.getCurrentUserId();
+      if (!userId) {
+        alert('Unable to determine user ID.');
+        this.isDeleting = false;
+        return;
+      }
+
+      // Call edge function to delete user account and all data
+      const deleteResult = await this.supabase.deleteUserAccount(userId);
+      
+      if (!deleteResult.success) {
+        alert(`Failed to delete account: ${deleteResult.error}`);
+        this.isDeleting = false;
+        return;
+      }
+
+      alert('Your account and all associated data have been successfully deleted.');
+      await this.supabase.signOut();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      console.error('Error during account deletion:', error);
+      alert('An error occurred while deleting your account. Please try again.');
+      this.isDeleting = false;
+    }
   }
 }
