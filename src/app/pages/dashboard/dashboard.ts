@@ -144,13 +144,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // ─── Messages ──────────────────────────────────────────────────────────────
   chatSearchQuery = '';
   newMessageText = '';
+  totalUnreadMessages = 0;
 
   // Dynamic conversations from connected users
   conversations: any[] = [];
   
   activeConversation: any = null;
 
-  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; isPlaceholder?: boolean }[] = [];
+  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
@@ -160,6 +161,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectConversation(conv: any) { 
     this.activeConversation = conv;
     this.loadMessages(conv.id);
+    // Mark messages as seen when opening conversation
+    this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
+    // Update unread count for this conversation
+    conv.unreadCount = 0;
+    this.updateTotalUnreadCount();
   }
 
   async loadMessages(userId: string) {
@@ -171,7 +177,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       id: msg.id,
       text: msg.message,
       fromMe: msg.sender_id === myId,
-      timestamp: msg.created_at
+      timestamp: msg.created_at,
+      status: msg.status
     }));
   }
 
@@ -182,18 +189,43 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.newMessageText = '';
 
     // Send to database
-    await this.supabase.sendMessage(this.activeConversation.id, message);
+    const result = await this.supabase.sendMessage(this.activeConversation.id, message);
     
     // Add to local messages immediately for better UX
-    this.messages.push({
-      id: Date.now(), // temporary ID
-      text: message,
-      fromMe: true,
-      timestamp: new Date().toISOString()
-    });
+    if (result.data) {
+      this.messages.push({
+        id: result.data.id,
+        text: message,
+        fromMe: true,
+        timestamp: result.data.created_at,
+        status: result.data.status
+      });
+    }
 
-    // Refresh messages from database to get real IDs
+    // Refresh messages from database to ensure consistency
     setTimeout(() => this.loadMessages(this.activeConversation.id), 100);
+  }
+
+  updateTotalUnreadCount() {
+    this.totalUnreadMessages = this.conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+  }
+
+  getMessageStatusIcon(status: string): string {
+    switch (status) {
+      case 'sent': return '✓';
+      case 'delivered': return '✓✓';
+      case 'seen': return '✓✓';
+      default: return '';
+    }
+  }
+
+  getMessageStatusClass(status: string): string {
+    switch (status) {
+      case 'sent': return 'status-sent';
+      case 'delivered': return 'status-delivered';
+      case 'seen': return 'status-seen';
+      default: return '';
+    }
   }
 
   onMessageKeydown(event: KeyboardEvent) {
@@ -272,7 +304,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ]);
     // Update last_seen every 2 minutes
     await this.supabase.updateLastSeen();
-    this.lastSeenInterval = setInterval(() => this.supabase.updateLastSeen(), 120000);
+    this.lastSeenInterval = setInterval(() => {
+      this.supabase.updateLastSeen();
+      // Also refresh connections every 2 minutes to update online status
+      if (this.activeNavItem === 'messages') {
+        this.loadConnections();
+      }
+    }, 120000);
     this.isLoading = false;
   }
 
@@ -354,16 +392,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const role = this.userService.role();
     // If I'm a mentee, my connections are mentors, and vice versa
     const table = role === 'mentor' ? 'mentee_profiles' : 'mentor_profiles';
-    const nameField = role === 'mentor' ? 'user_id,profile_picture,last_seen' : 'user_id,full_name,profile_picture,last_seen';
-
+    
     const { data } = await this.supabase.getClient()
       .from(table)
-      .select(nameField)
+      .select('user_id,full_name,profile_picture,last_seen')
       .in('user_id', ids);
 
     const users = (data || []).map((u: any) => ({
       ...u,
-      name: u.full_name || this.getNameFromMeta(u.user_id),
+      name: u.full_name?.trim() || `User ${u.user_id.slice(0, 8)}`,
       isOnline: this.isOnline(u.last_seen),
       lastSeenLabel: this.getLastSeenLabel(u.last_seen),
     }));
@@ -374,16 +411,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const conversations = [];
     for (const u of users) {
       const { data: lastMsg } = await this.supabase.getLastMessage(userId, u.user_id);
+      const unreadCount = await this.supabase.getUnreadCount(userId, u.user_id);
       conversations.push({
         id: u.user_id,
         name: u.name,
         status: u.isOnline ? 'Active Now' : u.lastSeenLabel,
         isOnline: u.isOnline,
         lastMessage: lastMsg?.message || 'No messages yet',
-        profile_picture: u.profile_picture
+        profile_picture: u.profile_picture,
+        unreadCount: unreadCount
       });
     }
     this.conversations = conversations;
+    this.updateTotalUnreadCount();
 
     // Set first conversation as active if none selected
     if (!this.activeConversation && this.conversations.length > 0) {

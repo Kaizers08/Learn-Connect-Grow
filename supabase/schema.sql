@@ -116,6 +116,8 @@ create table if not exists public.messages (
   sender_id uuid references auth.users(id) on delete cascade,
   receiver_id uuid references auth.users(id) on delete cascade,
   message text not null,
+  status text default 'sent', -- 'sent', 'delivered', 'seen'
+  seen_at timestamptz,
   created_at timestamptz default now()
 );
 
@@ -180,3 +182,7 @@ alter table public.mentor_profiles add column if not exists github_url text;
 alter table public.mentor_profiles add column if not exists linkedin_url text;
 alter table public.mentor_profiles add column if not exists twitter_url text;
 alter table public.mentor_profiles add column if not exists last_seen timestamptz default now();
+
+-- Add message status columns if not exists
+alter table public.messages add column if not exists status text default 'sent';
+alter table public.messages add column if not exists seen_at timestamptz;

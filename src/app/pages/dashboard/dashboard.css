@@ -2395,18 +2395,21 @@ select.st-input {
 .btn-message-small {
   flex: 1;
   padding: 0.5rem;
-  background: #04A2D7;
+  background: #21AA3A;
   color: white;
   border: none;
   border-radius: 50px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
   box-sizing: border-box;
 }
 
-.btn-message-small:hover { background: #0390c0; }
+.btn-message-small:hover { 
+  background: #1a8f30; 
+  transform: translateY(-1px);
+}
 
 /* ─── Empty state ─────────────────────────────────────────────────────────── */
 .empty-state {
@@ -2575,34 +2578,58 @@ select.st-input {
 }
 
 .pm-btn-connect {
-  flex: 1; padding: 0.65rem;
-  background: #04A2D7; color: white;
-  border: none; border-radius: 50px;
-  font-size: 0.88rem; font-weight: 600; cursor: pointer;
-  transition: background 0.2s;
+  flex: 1; 
+  padding: 0.5rem;
+  background: #04A2D7; 
+  color: white;
+  border: none; 
+  border-radius: 50px;
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.pm-btn-connect:hover { background: #0390c0; }
+.pm-btn-connect:hover { 
+  background: #0390c0; 
+  transform: translateY(-1px);
+}
 
 .pm-btn-message {
-  flex: 1; padding: 0.65rem;
-  background: #21AA3A; color: white;
-  border: none; border-radius: 50px;
-  font-size: 0.88rem; font-weight: 600; cursor: pointer;
-  transition: background 0.2s;
+  flex: 1; 
+  padding: 0.5rem;
+  background: #21AA3A; 
+  color: white;
+  border: none; 
+  border-radius: 50px;
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.pm-btn-message:hover { background: #1a8f30; }
+.pm-btn-message:hover { 
+  background: #1a8f30; 
+  transform: translateY(-1px);
+}
 
 .pm-btn-disconnect {
-  flex: 1; padding: 0.65rem;
-  background: white; color: #e74c3c;
-  border: 1.5px solid #e74c3c; border-radius: 50px;
-  font-size: 0.88rem; font-weight: 600; cursor: pointer;
-  transition: background 0.2s;
+  flex: 1; 
+  padding: 0.5rem;
+  background: white; 
+  color: #e74c3c;
+  border: 1.5px solid #e74c3c; 
+  border-radius: 50px;
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.pm-btn-disconnect:hover { background: #fff0f0; }
+.pm-btn-disconnect:hover { 
+  background: #fff0f0; 
+  transform: translateY(-1px);
+}
 
 .pm-btn-close {
   padding: 0.65rem 1.5rem;
@@ -2738,4 +2765,104 @@ select.st-input {
 .dcm-btn-delete:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+/* ─── Message Avatar Images ──────────────────────────────────────────────── */
+.msg-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.msg-header-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.msg-bubble-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* ─── Notification Badges ────────────────────────────────────────────────── */
+.nav-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.msg-unread-badge {
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msg-chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ─── Message Status Indicators ──────────────────────────────────────────── */
+.msg-text {
+  flex: 1;
+}
+
+.msg-status {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+.msg-status-icon {
+  font-size: 0.8rem;
+}
+
+.msg-status.status-sent {
+  color: #888;
+}
+
+.msg-status.status-delivered {
+  color: #04A2D7;
+}
+
+.msg-status.status-seen {
+  color: #21AA3A;
+}
+
+.msg-status-text {
+  text-transform: capitalize;
+}
+
+/* ─── Improved Message Bubble Layout ─────────────────────────────────────── */
+.msg-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }

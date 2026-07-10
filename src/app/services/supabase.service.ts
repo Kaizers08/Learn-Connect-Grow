@@ -332,7 +332,8 @@ export class SupabaseService {
       .insert({
         sender_id: await this.getCurrentUserId(),
         receiver_id: receiverId,
-        message: message.trim()
+        message: message.trim(),
+        status: 'sent'
       })
       .select()
       .single();
@@ -355,7 +356,7 @@ export class SupabaseService {
   async getLastMessage(userId1: string, userId2: string) {
     const { data, error } = await this.client
       .from('messages')
-      .select('message, created_at')
+      .select('message, created_at, status, sender_id')
       .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -363,6 +364,42 @@ export class SupabaseService {
     
     if (error) this.logError('getLastMessage', error);
     return { data, error };
+  }
+
+  async getUnreadCount(userId: string, otherId: string): Promise<number> {
+    const { count, error } = await this.client
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('sender_id', otherId)
+      .eq('receiver_id', userId)
+      .neq('status', 'seen');
+    
+    if (error) this.logError('getUnreadCount', error);
+    return count || 0;
+  }
+
+  async markMessagesAsSeen(senderId: string, receiverId: string) {
+    const { error } = await this.client
+      .from('messages')
+      .update({ 
+        status: 'seen',
+        seen_at: new Date().toISOString()
+      })
+      .eq('sender_id', senderId)
+      .eq('receiver_id', receiverId)
+      .neq('status', 'seen');
+    
+    if (error) this.logError('markMessagesAsSeen', error);
+  }
+
+  async markMessageAsDelivered(messageId: string) {
+    const { error } = await this.client
+      .from('messages')
+      .update({ status: 'delivered' })
+      .eq('id', messageId)
+      .eq('status', 'sent');
+    
+    if (error) this.logError('markMessageAsDelivered', error);
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────

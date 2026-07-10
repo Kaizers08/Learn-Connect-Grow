@@ -52,6 +52,9 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
           </svg>
+          @if (totalUnreadMessages > 0) {
+            <span class="nav-badge">{{ totalUnreadMessages > 99 ? '99+' : totalUnreadMessages }}</span>
+          }
         </span>
         <span class="nav-label">Messages</span>
       </button>
@@ -554,16 +557,25 @@
               @for (conv of filteredConversations; track conv.id) {
                 <div class="msg-chat-item" [class.active]="activeConversation.id === conv.id" (click)="selectConversation(conv)">
                   <div class="msg-chat-avatar">
-                    <span>{{ getInitials(conv.name) }}</span>
+                    @if (conv.profile_picture) {
+                      <img [src]="conv.profile_picture" alt="Profile" class="msg-avatar-img">
+                    } @else {
+                      <span>{{ getInitials(conv.name) }}</span>
+                    }
                     <span class="msg-online-dot" [class.online]="conv.isOnline"></span>
                   </div>
                   <div class="msg-chat-info">
                     <div class="msg-chat-top">
                       <span class="msg-chat-name">{{ conv.name }}</span>
-                      <span class="msg-chat-status" [class.online]="conv.isOnline">
-                        <span class="msg-status-dot" [class.online]="conv.isOnline"></span>
-                        {{ conv.status }}
-                      </span>
+                      <div class="msg-chat-meta">
+                        <span class="msg-chat-status" [class.online]="conv.isOnline">
+                          <span class="msg-status-dot" [class.online]="conv.isOnline"></span>
+                          {{ conv.status }}
+                        </span>
+                        @if (conv.unreadCount > 0) {
+                          <span class="msg-unread-badge">{{ conv.unreadCount > 99 ? '99+' : conv.unreadCount }}</span>
+                        }
+                      </div>
                     </div>
                     <p class="msg-chat-preview">{{ conv.lastMessage }}</p>
                   </div>
@@ -580,14 +592,18 @@
             <!-- Chat Header -->
             <div class="msg-chat-header">
               <div class="msg-chat-header-avatar">
-                <span>{{ getInitials(activeConversation.name || '') }}</span>
-                <span class="msg-online-dot online"></span>
+                @if (activeConversation.profile_picture) {
+                  <img [src]="activeConversation.profile_picture" alt="Profile" class="msg-header-avatar-img">
+                } @else {
+                  <span>{{ getInitials(activeConversation.name || '') }}</span>
+                }
+                <span class="msg-online-dot" [class.online]="activeConversation.isOnline"></span>
               </div>
               <div class="msg-chat-header-info">
                 <span class="msg-chat-header-name">{{ activeConversation.name }}</span>
-                <span class="msg-chat-header-status">
-                  <span class="msg-status-dot online"></span>
-                  Active Now
+                <span class="msg-chat-header-status" [class.online]="activeConversation.isOnline">
+                  <span class="msg-status-dot" [class.online]="activeConversation.isOnline"></span>
+                  {{ activeConversation.status }}
                 </span>
               </div>
             </div>
@@ -598,12 +614,22 @@
                 <div class="msg-row" [class.from-me]="msg.fromMe">
                   @if (!msg.fromMe) {
                     <div class="msg-bubble-avatar">
-                      <span>{{ getInitials(activeConversation.name || '') }}</span>
+                      @if (activeConversation.profile_picture) {
+                        <img [src]="activeConversation.profile_picture" alt="Profile" class="msg-bubble-avatar-img">
+                      } @else {
+                        <span>{{ getInitials(activeConversation.name || '') }}</span>
+                      }
                     </div>
                   }
                   <div class="msg-bubble" [class.bubble-me]="msg.fromMe" [class.bubble-them]="!msg.fromMe" [class.bubble-placeholder]="msg.isPlaceholder">
                     @if (!msg.isPlaceholder) {
-                      {{ msg.text }}
+                      <div class="msg-text">{{ msg.text }}</div>
+                      @if (msg.fromMe && msg.status) {
+                        <div class="msg-status" [class]="getMessageStatusClass(msg.status)">
+                          <span class="msg-status-icon">{{ getMessageStatusIcon(msg.status) }}</span>
+                          <span class="msg-status-text">{{ msg.status }}</span>
+                        </div>
+                      }
                     }
                   </div>
                 </div>
