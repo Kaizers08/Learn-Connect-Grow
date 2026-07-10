@@ -45,6 +45,48 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   searchQuery = '';
 
+  // ─── Settings Properties ───────────────────────────────────────────────────
+  settingsFirstName = '';
+  settingsLastName = '';
+  settingsEmail = '';
+  settingsJobPosition = '';
+  settingsCompany = '';
+  settingsExpertise = '';
+  settingsYearsExperience: number | null = null;
+  settingsBio = '';
+  settingsTechnicalSkills: string[] = [];
+  settingsPhone = '';
+  settingsCountry = '';
+  settingsGender = '';
+  settingsDateOfBirth = '';
+  settingsTab = 'profile';
+  settingsSaved = false;
+  settingsPhotoFile: File | null = null;
+  settingsPhotoPreview: string | null = null;
+  
+  // Mentee specific settings
+  settingsMenteeType = '';
+  settingsUniversity = '';
+  settingsMenteeJobPosition = '';
+  settingsMenteeCompany = '';
+  settingsLookingForJob = 'no';
+  settingsDesiredExpertise = '';
+  settingsDesiredSkills: string[] = [];
+  
+  // Password settings
+  passwordError = '';
+  settingsCurrentPassword = '';
+  settingsNewPassword = '';
+  settingsConfirmPassword = '';
+  showCurrentPass = false;
+  showNewPass = false;
+  showConfirmPass = false;
+  
+  // Delete account
+  showDeleteConfirm = false;
+  deleteAccountPassword = '';
+  isDeleting = false;
+
   // ─── Find Mentors ──────────────────────────────────────────────────────────
   mentorSearchQuery = '';
   selectedExpertise = '';
@@ -103,35 +145,55 @@ export class DashboardComponent implements OnInit, OnDestroy {
   chatSearchQuery = '';
   newMessageText = '';
 
-  conversations = [
-    { id: 1, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
-    { id: 2, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
-    { id: 3, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
-    { id: 4, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
-    { id: 5, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" }
-  ];
+  // Dynamic conversations from connected users
+  conversations: any[] = [];
+  
+  activeConversation: any = null;
 
-  activeConversation = this.conversations[0];
-
-  messages: { id: number; text: string; fromMe: boolean; isPlaceholder?: boolean }[] = [
-    { id: 1, text: '', fromMe: false, isPlaceholder: true },
-    { id: 2, text: '', fromMe: true, isPlaceholder: true },
-    { id: 3, text: '', fromMe: false, isPlaceholder: true },
-    { id: 4, text: "Sure let's talk about our schedule", fromMe: true }
-  ];
+  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; isPlaceholder?: boolean }[] = [];
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
     return this.conversations.filter(c => c.name.toLowerCase().includes(this.chatSearchQuery.toLowerCase()));
   }
 
-  selectConversation(conv: any) { this.activeConversation = conv; }
+  selectConversation(conv: any) { 
+    this.activeConversation = conv;
+    this.loadMessages(conv.id);
+  }
 
-  sendMessage() {
-    const text = this.newMessageText.trim();
-    if (!text) return;
-    this.messages.push({ id: Date.now(), text, fromMe: true });
+  async loadMessages(userId: string) {
+    const myId = this.currentUserId;
+    if (!myId) return;
+
+    const { data } = await this.supabase.getMessages(myId, userId);
+    this.messages = (data || []).map((msg: any) => ({
+      id: msg.id,
+      text: msg.message,
+      fromMe: msg.sender_id === myId,
+      timestamp: msg.created_at
+    }));
+  }
+
+  async sendMessage() {
+    if (!this.newMessageText.trim() || !this.activeConversation) return;
+
+    const message = this.newMessageText.trim();
     this.newMessageText = '';
+
+    // Send to database
+    await this.supabase.sendMessage(this.activeConversation.id, message);
+    
+    // Add to local messages immediately for better UX
+    this.messages.push({
+      id: Date.now(), // temporary ID
+      text: message,
+      fromMe: true,
+      timestamp: new Date().toISOString()
+    });
+
+    // Refresh messages from database to get real IDs
+    setTimeout(() => this.loadMessages(this.activeConversation.id), 100);
   }
 
   onMessageKeydown(event: KeyboardEvent) {
@@ -156,47 +218,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   isFilled(star: number, rating: number): boolean { return star <= Math.round(rating); }
 
   // ─── Settings ──────────────────────────────────────────────────────────────
-  settingsTab: 'profile' | 'account' | 'password' = 'profile';
-  settingsSaved = false;
-
-  settingsFirstName = '';
-  settingsLastName = '';
-  settingsEmail = '';
-  settingsPhone = '';
-  settingsCountry = '';
-  settingsGender = '';
-  settingsDateOfBirth = '';
-  settingsPhotoPreview: string | null = null;  // preview
-  settingsPhotoFile: File | null = null;        // actual file for upload
-
-  settingsFullName = '';
-  settingsJobPosition = '';
-  settingsCompany = '';
-  settingsExpertise = '';
-  settingsYearsExperience: number | null = null;
-  settingsBio = '';
-  settingsTechnicalSkills: string[] = [];
-
-  settingsMenteeType = '';
-  settingsUniversity = '';
-  settingsMenteeJobPosition = '';
-  settingsMenteeCompany = '';
-  settingsLookingForJob = 'no';
-  settingsDesiredExpertise = '';
-  settingsDesiredSkills: string[] = [];
-
-  settingsCurrentPassword = '';
-  settingsNewPassword = '';
-  settingsConfirmPassword = '';
-  showCurrentPass = false;
-  showNewPass = false;
-  showConfirmPass = false;
-  passwordError = '';
   
-  deleteAccountPassword = '';
-  showDeleteConfirm = false;
-  isDeleting = false;
-
   settingsCountries = [
     'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia',
     'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Belarus',
@@ -323,7 +345,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Load profiles of connected users
     const ids = [...this.myConnectionIds];
-    if (!ids.length) { this.connectedUsers = []; return; }
+    if (!ids.length) { 
+      this.connectedUsers = []; 
+      this.conversations = [];
+      return; 
+    }
 
     const role = this.userService.role();
     // If I'm a mentee, my connections are mentors, and vice versa
@@ -335,12 +361,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .select(nameField)
       .in('user_id', ids);
 
-    this.connectedUsers = (data || []).map((u: any) => ({
+    const users = (data || []).map((u: any) => ({
       ...u,
       name: u.full_name || this.getNameFromMeta(u.user_id),
       isOnline: this.isOnline(u.last_seen),
       lastSeenLabel: this.getLastSeenLabel(u.last_seen),
     }));
+
+    this.connectedUsers = users;
+
+    // Also populate conversations for messages with last message
+    const conversations = [];
+    for (const u of users) {
+      const { data: lastMsg } = await this.supabase.getLastMessage(userId, u.user_id);
+      conversations.push({
+        id: u.user_id,
+        name: u.name,
+        status: u.isOnline ? 'Active Now' : u.lastSeenLabel,
+        isOnline: u.isOnline,
+        lastMessage: lastMsg?.message || 'No messages yet',
+        profile_picture: u.profile_picture
+      });
+    }
+    this.conversations = conversations;
+
+    // Set first conversation as active if none selected
+    if (!this.activeConversation && this.conversations.length > 0) {
+      this.activeConversation = this.conversations[0];
+      this.loadMessages(this.activeConversation.id);
+    }
   }
 
   isOnline(lastSeen: string): boolean {
@@ -381,7 +430,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       await this.supabase.connect(myId, otherId); // myId=mentee, otherId=mentor
     }
     this.myConnectionIds.add(otherId);
-    await this.loadConnections();
+    await this.loadConnections(); // Refresh connections and conversations
+    
+    // After connecting, switch to messages tab and select the conversation
+    this.setActiveNav('messages');
+    const conversation = this.conversations.find(c => c.id === otherId);
+    if (conversation) {
+      this.selectConversation(conversation);
+    }
   }
 
   async onDisconnect(user: any) {
@@ -394,7 +450,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       await this.supabase.disconnect(myId, otherId);
     }
     this.myConnectionIds.delete(otherId);
-    await this.loadConnections();
+    await this.loadConnections(); // Refresh connections and conversations
+    
+    // Close profile modal if it's showing this user
+    if (this.selectedProfile?.user_id === otherId) {
+      this.closeProfile();
+    }
   }
 
   // ─── Profile Modal ─────────────────────────────────────────────────────────
@@ -423,7 +484,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   onViewProfile(user: any) { this.openProfile(user); }
-  onMessage(user: any) { this.setActiveNav('messages'); }
+  onMessage(user: any) { 
+    this.setActiveNav('messages');
+    const conversation = this.conversations.find(c => c.id === user.user_id);
+    if (conversation) {
+      this.selectConversation(conversation);
+    }
+  }
 
   // ─── Data ──────────────────────────────────────────────────────────────────
   async loadUserProfile() {

@@ -266,17 +266,7 @@
               @if (!isConnectedTo(mentor.user_id)) {
                 <button class="btn-connect" (click)="onConnect(mentor)">Connect</button>
               } @else {
-                <div class="btn-connected-menu">
-                  <button class="btn-disconnect" (click)="onDisconnect(mentor)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-                      <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
-                      <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
-                    </svg>
-                    Disconnect
-                  </button>
-                  <button class="btn-message-small" (click)="onMessage(mentor)">Message</button>
-                </div>
+                <button class="btn-message-small" (click)="onMessage(mentor)">Message</button>
               }
               <button class="btn-view-profile" (click)="onViewProfile(mentor)">View Profile</button>
             </div>
@@ -1203,7 +1193,7 @@
           <button class="pm-btn-connect" (click)="onConnect(selectedProfile); closeProfile()">Connect</button>
         } @else {
           <button class="pm-btn-message" (click)="onMessage(selectedProfile); closeProfile()">Send Message</button>
-          <button class="pm-btn-disconnect" (click)="onDisconnect(selectedProfile); closeProfile()">Disconnect</button>
+          <button class="pm-btn-disconnect" (click)="onDisconnect(selectedProfile); closeProfile()">Unfollow</button>
         }
         <button class="pm-btn-close" (click)="closeProfile()">Close</button>
       </div>

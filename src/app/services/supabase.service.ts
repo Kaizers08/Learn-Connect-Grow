@@ -325,6 +325,46 @@ export class SupabaseService {
     return { data: filtered, error };
   }
 
+  // ── Messages ────────────────────────────────────────────────────────────────
+  async sendMessage(receiverId: string, message: string) {
+    const { data, error } = await this.client
+      .from('messages')
+      .insert({
+        sender_id: await this.getCurrentUserId(),
+        receiver_id: receiverId,
+        message: message.trim()
+      })
+      .select()
+      .single();
+    
+    if (error) this.logError('sendMessage', error);
+    return { data, error };
+  }
+
+  async getMessages(userId1: string, userId2: string) {
+    const { data, error } = await this.client
+      .from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
+      .order('created_at', { ascending: true });
+    
+    if (error) this.logError('getMessages', error);
+    return { data: data || [], error };
+  }
+
+  async getLastMessage(userId1: string, userId2: string) {
+    const { data, error } = await this.client
+      .from('messages')
+      .select('message, created_at')
+      .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) this.logError('getLastMessage', error);
+    return { data, error };
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────────────
   async getPlatformStats() {
     const [mentees, mentors] = await Promise.all([

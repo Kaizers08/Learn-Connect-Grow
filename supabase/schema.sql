@@ -109,6 +109,36 @@ create policy "Update own connections"
     auth.uid() = mentee_user_id or auth.uid() = mentor_user_id
   );
 
+-- ── Messages ──────────────────────────────────────────────────────────────────
+-- Real-time chat messages between connected users
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid references auth.users(id) on delete cascade,
+  receiver_id uuid references auth.users(id) on delete cascade,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.messages enable row level security;
+
+drop policy if exists "Read own messages" on public.messages;
+create policy "Read own messages"
+  on public.messages for select using (
+    auth.uid() = sender_id or auth.uid() = receiver_id
+  );
+
+drop policy if exists "Insert own messages" on public.messages;
+create policy "Insert own messages"
+  on public.messages for insert with check (
+    auth.uid() = sender_id
+  );
+
+drop policy if exists "Update own messages" on public.messages;
+create policy "Update own messages"
+  on public.messages for update using (
+    auth.uid() = sender_id or auth.uid() = receiver_id
+  );
+
 -- ── Admins ───────────────────────────────────────────────────────────────────
 create table if not exists public.admins (
   id uuid primary key default gen_random_uuid(),
