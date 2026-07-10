@@ -165,7 +165,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   settingsCountry = '';
   settingsGender = '';
   settingsDateOfBirth = '';
-  settingsPhotoPreview: string | null = null;
+  settingsPhotoPreview: string | null = null;  // preview
+  settingsPhotoFile: File | null = null;        // actual file for upload
 
   settingsFullName = '';
   settingsJobPosition = '';
@@ -219,9 +220,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onSettingsPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => { this.settingsPhotoPreview = e.target?.result as string; };
-      reader.readAsDataURL(file);
+      this.settingsPhotoFile = file;
+      this.settingsPhotoPreview = URL.createObjectURL(file);
     }
   }
 
@@ -444,8 +444,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!userId) return;
     const role = this.userService.role();
     const newName = `${this.settingsFirstName} ${this.settingsLastName}`.trim();
-    if (this.settingsPhotoPreview) this.profilePicture = this.settingsPhotoPreview;
+
+    // Upload new photo to Storage if one was selected
+    if (this.settingsPhotoFile) {
+      const url = await this.supabase.uploadProfilePicture(userId, this.settingsPhotoFile);
+      if (url) this.profilePicture = url;
+      this.settingsPhotoFile = null;
+    }
+
     this.userName = newName;
+
     if (role === 'mentor') {
       await this.supabase.getClient()
         .from('mentor_profiles')

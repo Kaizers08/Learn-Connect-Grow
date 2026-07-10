@@ -12,7 +12,8 @@ import { UserService } from '../../services/user.service';
   styleUrls: ['./journey.css']
 })
 export class JourneyComponent {
-  profilePhoto: string | null = null;
+  profilePhoto: string | null = null;  // preview URL (object URL)
+  profileFile: File | null = null;     // actual File for upload
   dateOfBirth: string = '';
   country: string = '';
   phoneNumber: string = '';
@@ -118,16 +119,16 @@ export class JourneyComponent {
   onPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.profilePhoto = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      this.profileFile = file;
+      // Show preview using object URL (no base64 needed)
+      this.profilePhoto = URL.createObjectURL(file);
     }
   }
 
   removePhoto() {
+    if (this.profilePhoto) URL.revokeObjectURL(this.profilePhoto);
     this.profilePhoto = null;
+    this.profileFile = null;
   }
 
   async onNext() {
@@ -137,32 +138,40 @@ export class JourneyComponent {
     }
 
     const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
     const role = this.userService.role();
     const fullPhone = this.selectedDialCode
       ? `${this.selectedDialCode} ${this.phoneNumber}`
       : this.phoneNumber;
 
+    // Upload photo to Supabase Storage if a file was selected
+    let pictureUrl: string | null = null;
+    if (this.profileFile) {
+      pictureUrl = await this.supabase.uploadProfilePicture(userId, this.profileFile);
+    }
+
     if (role === 'mentor') {
       await this.supabase.getClient()
         .from('mentor_profiles')
         .update({
-          profile_picture: this.profilePhoto ?? null,
-          phone_number:    fullPhone,
-          country:         this.country     || null,
-          gender:          this.gender      || null,
-          date_of_birth:   this.dateOfBirth || null,
+          ...(pictureUrl ? { profile_picture: pictureUrl } : {}),
+          phone_number:  fullPhone,
+          country:       this.country     || null,
+          gender:        this.gender      || null,
+          date_of_birth: this.dateOfBirth || null,
         })
         .eq('user_id', userId);
     } else {
       await this.supabase.getClient()
         .from('mentee_profiles')
         .upsert({
-          user_id:         userId,
-          profile_picture: this.profilePhoto ?? null,
-          phone_number:    fullPhone,
-          country:         this.country     || null,
-          gender:          this.gender      || null,
-          date_of_birth:   this.dateOfBirth || null,
+          user_id:       userId,
+          ...(pictureUrl ? { profile_picture: pictureUrl } : {}),
+          phone_number:  fullPhone,
+          country:       this.country     || null,
+          gender:        this.gender      || null,
+          date_of_birth: this.dateOfBirth || null,
         });
     }
 

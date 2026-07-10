@@ -17,7 +17,8 @@ export class MentorProfileComponent implements OnInit {
   expertise = '';
   yearsExperience: number | null = null;
   bio = '';
-  profilePhoto: string | null = null;
+  profilePhoto: string | null = null;  // preview URL
+  profileFile: File | null = null;     // actual file for upload
   phoneNumber = '';
   githubUrl = '';
   linkedinUrl = '';
@@ -59,12 +60,15 @@ export class MentorProfileComponent implements OnInit {
   onPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { this.profilePhoto = reader.result as string; };
-    reader.readAsDataURL(file);
+    this.profileFile = file;
+    this.profilePhoto = URL.createObjectURL(file);
   }
 
-  removePhoto() { this.profilePhoto = null; }
+  removePhoto() {
+    if (this.profilePhoto) URL.revokeObjectURL(this.profilePhoto);
+    this.profilePhoto = null;
+    this.profileFile = null;
+  }
 
   addSkill() {
     const s = this.skillInput.trim();
@@ -89,15 +93,23 @@ export class MentorProfileComponent implements OnInit {
     if (!this.phoneNumber.trim()) { this.errorMsg = 'Phone number is required.'; return; }
 
     const userId = await this.supabase.getCurrentUserId();
+
+    // Upload photo to Storage if selected
+    let pictureUrl: string | undefined = undefined;
+    if (this.profileFile) {
+      const url = await this.supabase.uploadProfilePicture(userId!, this.profileFile);
+      if (url) pictureUrl = url;
+    }
+
     const { error } = await this.supabase.saveMentorProfile({
       user_id: userId,
       full_name:        this.fullName        || undefined,
       job_position:     this.jobPosition     || undefined,
       company:          this.company         || undefined,
       expertise:        this.expertise,
-      years_experience: this.yearsExperience,
+      years_experience: this.yearsExperience!,
       bio:              this.bio             || undefined,
-      profile_picture:  this.profilePhoto    ?? undefined,
+      profile_picture:  pictureUrl,
       skills:           this.skills,
       phone_number:     this.phoneNumber     || undefined,
       github_url:       this.githubUrl       || undefined,

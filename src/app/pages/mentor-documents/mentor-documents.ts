@@ -11,9 +11,14 @@ import { SupabaseService } from '../../services/supabase.service';
   styleUrls: ['./mentor-documents.css']
 })
 export class MentorDocumentsComponent {
-  diploma: string | null = null;
+  // Diploma — optional
+  diplomaFile: File | null = null;
   diplomaName = '';
-  certifications: { name: string; data: string }[] = [];
+  diplomaPreview: string | null = null;
+
+  // Certifications — at least 1 required
+  certFiles: { file: File; name: string; preview: string }[] = [];
+
   submitting = false;
   errorMsg = '';
 
@@ -25,45 +30,71 @@ export class MentorDocumentsComponent {
   onDiplomaChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+    this.diplomaFile = file;
     this.diplomaName = file.name;
-    const reader = new FileReader();
-    reader.onload = () => { this.diploma = reader.result as string; };
-    reader.readAsDataURL(file);
+    this.diplomaPreview = file.type.startsWith('image/')
+      ? URL.createObjectURL(file)
+      : null;
   }
 
   removeDiploma() {
-    this.diploma = null;
+    if (this.diplomaPreview) URL.revokeObjectURL(this.diplomaPreview);
+    this.diplomaFile = null;
     this.diplomaName = '';
+    this.diplomaPreview = null;
   }
 
   onCertificationChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.certifications.push({ name: file.name, data: reader.result as string });
-    };
-    reader.readAsDataURL(file);
+    const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+    this.certFiles.push({ file, name: file.name, preview });
   }
 
   removeCertification(index: number) {
-    this.certifications = this.certifications.filter((_, i) => i !== index);
+    const cert = this.certFiles[index];
+    if (cert?.preview) URL.revokeObjectURL(cert.preview);
+    this.certFiles = this.certFiles.filter((_, i) => i !== index);
   }
 
   async onSubmit() {
     this.errorMsg = '';
 
-    // Certifications required (diploma optional)
-    if (this.certifications.length === 0) {
+    if (this.certFiles.length === 0) {
       this.errorMsg = 'At least one certification is required.';
       return;
     }
 
     this.submitting = true;
-    const { error } = await this.supabase.submitMentorDocuments(
-      this.diploma ?? undefined,
-      this.certifications.map(c => c.data)
-    );
+
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) {
+      this.errorMsg = 'Not authenticated.';
+      this.submitting = false;
+      return;
+    }
+
+    // Upload diploma to Storage (optional)
+    let diplomaUrl: string | undefined;
+    if (this.diplomaFile) {
+      const url = await this.supabase.uploadDocument(userId, this.diplomaFile, 'diploma');
+      if (url) diplomaUrl = url;
+    }
+
+    // Upload all certifications to Storage
+    const certUrls: string[] = [];
+    for (const cert of this.certFiles) {
+      const url = await this.supabase.uploadDocument(userId, cert.file, 'certifications');
+      if (url) certUrls.push(url);
+    }
+
+    if (certUrls.length === 0) {
+      this.errorMsg = 'Failed to upload certifications. Please try again.';
+      this.submitting = false;
+      return;
+    }
+
+    const { error } = await this.supabase.submitMentorDocuments(diplomaUrl, certUrls);
     this.submitting = false;
 
     if (error) {
@@ -72,7 +103,6 @@ export class MentorDocumentsComponent {
       return;
     }
 
-    // Mentor must wait for admin approval
     this.router.navigate(['/pending-approval']);
   }
 

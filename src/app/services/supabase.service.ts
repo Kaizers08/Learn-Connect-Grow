@@ -82,6 +82,52 @@ export class SupabaseService {
     });
   }
 
+  // ── Storage ───────────────────────────────────────────────────────────────
+  /**
+   * Uploads a profile picture to Supabase Storage and returns the public URL.
+   * The bucket must exist — create it in Supabase Dashboard:
+   *   Storage → New bucket → name: "profiles" → Public: ON
+   */
+  async uploadProfilePicture(userId: string, file: File): Promise<string | null> {
+    const ext = file.name.split('.').pop() ?? 'jpg';
+    const path = `${userId}/profile.${ext}`;
+
+    const { error } = await this.client.storage
+      .from('profiles')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      this.logError('uploadProfilePicture', error);
+      return null;
+    }
+
+    const { data } = this.client.storage
+      .from('profiles')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
+  }
+
+  async uploadDocument(userId: string, file: File, folder: string): Promise<string | null> {
+    const ext = file.name.split('.').pop() ?? 'pdf';
+    const path = `${userId}/${folder}/${Date.now()}.${ext}`;
+
+    const { error } = await this.client.storage
+      .from('profiles')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      this.logError('uploadDocument', error);
+      return null;
+    }
+
+    const { data } = this.client.storage
+      .from('profiles')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
+  }
+
   // ── Auth ───────────────────────────────────────────────────────────────────
   signUp(email: string, password: string, fullName: string) {
     return this.client.auth.signUp({
@@ -122,14 +168,35 @@ export class SupabaseService {
   }
 
   // ── Mentee ────────────────────────────────────────────────────────────────
+  // Saves mentee profile — only called when user clicks Next after validation passes
   async saveMenteeProfile(profile: MenteeProfile) {
-    const { data, error } = await this.client
+    const userId = profile.user_id;
+    if (!userId) return { data: null, error: { message: 'No user ID.' } };
+
+    const { data: existing } = await this.client
       .from('mentee_profiles')
-      .upsert(profile)
-      .select()
-      .single();
-    if (error) this.logError('saveMenteeProfile', error);
-    return { data, error };
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    let result;
+    if (existing) {
+      result = await this.client
+        .from('mentee_profiles')
+        .update(profile)
+        .eq('user_id', userId)
+        .select()
+        .single();
+    } else {
+      result = await this.client
+        .from('mentee_profiles')
+        .insert(profile)
+        .select()
+        .single();
+    }
+
+    if (result.error) this.logError('saveMenteeProfile', result.error);
+    return { data: result.data, error: result.error };
   }
 
   async getMenteeProfiles() {
@@ -139,14 +206,36 @@ export class SupabaseService {
   }
 
   // ── Mentor ────────────────────────────────────────────────────────────────
+  // Saves mentor profile — only called when user clicks Next after validation passes
   async saveMentorProfile(profile: MentorProfile) {
-    const { data, error } = await this.client
+    const userId = profile.user_id;
+    if (!userId) return { data: null, error: { message: 'No user ID.' } };
+
+    // Check if row already exists
+    const { data: existing } = await this.client
       .from('mentor_profiles')
-      .upsert(profile)
-      .select()
-      .single();
-    if (error) this.logError('saveMentorProfile', error);
-    return { data, error };
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    let result;
+    if (existing) {
+      result = await this.client
+        .from('mentor_profiles')
+        .update(profile)
+        .eq('user_id', userId)
+        .select()
+        .single();
+    } else {
+      result = await this.client
+        .from('mentor_profiles')
+        .insert(profile)
+        .select()
+        .single();
+    }
+
+    if (result.error) this.logError('saveMentorProfile', result.error);
+    return { data: result.data, error: result.error };
   }
 
   // Mentor uploads diploma + certifications for admin approval.
