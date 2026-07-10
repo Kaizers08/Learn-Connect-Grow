@@ -53,10 +53,12 @@ export interface MentorProfile {
 export class SupabaseService {
   private readonly config = inject(SupabaseConfigService);
   private readonly client: SupabaseClient;
+  private supabaseUrl: string;
 
   constructor() {
     const { url, anonKey } = this.config.getSupabaseConfig();
     this.client = createClient(url, anonKey);
+    this.supabaseUrl = url;
   }
 
   getClient(): SupabaseClient {
@@ -447,5 +449,40 @@ export class SupabaseService {
       return 'complete';
     }
     return 'none';
+  }
+
+  // ── Account Deletion ────────────────────────────────────────────────────────
+  async deleteUserAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+    const { data: sessionData } = await this.client.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      return { success: false, error: 'No access token' };
+    }
+
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Delete user error:', errorData);
+        return { success: false, error: errorData.error || 'Failed to delete user' };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error calling delete function:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      return { success: false, error: errorMessage };
+    }
   }
 }
