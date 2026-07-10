@@ -1,4 +1,4 @@
-.mentee-page {
+.mentor-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -32,7 +32,7 @@
   clip-path: ellipse(100% 80% at 100% 100%);
 }
 
-.mentee-container {
+.mentor-container {
   width: 100%;
   max-width: 580px;
   position: relative;
@@ -41,34 +41,34 @@
 }
 
 /* Logo */
-.mentee-logo {
+.mentor-logo {
   margin-bottom: 1.25rem;
   display: flex;
   justify-content: center;
 }
 
-.mentee-logo-img {
+.mentor-logo-img {
   height: 60px;
   width: auto;
   object-fit: contain;
 }
 
 /* Title */
-.mentee-title {
+.mentor-title {
   font-size: 1.75rem;
   font-weight: 700;
   color: #333;
   margin: 0 0 0.4rem 0;
 }
 
-.mentee-subtitle {
+.mentor-subtitle {
   font-size: 0.9rem;
   color: #888;
   margin: 0 0 1.75rem 0;
 }
 
 /* Card */
-.mentee-card {
+.mentor-card {
   background: white;
   border-radius: 20px;
   padding: 2rem 2.5rem;
@@ -98,58 +98,6 @@
   margin-bottom: 0.5rem;
 }
 
-/* Radio Buttons */
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-  color: #333;
-}
-
-.radio-input {
-  display: none;
-}
-
-.radio-custom {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  border: 2px solid #ccc;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  background: white;
-}
-
-.radio-input:checked + .radio-custom {
-  border-color: #04A2D7;
-  background: white;
-}
-
-.radio-input:checked + .radio-custom::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  background: #04A2D7;
-  border-radius: 50%;
-  display: block;
-}
-
-.radio-text {
-  font-size: 0.95rem;
-  color: #333;
-}
-
 /* Text Input & Select */
 .form-input {
   width: 100%;
@@ -162,6 +110,8 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   background: white;
   box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
 }
 
 .form-input:focus {
@@ -227,6 +177,73 @@ select.form-input {
   background: #0390c0;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(4, 162, 215, 0.4);
+}
+
+/* Profile Picture */
+.profile-photo-section {
+  text-align: center;
+}
+
+.profile-photo-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-photo-preview {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px dashed #d0d0d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f9fb;
+}
+
+.profile-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-photo-placeholder {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.profile-photo-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-upload {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #04A2D7;
+  border: 1.5px solid #04A2D7;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #f0faff;
+}
+
+.btn-remove-photo {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #e74c3c;
+  border: 1.5px solid #e74c3c;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* Skills */
@@ -306,7 +323,7 @@ select.form-input {
 
 /* Large screens */
 @media (min-width: 1200px) {
-  .mentee-container {
+  .mentor-container {
     max-width: 580px;
   }
 }
@@ -319,22 +336,22 @@ select.form-input {
     height: 170px;
   }
 
-  .mentee-page {
+  .mentor-page {
     padding: 1.5rem;
   }
 
-  .mentee-title {
+  .mentor-title {
     font-size: 1.5rem;
   }
 
-  .mentee-card {
+  .mentor-card {
     padding: 1.75rem 2rem;
   }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
-  .mentee-page {
+  .mentor-page {
     align-items: flex-start;
     padding: 3rem 1rem 2rem 1rem;
   }
@@ -345,20 +362,20 @@ select.form-input {
     height: 130px;
   }
 
-  .mentee-logo-img {
+  .mentor-logo-img {
     height: 50px;
   }
 
-  .mentee-title {
+  .mentor-title {
     font-size: 1.3rem;
   }
 
-  .mentee-subtitle {
+  .mentor-subtitle {
     font-size: 0.85rem;
     margin-bottom: 1.25rem;
   }
 
-  .mentee-card {
+  .mentor-card {
     padding: 1.5rem 1.25rem;
     border-radius: 16px;
   }
@@ -380,4 +397,13 @@ select.form-input {
     font-size: 0.95rem;
     width: 100%;
   }
+}
+
+.required { color: #e74c3c; margin-left: 2px; }
+
+.form-error {
+  background: #fff0f0; color: #e74c3c;
+  border: 1.5px solid #ffc8c8; border-radius: 10px;
+  padding: 0.65rem 1rem; font-size: 0.85rem; font-weight: 500;
+  margin-top: 0.5rem;
 }

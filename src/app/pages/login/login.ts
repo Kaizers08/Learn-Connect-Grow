@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-login',
@@ -14,14 +16,40 @@ export class LoginComponent {
   password = '';
   showPassword = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private supabase: SupabaseService,
+    private userService: UserService
+  ) {}
 
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
 
-  onSignIn() {
-    // TODO: add real auth logic here
+  async onSignIn() {
+    if (!this.email || !this.password) {
+      alert('Please enter your email and password.');
+      return;
+    }
+
+    const { data, error } = await this.supabase.signIn(this.email, this.password);
+    if (error) {
+      console.error('Sign in failed:', error.message);
+      alert(error.message);
+      return;
+    }
+
+    // Check admin first using the active session
+    const isAdmin = await this.supabase.isAdmin();
+    if (isAdmin) {
+      this.router.navigate(['/admin']);
+      return;
+    }
+
+    // Not admin — check role from metadata
+    const meta = await this.supabase.getCurrentUserMeta();
+    const role = (meta.role as 'mentor' | 'mentee') ?? 'mentee';
+    this.userService.role.set(role);
     this.router.navigate(['/dashboard']);
   }
 

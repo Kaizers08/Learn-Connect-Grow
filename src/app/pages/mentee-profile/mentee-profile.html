@@ -64,6 +64,48 @@
         </div>
       }
 
+      <!-- Desired Expertise (for matchmaking) -->
+      <div class="form-section">
+        <label class="field-label">What expertise do you want to learn?</label>
+        <select class="form-input" [(ngModel)]="desiredExpertise" name="desiredExpertise">
+          <option value="" disabled selected>Select an expertise</option>
+          @for (exp of expertiseOptions; track exp) {
+            <option [value]="exp">{{ exp }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Desired Skills (for matchmaking) -->
+      <div class="form-section">
+        <label class="field-label">What technical skills do you want to learn?</label>
+        <div class="skill-tags">
+          @for (skill of desiredSkills; track skill) {
+            <span class="skill-tag">
+              {{ skill }}
+              <button type="button" class="skill-tag-remove" (click)="toggleSkill(skill)">✕</button>
+            </span>
+          }
+        </div>
+        <div class="skill-add-row">
+          <input
+            type="text"
+            class="form-input"
+            placeholder="Type a skill and press Enter"
+            [(ngModel)]="skillInput"
+            name="skillInput"
+            (keydown.enter)="$event.preventDefault(); addSkill()"
+          >
+          <button type="button" class="btn-add-skill" (click)="addSkill()">Add</button>
+        </div>
+        <div class="skill-suggestions">
+          @for (skill of skillOptions; track skill) {
+            @if (!desiredSkills.includes(skill)) {
+              <button type="button" class="skill-suggestion" (click)="toggleSkill(skill)">+ {{ skill }}</button>
+            }
+          }
+        </div>
+      </div>
+
     </div>
 
     <!-- Buttons -->

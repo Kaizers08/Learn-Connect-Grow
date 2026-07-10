@@ -1,0 +1,246 @@
+.mentor-docs-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 2rem;
+}
+
+.wave-top-left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #04A2D7, #21AA3A);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 0% 0%);
+}
+
+.wave-bottom-right {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #21AA3A, #04A2D7);
+  z-index: 0;
+  clip-path: ellipse(100% 80% at 100% 100%);
+}
+
+.mentor-docs-container {
+  width: 100%;
+  max-width: 580px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.mentor-docs-logo {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.mentor-docs-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.mentor-docs-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.4rem 0;
+}
+
+.mentor-docs-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0 0 1.75rem 0;
+}
+
+.mentor-docs-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.required {
+  color: #e74c3c;
+}
+
+.doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fafbfc;
+}
+
+.doc-name {
+  font-size: 0.88rem;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-upload {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #04A2D7;
+  border: 1.5px solid #04A2D7;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #f0faff;
+}
+
+.doc-add {
+  display: inline-block;
+}
+
+.btn-remove-photo {
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #e74c3c;
+  border: 1.5px solid #e74c3c;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: -2rem;
+}
+
+.btn-previous {
+  width: 100%;
+  padding: 0.9rem;
+  background: white;
+  color: #04A2D7;
+  border: 2px solid #04A2D7;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-previous:hover {
+  background: #f0faff;
+}
+
+.btn-next {
+  width: 100%;
+  padding: 0.9rem;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(4, 162, 215, 0.3);
+}
+
+.btn-next:hover {
+  background: #0390c0;
+}
+
+.btn-next:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .mentor-docs-page {
+    padding: 3rem 1rem 2rem 1rem;
+  }
+  .mentor-docs-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+  .btn-row {
+    grid-template-columns: 1fr;
+    margin-top: -1rem;
+  }
+}
+
+.docs-error {
+  background: #fff0f0; color: #e74c3c;
+  border: 1.5px solid #ffc8c8; border-radius: 10px;
+  padding: 0.65rem 1rem; font-size: 0.85rem; font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.required-badge {
+  background: #fff0f0; color: #e74c3c;
+  font-size: 0.7rem; font-weight: 700;
+  padding: 0.1rem 0.5rem; border-radius: 50px;
+  margin-left: 0.4rem;
+}
+
+.optional-badge {
+  background: #f0f9ff; color: #04A2D7;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 0.1rem 0.5rem; border-radius: 50px;
+  margin-left: 0.4rem;
+}
+
+.field-hint {
+  font-size: 0.75rem; color: #aaa; margin: -0.5rem 0 0.5rem;
+}
+
+.no-docs-hint {
+  font-size: 0.8rem; color: #bbb;
+  padding: 0.5rem; border: 1.5px dashed #e0e0e0;
+  border-radius: 8px; text-align: center; margin-bottom: 0.5rem;
+}

@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-journey',
@@ -111,7 +113,7 @@ export class JourneyComponent {
     }
   }
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private userService: UserService, private supabase: SupabaseService) {}
 
   onPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -128,7 +130,42 @@ export class JourneyComponent {
     this.profilePhoto = null;
   }
 
-  onNext() {
+  async onNext() {
+    if (!this.phoneNumber.trim()) {
+      alert('Phone number is required.');
+      return;
+    }
+
+    const userId = await this.supabase.getCurrentUserId();
+    const role = this.userService.role();
+    const fullPhone = this.selectedDialCode
+      ? `${this.selectedDialCode} ${this.phoneNumber}`
+      : this.phoneNumber;
+
+    if (role === 'mentor') {
+      await this.supabase.getClient()
+        .from('mentor_profiles')
+        .update({
+          profile_picture: this.profilePhoto ?? null,
+          phone_number:    fullPhone,
+          country:         this.country     || null,
+          gender:          this.gender      || null,
+          date_of_birth:   this.dateOfBirth || null,
+        })
+        .eq('user_id', userId);
+    } else {
+      await this.supabase.getClient()
+        .from('mentee_profiles')
+        .upsert({
+          user_id:         userId,
+          profile_picture: this.profilePhoto ?? null,
+          phone_number:    fullPhone,
+          country:         this.country     || null,
+          gender:          this.gender      || null,
+          date_of_birth:   this.dateOfBirth || null,
+        });
+    }
+
     this.router.navigate(['/dashboard']);
   }
 }

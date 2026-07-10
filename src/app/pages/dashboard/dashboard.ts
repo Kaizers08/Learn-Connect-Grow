@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { UserService } from '../../services/user.service';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,180 +11,489 @@ import { Router } from '@angular/router';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit, OnDestroy {
 
-  userName = 'Jaireell';
+  // ─── General ───────────────────────────────────────────────────────────────
+  userName = 'User';
   userRole = 'Mentee';
+  showUserMenu = false;
+  profilePicture: string | null = null;
+  currentUserId = '';
+  private lastSeenInterval: any;
+
+  get isMentor(): boolean { return this.userService.role() === 'mentor'; }
 
   upcomingSessionsCount = 2;
   unreadMessages = 0;
-
   activeNavItem = 'dashboard';
 
-  recommendedMentors = [
-    { name: 'Emily Johnson', specialty: 'UI/UX', rating: 4.9, reviews: 32 },
-    { name: 'Peter Parker', specialty: 'Fullstack Developer', rating: 4.9, reviews: 32 },
-    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 4.9, reviews: 32 }
-  ];
+  // Matched mentors/mentees from DB
+  recommendedMentors: any[] = [];
+  // My connections (online side panel)
+  connectedUsers: any[] = [];
+  // Which user IDs I'm connected to
+  myConnectionIds = new Set<string>();
+
+  // Profile modal
+  showProfileModal = false;
+  selectedProfile: any = null;
 
   upcomingSessions = [
-    {
-      mentorName: 'Manilyn Jones',
-      isActive: true,
-      date: 'December 3, 2025',
-      time: '4:00PM – 10:00PM',
-      platform: 'Google Meet'
-    }
-  ];
-
-  onlineMentors = [
-    { name: 'Jaireell Son Regala', status: 'Active Now', isOnline: true },
-    { name: 'Jaireell Son Regala', status: 'Active Now', isOnline: true },
-    { name: 'Luisita Reyes Marie', status: 'Active 2mins', isOnline: false }
+    { mentorName: 'Manilyn Jones', isActive: true, date: 'December 3, 2025', time: '4:00PM – 10:00PM', platform: 'Google Meet' }
   ];
 
   searchQuery = '';
 
-  // ── Find Mentors ──────────────────────────────────────────────────────────
+  // ─── Find Mentors ──────────────────────────────────────────────────────────
   mentorSearchQuery = '';
   selectedExpertise = '';
-  selectedSkills: string[] = ['Figma', 'Photoshop', 'Wordpress', 'Webflow'];
+  selectedSkills: string[] = [];
   expertiseLevels: string[] = [];
   currentPage = 1;
   totalPages = 4;
 
   expertiseOptions = [
-    'UI/UX Design',
-    'Fullstack Developer',
-    'Frontend Developer',
-    'Backend Developer',
-    'Mobile Developer',
-    'DevOps / Cloud',
-    'Data Science',
-    'Machine Learning / AI',
-    'Cybersecurity',
-    'Blockchain',
-    'Game Development',
-    'QA / Testing',
-    'Project Management',
-    'Product Management',
-    'Business Analysis',
-    'Digital Marketing',
-    'Graphic Design',
-    'Content Writing',
-    'Video Editing',
-    'Photography'
+    'UI/UX Design', 'Fullstack Developer', 'Frontend Developer', 'Backend Developer',
+    'Mobile Developer', 'DevOps / Cloud', 'Data Science', 'Machine Learning / AI',
+    'Cybersecurity', 'Blockchain', 'Game Development', 'QA / Testing',
+    'Project Management', 'Product Management', 'Business Analysis',
+    'Digital Marketing', 'Graphic Design', 'Content Writing', 'Video Editing', 'Photography'
   ];
 
   skillOptions = [
-    // Design
-    'Figma', 'Adobe XD', 'Sketch', 'Photoshop', 'Illustrator', 'InDesign',
-    'Canva', 'Webflow', 'Framer',
-    // Frontend
-    'HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js',
-    'Next.js', 'Nuxt.js', 'Tailwind CSS', 'Bootstrap', 'SASS',
-    // Backend
-    'Node.js', 'Express.js', 'Python', 'Django', 'FastAPI', 'PHP', 'Laravel',
-    'Java', 'Spring Boot', 'C#', '.NET', 'Ruby on Rails', 'Go', 'Rust',
-    // Mobile
+    'Figma', 'Adobe XD', 'Sketch', 'Photoshop', 'Illustrator', 'InDesign', 'Canva', 'Webflow', 'Framer',
+    'HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Next.js', 'Nuxt.js', 'Tailwind CSS', 'Bootstrap', 'SASS',
+    'Node.js', 'Express.js', 'Python', 'Django', 'FastAPI', 'PHP', 'Laravel', 'Java', 'Spring Boot', 'C#', '.NET', 'Ruby on Rails', 'Go', 'Rust',
     'Flutter', 'React Native', 'Swift', 'Kotlin', 'Dart',
-    // Database
     'MySQL', 'PostgreSQL', 'MongoDB', 'Firebase', 'Redis', 'Supabase',
-    // DevOps / Cloud
-    'Docker', 'Kubernetes', 'AWS', 'Azure', 'Google Cloud', 'CI/CD',
-    'Linux', 'Nginx', 'GitHub Actions',
-    // Data / AI
-    'Python', 'TensorFlow', 'PyTorch', 'Pandas', 'NumPy', 'Scikit-learn',
-    'Tableau', 'Power BI', 'SQL',
-    // Other
+    'Docker', 'Kubernetes', 'AWS', 'Azure', 'Google Cloud', 'CI/CD', 'Linux', 'Nginx', 'GitHub Actions',
+    'TensorFlow', 'PyTorch', 'Pandas', 'NumPy', 'Scikit-learn', 'Tableau', 'Power BI', 'SQL',
     'Git', 'GitHub', 'Jira', 'Notion', 'Trello', 'WordPress', 'Shopify'
   ];
+
   levelOptions = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 
   allMentors = [
-    {
-      name: 'Julian Hernandez',
-      role: 'UI/UX Designer',
-      rating: 4.9,
-      reviews: 32,
-      bio: '5yrs of experience building ui friendly application',
-      skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress']
-    },
-    {
-      name: 'Janine Hernandez',
-      role: 'UI/UX Designer',
-      rating: 2.9,
-      reviews: 3,
-      bio: '5yrs of experience building ui friendly application',
-      skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress']
-    },
-    {
-      name: 'Michael Jackson',
-      role: 'UI/UX Designer',
-      rating: 3.9,
-      reviews: 3,
-      bio: '5yrs of experience building ui friendly application',
-      skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress']
-    }
+    { name: 'Julian Hernandez', role: 'UI/UX Designer', rating: 4.9, reviews: 32, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
+    { name: 'Janine Hernandez', role: 'UI/UX Designer', rating: 2.9, reviews: 3, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
+    { name: 'Michael Jackson', role: 'UI/UX Designer', rating: 3.9, reviews: 3, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] }
   ];
 
   get filteredMentors() {
     return this.allMentors.filter(m => {
-      const matchName = !this.mentorSearchQuery ||
-        m.name.toLowerCase().includes(this.mentorSearchQuery.toLowerCase());
-      const matchExpertise = !this.selectedExpertise ||
-        m.role.toLowerCase().includes(this.selectedExpertise.toLowerCase());
+      const matchName = !this.mentorSearchQuery || m.name.toLowerCase().includes(this.mentorSearchQuery.toLowerCase());
+      const matchExpertise = !this.selectedExpertise || m.role.toLowerCase().includes(this.selectedExpertise.toLowerCase());
       return matchName && matchExpertise;
     });
   }
 
-  removeSkill(skill: string) {
-    this.selectedSkills = this.selectedSkills.filter(s => s !== skill);
-  }
+  removeSkill(skill: string) { this.selectedSkills = this.selectedSkills.filter(s => s !== skill); }
 
   toggleLevel(level: string) {
-    if (this.expertiseLevels.includes(level)) {
-      this.expertiseLevels = this.expertiseLevels.filter(l => l !== level);
+    if (this.expertiseLevels.includes(level)) this.expertiseLevels = this.expertiseLevels.filter(l => l !== level);
+    else this.expertiseLevels.push(level);
+  }
+
+  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.expertiseLevels = []; }
+  goToPage(page: number) { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
+  getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+
+  // ─── Messages ──────────────────────────────────────────────────────────────
+  chatSearchQuery = '';
+  newMessageText = '';
+
+  conversations = [
+    { id: 1, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
+    { id: 2, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
+    { id: 3, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
+    { id: 4, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" },
+    { id: 5, name: 'Julian Hernandez', status: 'Active Now', isOnline: true, lastMessage: "Sure let's talk about our schedule" }
+  ];
+
+  activeConversation = this.conversations[0];
+
+  messages: { id: number; text: string; fromMe: boolean; isPlaceholder?: boolean }[] = [
+    { id: 1, text: '', fromMe: false, isPlaceholder: true },
+    { id: 2, text: '', fromMe: true, isPlaceholder: true },
+    { id: 3, text: '', fromMe: false, isPlaceholder: true },
+    { id: 4, text: "Sure let's talk about our schedule", fromMe: true }
+  ];
+
+  get filteredConversations() {
+    if (!this.chatSearchQuery) return this.conversations;
+    return this.conversations.filter(c => c.name.toLowerCase().includes(this.chatSearchQuery.toLowerCase()));
+  }
+
+  selectConversation(conv: any) { this.activeConversation = conv; }
+
+  sendMessage() {
+    const text = this.newMessageText.trim();
+    if (!text) return;
+    this.messages.push({ id: Date.now(), text, fromMe: true });
+    this.newMessageText = '';
+  }
+
+  onMessageKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.sendMessage(); }
+  }
+
+  // ─── Mentors & Feedback ────────────────────────────────────────────────────
+  myMentors = [
+    { name: 'Emily Johnson', specialty: 'UI/UX', rating: 4.9, reviews: 32 },
+    { name: 'Peter Parker', specialty: 'Fullstack Developer', rating: 4.9, reviews: 32 },
+    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 4.9, reviews: 32 },
+    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 4.9, reviews: 32 }
+  ];
+
+  feedbackList = [
+    { name: 'Julian Hernandez', rating: 5, comment: 'Good mentor and very understanding for their students, I love her teaching skills' },
+    { name: 'Janine Hernandez', rating: 3, comment: 'Good mentor and very understanding for their students, I love her teaching skills' },
+    { name: 'Michael Jackson', rating: 4, comment: 'Good mentor and very understanding for their students, I love her teaching skills' }
+  ];
+
+  getStars(rating: number): number[] { return Array.from({ length: 5 }, (_, i) => i + 1); }
+  isFilled(star: number, rating: number): boolean { return star <= Math.round(rating); }
+
+  // ─── Settings ──────────────────────────────────────────────────────────────
+  settingsTab: 'profile' | 'account' | 'password' = 'profile';
+  settingsSaved = false;
+
+  settingsFirstName = '';
+  settingsLastName = '';
+  settingsEmail = '';
+  settingsPhone = '';
+  settingsCountry = '';
+  settingsGender = '';
+  settingsDateOfBirth = '';
+  settingsPhotoPreview: string | null = null;
+
+  settingsFullName = '';
+  settingsJobPosition = '';
+  settingsCompany = '';
+  settingsExpertise = '';
+  settingsYearsExperience: number | null = null;
+  settingsBio = '';
+  settingsTechnicalSkills: string[] = [];
+
+  settingsMenteeType = '';
+  settingsDesiredExpertise = '';
+  settingsDesiredSkills: string[] = [];
+
+  settingsCurrentPassword = '';
+  settingsNewPassword = '';
+  settingsConfirmPassword = '';
+  showCurrentPass = false;
+  showNewPass = false;
+  showConfirmPass = false;
+  passwordError = '';
+
+  settingsCountries = [
+    'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia',
+    'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Belarus',
+    'Belgium','Bolivia','Bosnia and Herzegovina','Brazil','Bulgaria','Cambodia',
+    'Cameroon','Canada','Chile','China','Colombia','Costa Rica','Croatia','Cuba',
+    'Czech Republic','Denmark','Dominican Republic','Ecuador','Egypt','El Salvador',
+    'Estonia','Ethiopia','Finland','France','Georgia','Germany','Ghana','Greece',
+    'Guatemala','Honduras','Hungary','India','Indonesia','Iran','Iraq','Ireland',
+    'Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kuwait',
+    'Latvia','Lebanon','Libya','Lithuania','Luxembourg','Malaysia','Mexico',
+    'Morocco','Myanmar','Nepal','Netherlands','New Zealand','Nicaragua','Nigeria',
+    'Norway','Pakistan','Panama','Paraguay','Peru','Philippines','Poland',
+    'Portugal','Qatar','Romania','Russia','Saudi Arabia','Serbia','Singapore',
+    'Slovakia','South Africa','South Korea','Spain','Sri Lanka','Sudan','Sweden',
+    'Switzerland','Syria','Taiwan','Tanzania','Thailand','Tunisia','Turkey',
+    'Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
+    'Uzbekistan','Venezuela','Vietnam','Yemen','Zimbabwe'
+  ];
+
+  toggleSettingsSkill(skill: string, type: 'mentor' | 'mentee') {
+    if (type === 'mentor') {
+      if (this.settingsTechnicalSkills.includes(skill)) this.settingsTechnicalSkills = this.settingsTechnicalSkills.filter(s => s !== skill);
+      else this.settingsTechnicalSkills.push(skill);
     } else {
-      this.expertiseLevels.push(level);
+      if (this.settingsDesiredSkills.includes(skill)) this.settingsDesiredSkills = this.settingsDesiredSkills.filter(s => s !== skill);
+      else this.settingsDesiredSkills.push(skill);
     }
   }
 
-  resetFilters() {
-    this.mentorSearchQuery = '';
-    this.selectedExpertise = '';
-    this.selectedSkills = [];
-    this.expertiseLevels = [];
-  }
-
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+  onSettingsPhotoChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => { this.settingsPhotoPreview = e.target?.result as string; };
+      reader.readAsDataURL(file);
     }
   }
 
-  getPages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  // ─── Constructor ───────────────────────────────────────────────────────────
+  constructor(
+    private router: Router,
+    private userService: UserService,
+    private supabase: SupabaseService
+  ) {}
+
+  async ngOnInit() {
+    await this.loadUserProfile();
+    await this.loadMatchedUsers();
+    await this.loadConnections();
+    // Update last_seen every 2 minutes
+    await this.supabase.updateLastSeen();
+    this.lastSeenInterval = setInterval(() => this.supabase.updateLastSeen(), 120000);
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  constructor(private router: Router) {}
-
-  setActiveNav(id: string) {
-    this.activeNavItem = id;
+  ngOnDestroy() {
+    if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
   }
 
-  onConnect(mentor: any) {}
-  onViewProfile(mentor: any) {}
+  // ─── Navigation ────────────────────────────────────────────────────────────
+  setActiveNav(id: string) { this.activeNavItem = id; }
   onViewAllSessions() {}
   onViewAllOnline() {}
-  onMessage(mentor: any) {}
-
-  onLogout() {
-    this.router.navigate(['/login']);
-  }
+  onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
+  toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }
+  closeUserMenu() { this.showUserMenu = false; }
+  onLogout() { this.showUserMenu = false; this.router.navigate(['/login']); }
 
   getInitials(name: string): string {
+    if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+
+  // ─── Matchmaking ───────────────────────────────────────────────────────────
+  async loadMatchedUsers() {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+    this.currentUserId = userId;
+
+    if (this.isMentor) {
+      const { data } = await this.supabase.getClient()
+        .from('mentor_profiles')
+        .select('expertise, skills')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const expertise = (data as any)?.expertise;
+      const skills: string[] = (data as any)?.skills || [];
+      const { data: matched } = await this.supabase.findMenteesForMentor(expertise, skills);
+      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId);
+    } else {
+      const { data } = await this.supabase.getClient()
+        .from('mentee_profiles')
+        .select('desired_expertise, desired_skills')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const desiredExpertise = (data as any)?.desired_expertise;
+      const desiredSkills: string[] = (data as any)?.desired_skills || [];
+      const { data: matched } = await this.supabase.findMentorsForMentee(desiredExpertise, desiredSkills);
+      // Only show approved mentors
+      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId && m.status === 'approved');
+    }
+  }
+
+  async loadConnections() {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
+    const connections = await this.supabase.getMyConnections();
+    this.myConnectionIds = new Set(
+      connections.map((c: any) => c.mentee_user_id === userId ? c.mentor_user_id : c.mentee_user_id)
+    );
+
+    // Load profiles of connected users
+    const ids = [...this.myConnectionIds];
+    if (!ids.length) { this.connectedUsers = []; return; }
+
+    const role = this.userService.role();
+    // If I'm a mentee, my connections are mentors, and vice versa
+    const table = role === 'mentor' ? 'mentee_profiles' : 'mentor_profiles';
+    const nameField = role === 'mentor' ? 'user_id,profile_picture,last_seen' : 'user_id,full_name,profile_picture,last_seen';
+
+    const { data } = await this.supabase.getClient()
+      .from(table)
+      .select(nameField)
+      .in('user_id', ids);
+
+    this.connectedUsers = (data || []).map((u: any) => ({
+      ...u,
+      name: u.full_name || this.getNameFromMeta(u.user_id),
+      isOnline: this.isOnline(u.last_seen),
+      lastSeenLabel: this.getLastSeenLabel(u.last_seen),
+    }));
+  }
+
+  isOnline(lastSeen: string): boolean {
+    if (!lastSeen) return false;
+    return (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000; // 5 min
+  }
+
+  getLastSeenLabel(lastSeen: string): string {
+    if (!lastSeen) return 'Unknown';
+    const diff = Date.now() - new Date(lastSeen).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 5) return 'Active Now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks}w ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}m ago`;
+    return `${Math.floor(months / 12)}y ago`;
+  }
+
+  private getNameFromMeta(_userId: string): string { return 'User'; }
+
+  isConnectedTo(userId: string): boolean {
+    return this.myConnectionIds.has(userId);
+  }
+
+  async onConnect(user: any) {
+    const myId = this.currentUserId;
+    if (!myId) return;
+    const otherId = user.user_id;
+    if (this.isMentor) {
+      await this.supabase.connect(otherId, myId); // otherId=mentee, myId=mentor
+    } else {
+      await this.supabase.connect(myId, otherId); // myId=mentee, otherId=mentor
+    }
+    this.myConnectionIds.add(otherId);
+    await this.loadConnections();
+  }
+
+  async onDisconnect(user: any) {
+    const myId = this.currentUserId;
+    if (!myId) return;
+    const otherId = user.user_id;
+    if (this.isMentor) {
+      await this.supabase.disconnect(otherId, myId);
+    } else {
+      await this.supabase.disconnect(myId, otherId);
+    }
+    this.myConnectionIds.delete(otherId);
+    await this.loadConnections();
+  }
+
+  // ─── Profile Modal ─────────────────────────────────────────────────────────
+  openProfile(user: any) {
+    this.selectedProfile = user;
+    this.showProfileModal = true;
+  }
+
+  closeProfile() {
+    this.showProfileModal = false;
+    this.selectedProfile = null;
+  }
+
+  onViewProfile(user: any) { this.openProfile(user); }
+  onMessage(user: any) { this.setActiveNav('messages'); }
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  async loadUserProfile() {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
+    const role = this.userService.role();
+    const authUser = await this.supabase.getClient().auth.getUser();
+    this.settingsEmail = authUser.data.user?.email || '';
+
+    if (role === 'mentor') {
+      const { data } = await this.supabase.getClient()
+        .from('mentor_profiles')
+        .select('full_name, profile_picture, job_position, company, expertise, years_experience, bio, skills')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data) {
+        const d = data as any;
+        if (d.full_name) this.userName = this.stripMiddleName(d.full_name);
+        this.profilePicture          = d.profile_picture || null;
+        this.settingsJobPosition     = d.job_position    || '';
+        this.settingsCompany         = d.company         || '';
+        this.settingsExpertise       = d.expertise       || '';
+        this.settingsYearsExperience = d.years_experience ?? null;
+        this.settingsBio             = d.bio             || '';
+        this.settingsTechnicalSkills = d.skills          || [];
+      }
+      this.userRole = 'Mentor';
+    } else {
+      const meta = await this.supabase.getCurrentUserMeta();
+      if (meta.fullName) this.userName = this.stripMiddleName(meta.fullName);
+      const { data } = await this.supabase.getClient()
+        .from('mentee_profiles')
+        .select('profile_picture, desired_expertise, desired_skills')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data) {
+        const d = data as any;
+        this.profilePicture           = d.profile_picture   || null;
+        this.settingsDesiredExpertise = d.desired_expertise || '';
+        this.settingsDesiredSkills    = d.desired_skills    || [];
+      }
+      this.userRole = 'Mentee';
+    }
+
+    const nameParts = this.userName.split(' ');
+    this.settingsFirstName = nameParts[0] || '';
+    this.settingsLastName  = nameParts.slice(-1)[0] || '';
+  }
+
+  async saveSettings() {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+    const role = this.userService.role();
+    const newName = `${this.settingsFirstName} ${this.settingsLastName}`.trim();
+    if (this.settingsPhotoPreview) this.profilePicture = this.settingsPhotoPreview;
+    this.userName = newName;
+    if (role === 'mentor') {
+      await this.supabase.getClient()
+        .from('mentor_profiles')
+        .update({
+          full_name:        newName,
+          job_position:     this.settingsJobPosition     || null,
+          company:          this.settingsCompany         || null,
+          expertise:        this.settingsExpertise       || null,
+          years_experience: this.settingsYearsExperience ?? null,
+          bio:              this.settingsBio             || null,
+          skills:           this.settingsTechnicalSkills,
+          profile_picture:  this.profilePicture          || null,
+        })
+        .eq('user_id', userId);
+    } else {
+      await this.supabase.getClient()
+        .from('mentee_profiles')
+        .update({
+          desired_expertise: this.settingsDesiredExpertise || null,
+          desired_skills:    this.settingsDesiredSkills,
+          profile_picture:   this.profilePicture           || null,
+        })
+        .eq('user_id', userId);
+      await this.supabase.updateUserMeta({ full_name: newName });
+    }
+    this.settingsSaved = true;
+    setTimeout(() => this.settingsSaved = false, 3000);
+  }
+
+  async savePassword() {
+    this.passwordError = '';
+    if (!this.settingsCurrentPassword) { this.passwordError = 'Current password is required.'; return; }
+    if (this.settingsNewPassword.length < 8) { this.passwordError = 'New password must be at least 8 characters.'; return; }
+    if (this.settingsNewPassword !== this.settingsConfirmPassword) { this.passwordError = 'Passwords do not match.'; return; }
+    const { error: signInError } = await this.supabase.signIn(this.settingsEmail, this.settingsCurrentPassword);
+    if (signInError) { this.passwordError = 'Current password is incorrect.'; return; }
+    const { error } = await this.supabase.getClient().auth.updateUser({ password: this.settingsNewPassword });
+    if (error) { this.passwordError = error.message; return; }
+    this.settingsSaved = true;
+    this.settingsCurrentPassword = '';
+    this.settingsNewPassword = '';
+    this.settingsConfirmPassword = '';
+    setTimeout(() => this.settingsSaved = false, 3000);
+  }
+
+  private stripMiddleName(fullName: string): string {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length <= 2) return fullName.trim();
+    return `${parts[0]} ${parts[parts.length - 1]}`;
   }
 }

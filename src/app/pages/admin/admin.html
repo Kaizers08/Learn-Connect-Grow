@@ -1,0 +1,487 @@
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">
+      <img src="/edtech dashboard.png" alt="EdTech" class="admin-logo-collapsed">
+      <img src="/edtech expand.png" alt="EdTech" class="admin-logo-expanded">
+    </div>
+
+    <nav class="admin-nav">
+      <button class="admin-nav-item" [class.active]="activeNav === 'dashboard'" (click)="activeNav = 'dashboard'">
+        <span class="admin-nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="2"/>
+            <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="2"/>
+            <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="2"/>
+            <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </span>
+        <span class="admin-nav-label">Dashboard</span>
+      </button>
+
+      <button class="admin-nav-item" [class.active]="activeNav === 'requests'" (click)="activeNav = 'requests'">
+        <span class="admin-nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M3 21V19C3 16.8 4.8 15 7 15H11C13.2 15 15 16.8 15 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M16 3.13A4 4 0 0118 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M21 21V19C20.99 17.15 19.76 15.53 18 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="admin-nav-label">Mentor Requests</span>
+        @if (pendingMentors.length > 0) {
+          <span class="admin-nav-badge">{{ pendingMentors.length }}</span>
+        }
+      </button>
+
+      <button class="admin-nav-item" [class.active]="activeNav === 'settings'" (click)="activeNav = 'settings'">
+        <span class="admin-nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </span>
+        <span class="admin-nav-label">Settings</span>
+      </button>
+    </nav>
+
+    <button class="admin-logout-btn" (click)="onLogout()">
+      <span class="admin-nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M9 21H5C4.47 21 3.96 20.79 3.59 20.41C3.21 20.04 3 19.53 3 19V5C3 4.47 3.21 3.96 3.59 3.59C3.96 3.21 4.47 3 5 3H9" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="16 17 21 12 16 7" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="21" y1="12" x2="9" y2="12" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="admin-nav-label admin-logout-label">Logout</span>
+    </button>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-left">
+        @if (activeNav === 'dashboard') { <span class="admin-page-title">Admin Dashboard</span> }
+        @if (activeNav === 'requests') { <span class="admin-page-title">Mentor Requests</span> }
+        @if (activeNav === 'settings') { <span class="admin-page-title">Settings</span> }
+      </div>
+      <div class="admin-topbar-right">
+        <div class="admin-user-badge">
+          <div class="admin-user-avatar">{{ adminName.substring(0, 2).toUpperCase() }}</div>
+          <span class="admin-user-name">{{ adminName }}</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="admin-body">
+
+      <!-- ── DASHBOARD VIEW ── -->
+      @if (activeNav === 'dashboard') {
+        @if (loading) {
+          <div class="admin-loading">
+            <div class="admin-spinner"></div>
+            <p>Loading platform data…</p>
+          </div>
+        } @else {
+          <div class="admin-dash-wrapper">
+            <div class="admin-dash-header">
+              <h1 class="admin-dash-title">Platform Overview</h1>
+              <p class="admin-dash-subtitle">Monitor your platform's growth and activity</p>
+            </div>
+
+            <!-- Stat Cards -->
+            <div class="admin-stats-row">
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon admin-stat-blue">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <circle cx="9" cy="7" r="4" stroke="white" stroke-width="2"/>
+                    <path d="M3 21V19C3 16.8 4.8 15 7 15H11C13.2 15 15 16.8 15 19V21" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 3.13A4 4 0 0118 11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M21 21V19C20.99 17.15 19.76 15.53 18 15.13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-info">
+                  <span class="admin-stat-label">Total Mentors</span>
+                  <span class="admin-stat-value">{{ mentorCount }}</span>
+                  <span class="admin-stat-sub">Registered mentors</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon admin-stat-green">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="4" stroke="white" stroke-width="2"/>
+                    <path d="M4 20C4 17.8 7.58 16 12 16C16.42 16 20 17.8 20 20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-info">
+                  <span class="admin-stat-label">Total Mentees</span>
+                  <span class="admin-stat-value">{{ menteeCount }}</span>
+                  <span class="admin-stat-sub">Registered mentees</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon admin-stat-purple">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="white" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-info">
+                  <span class="admin-stat-label">Total Users</span>
+                  <span class="admin-stat-value">{{ mentorCount + menteeCount }}</span>
+                  <span class="admin-stat-sub">All registered users</span>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-icon admin-stat-orange">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="white" stroke-width="2"/>
+                    <path d="M12 7V12L15 15" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="admin-stat-info">
+                  <span class="admin-stat-label">Pending Requests</span>
+                  <span class="admin-stat-value">{{ pendingMentors.length }}</span>
+                  <span class="admin-stat-sub">Awaiting review</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Mentor Requests -->
+            <div class="admin-recent-section">
+              <div class="admin-section-header">
+                <h2 class="admin-section-title">Recent Mentor Requests</h2>
+                <button class="admin-view-all-btn" (click)="activeNav = 'requests'">View all</button>
+              </div>
+              @if (pendingMentors.length === 0) {
+                <div class="admin-empty">No pending requests.</div>
+              } @else {
+                <div class="admin-request-cards">
+                  @for (m of pendingMentors.slice(0, 3); track m.id) {
+                    <div class="admin-request-card">
+                      <div class="admin-card-avatar">{{ getInitials(m.full_name) }}</div>
+                      <div class="admin-card-info">
+                        <span class="admin-card-name">{{ m.full_name || 'Unknown' }}</span>
+                        <span class="admin-card-role">{{ m.expertise || 'N/A' }}</span>
+                      </div>
+                      <span class="admin-badge badge-pending">Pending</span>
+                      <button class="admin-card-view-btn" (click)="openMentorModal(m); activeNav = 'requests'">Review</button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- ── MENTOR REQUESTS VIEW ── -->
+      @if (activeNav === 'requests') {
+        <div class="admin-requests-wrapper">
+          <div class="admin-dash-header">
+            <h1 class="admin-dash-title">Mentor Requests</h1>
+            <p class="admin-dash-subtitle">Review and manage mentor applications</p>
+          </div>
+
+          @if (loading) {
+            <div class="admin-loading"><div class="admin-spinner"></div></div>
+          } @else {
+            <!-- Pending -->
+            <div class="admin-req-section">
+              <h2 class="admin-req-section-title">
+                Pending
+                <span class="admin-req-count">{{ pendingMentors.length }}</span>
+              </h2>
+              @if (pendingMentors.length === 0) {
+                <div class="admin-empty">No pending requests.</div>
+              } @else {
+                <div class="admin-mentor-grid">
+                  @for (m of pendingMentors; track m.id) {
+                    <div class="admin-mentor-card">
+                      <div class="admin-mentor-card-top">
+                        <div class="admin-mentor-avatar-lg">{{ getInitials(m.full_name) }}</div>
+                        <span class="admin-badge badge-pending">Pending</span>
+                      </div>
+                      <h3 class="admin-mentor-card-name">{{ m.full_name || 'Unknown' }}</h3>
+                      <p class="admin-mentor-card-role">{{ m.expertise || 'N/A' }}</p>
+                      <p class="admin-mentor-card-company">{{ m.company || '' }}@if(m.years_experience){ · {{ m.years_experience }} yrs exp }</p>
+                      <div class="admin-mentor-card-actions">
+                        <button class="admin-btn-view-profile" (click)="openMentorModal(m)">View Profile</button>
+                        <button class="admin-btn-approve-sm" (click)="approve(m)">Approve</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Approved -->
+            <div class="admin-req-section">
+              <h2 class="admin-req-section-title">
+                Approved
+                <span class="admin-req-count admin-req-count-green">{{ approvedMentors.length }}</span>
+              </h2>
+              @if (approvedMentors.length === 0) {
+                <div class="admin-empty">No approved mentors yet.</div>
+              } @else {
+                <div class="admin-mentor-grid">
+                  @for (m of approvedMentors; track m.id) {
+                    <div class="admin-mentor-card">
+                      <div class="admin-mentor-card-top">
+                        <div class="admin-mentor-avatar-lg">{{ getInitials(m.full_name) }}</div>
+                        <span class="admin-badge badge-approved">Approved</span>
+                      </div>
+                      <h3 class="admin-mentor-card-name">{{ m.full_name || 'Unknown' }}</h3>
+                      <p class="admin-mentor-card-role">{{ m.expertise || 'N/A' }}</p>
+                      <p class="admin-mentor-card-company">{{ m.company || '' }}</p>
+                      <div class="admin-mentor-card-actions">
+                        <button class="admin-btn-view-profile" (click)="openMentorModal(m)">View Profile</button>
+                        <button class="admin-btn-reject-sm" (click)="reject(m)">Revoke</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── SETTINGS VIEW ── -->
+      @if (activeNav === 'settings') {
+        <div class="admin-settings-wrapper">
+          <div class="admin-dash-header">
+            <h1 class="admin-dash-title">Settings</h1>
+            <p class="admin-dash-subtitle">Manage your admin account</p>
+          </div>
+
+          @if (settingsSaved) {
+            <div class="admin-toast">✓ Changes saved successfully!</div>
+          }
+
+          <div class="admin-settings-card">
+            <h3 class="admin-settings-section-title">Account Information</h3>
+            <div class="admin-settings-form">
+              <div class="admin-form-group">
+                <label class="admin-form-label">Email Address</label>
+                <input class="admin-form-input" type="email" [(ngModel)]="adminEmail">
+              </div>
+            </div>
+            <div class="admin-form-actions">
+              <button class="admin-btn-save" (click)="saveSettings()">Save Changes</button>
+            </div>
+          </div>
+
+          <div class="admin-settings-card">
+            <h3 class="admin-settings-section-title">Change Password</h3>
+            @if (passwordError) {
+              <div class="admin-error">{{ passwordError }}</div>
+            }
+            <div class="admin-settings-form">
+              <div class="admin-form-group">
+                <label class="admin-form-label">Current Password</label>
+                <div class="admin-pass-wrap">
+                  <input class="admin-form-input" [type]="showCurrentPass ? 'text' : 'password'" [(ngModel)]="adminCurrentPassword" placeholder="Enter current password">
+                  <button type="button" class="admin-pass-toggle" (click)="showCurrentPass = !showCurrentPass">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="admin-form-group">
+                <label class="admin-form-label">New Password</label>
+                <div class="admin-pass-wrap">
+                  <input class="admin-form-input" [type]="showNewPass ? 'text' : 'password'" [(ngModel)]="adminNewPassword" placeholder="Min. 8 characters">
+                  <button type="button" class="admin-pass-toggle" (click)="showNewPass = !showNewPass">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="admin-form-group">
+                <label class="admin-form-label">Confirm New Password</label>
+                <div class="admin-pass-wrap">
+                  <input class="admin-form-input" [type]="showConfirmPass ? 'text' : 'password'" [(ngModel)]="adminConfirmPassword" placeholder="Re-enter new password">
+                  <button type="button" class="admin-pass-toggle" (click)="showConfirmPass = !showConfirmPass">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="admin-form-actions">
+              <button class="admin-btn-save" (click)="savePassword()">Update Password</button>
+            </div>
+          </div>
+        </div>
+      }
+
+    </div>
+  </main>
+</div>
+
+<!-- ── MENTOR PROFILE MODAL ── -->
+@if (showModal && selectedMentor) {
+  <div class="admin-modal-backdrop" (click)="closeModal()">
+    <div class="admin-modal" (click)="$event.stopPropagation()">
+
+      <button class="admin-modal-close" (click)="closeModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <!-- Header -->
+      <div class="admin-modal-header">
+        <div class="admin-modal-avatar">{{ getInitials(selectedMentor.full_name) }}</div>
+        <div class="admin-modal-title-info">
+          <h2 class="admin-modal-name">{{ selectedMentor.full_name || 'Unknown' }}</h2>
+          <p class="admin-modal-role">{{ selectedMentor.expertise || 'N/A' }}</p>
+          <span class="admin-badge" [class]="getStatusClass(selectedMentor.status)">
+            {{ selectedMentor.status || 'pending' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="admin-modal-divider"></div>
+
+      <!-- Info Grid -->
+      <div class="admin-modal-body">
+        <div class="admin-modal-info-grid">
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Job Position</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.job_position || '—' }}</span>
+          </div>
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Company</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.company || '—' }}</span>
+          </div>
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Area of Expertise</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.expertise || '—' }}</span>
+          </div>
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Years of Experience</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.years_experience != null ? (selectedMentor.years_experience + ' years') : '—' }}</span>
+          </div>
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Phone Number</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.phone_number || '—' }}</span>
+          </div>
+          <div class="admin-modal-info-item">
+            <span class="admin-modal-info-label">Country</span>
+            <span class="admin-modal-info-value">{{ selectedMentor.country || '—' }}</span>
+          </div>
+        </div>
+
+        @if (selectedMentor.github_url || selectedMentor.linkedin_url || selectedMentor.twitter_url) {
+          <div class="admin-modal-bio-section">
+            <span class="admin-modal-info-label">Social Media</span>
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.4rem;">
+              @if (selectedMentor.github_url) {
+                <a [href]="selectedMentor.github_url" target="_blank" class="admin-doc-link">GitHub</a>
+              }
+              @if (selectedMentor.linkedin_url) {
+                <a [href]="selectedMentor.linkedin_url" target="_blank" class="admin-doc-link">LinkedIn</a>
+              }
+              @if (selectedMentor.twitter_url) {
+                <a [href]="selectedMentor.twitter_url" target="_blank" class="admin-doc-link">Twitter</a>
+              }
+            </div>
+          </div>
+        }
+
+        @if (selectedMentor.bio) {
+          <div class="admin-modal-bio-section">
+            <span class="admin-modal-info-label">Bio</span>
+            <p class="admin-modal-bio">{{ selectedMentor.bio }}</p>
+          </div>
+        }
+
+        @if (selectedMentor.skills?.length) {
+          <div class="admin-modal-skills-section">
+            <span class="admin-modal-info-label">Technical Skills</span>
+            <div class="admin-modal-skills">
+              @for (skill of selectedMentor.skills; track skill) {
+                <span class="admin-skill-chip">{{ skill }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Documents -->
+        <div class="admin-modal-docs-section">
+          <span class="admin-modal-info-label">Documents</span>
+          <div class="admin-modal-docs">
+            <div class="admin-doc-item">
+              <span class="admin-doc-label">Diploma</span>
+              @if (selectedMentor.diploma) {
+                @if (isImage(selectedMentor.diploma)) {
+                  <img [src]="selectedMentor.diploma" class="admin-doc-img" alt="Diploma">
+                } @else {
+                  <a [href]="selectedMentor.diploma" target="_blank" class="admin-doc-link">Open File</a>
+                }
+              } @else {
+                <span class="admin-doc-none">Not provided</span>
+              }
+            </div>
+            <div class="admin-doc-item">
+              <span class="admin-doc-label">Certifications</span>
+              @if (selectedMentor.certifications?.length) {
+                <div class="admin-cert-list">
+                  @for (cert of selectedMentor.certifications; track cert) {
+                    @if (isImage(cert)) {
+                      <img [src]="cert" class="admin-doc-img-sm" alt="Certificate">
+                    } @else {
+                      <a [href]="cert" target="_blank" class="admin-doc-link">Open File</a>
+                    }
+                  }
+                </div>
+              } @else {
+                <span class="admin-doc-none">Not provided</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-modal-divider"></div>
+
+      <!-- Actions -->
+      <div class="admin-modal-actions">
+        @if (selectedMentor.status !== 'approved') {
+          <button class="admin-btn-approve" (click)="approve(selectedMentor)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17L4 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Approve
+          </button>
+        }
+        @if (selectedMentor.status !== 'rejected') {
+          <button class="admin-btn-decline" (click)="reject(selectedMentor)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            Decline
+          </button>
+        }
+        <button class="admin-btn-cancel" (click)="closeModal()">Close</button>
+      </div>
+
+    </div>
+  </div>
+}

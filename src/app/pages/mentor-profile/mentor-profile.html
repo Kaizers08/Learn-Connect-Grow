@@ -1,0 +1,193 @@
+<div class="mentor-page">
+  <div class="wave-top-left"></div>
+  <div class="wave-bottom-right"></div>
+
+  <div class="mentor-container">
+
+    <!-- Logo -->
+    <div class="mentor-logo">
+      <img src="/landing page logo.png" alt="EdTech Logo" class="mentor-logo-img">
+    </div>
+
+    <!-- Title -->
+    <h2 class="mentor-title">Complete your profile</h2>
+    <p class="mentor-subtitle">Tell us about yourself to get started as a mentor</p>
+
+    <!-- Card -->
+    <div class="mentor-card">
+
+      <!-- Profile Picture -->
+      <div class="form-section profile-photo-section">
+        <label class="field-label">Profile Picture</label>
+        <div class="profile-photo-row">
+          <div class="profile-photo-preview">
+            @if (profilePhoto) {
+              <img [src]="profilePhoto" alt="Profile preview" class="profile-photo-img">
+            } @else {
+              <span class="profile-photo-placeholder">No photo</span>
+            }
+          </div>
+          <div class="profile-photo-actions">
+            <label class="btn-upload">
+              {{ profilePhoto ? 'Change Photo' : 'Upload Photo' }}
+              <input type="file" accept="image/*" hidden (change)="onPhotoChange($event)">
+            </label>
+            @if (profilePhoto) {
+              <button type="button" class="btn-remove-photo" (click)="removePhoto()">Remove</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Position -->
+      <div class="form-section">
+        <label class="field-label">Job Position</label>
+        <input
+          type="text"
+          class="form-input"
+          placeholder="e.g. Senior Software Engineer"
+          [(ngModel)]="jobPosition"
+          name="jobPosition"
+        >
+      </div>
+
+      <!-- Company -->
+      <div class="form-section">
+        <label class="field-label">Company</label>
+        <input
+          type="text"
+          class="form-input"
+          placeholder="e.g. Google"
+          [(ngModel)]="company"
+          name="company"
+        >
+      </div>
+
+      <!-- Area of Expertise -->
+      <div class="form-section">
+        <label class="field-label">Area of Expertise</label>
+        <select class="form-input" [(ngModel)]="expertise" name="expertise">
+          <option value="" disabled selected>Select your expertise</option>
+          @for (exp of expertiseOptions; track exp) {
+            <option [value]="exp">{{ exp }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Technical Skills -->
+      <div class="form-section">
+        <label class="field-label">Technical Skills</label>
+        <div class="skill-tags">
+          @for (skill of skills; track skill) {
+            <span class="skill-tag">
+              {{ skill }}
+              <button type="button" class="skill-tag-remove" (click)="toggleSkill(skill)">✕</button>
+            </span>
+          }
+        </div>
+        <div class="skill-add-row">
+          <input
+            type="text"
+            class="form-input"
+            placeholder="Type a skill and press Enter"
+            [(ngModel)]="skillInput"
+            name="skillInput"
+            (keydown.enter)="$event.preventDefault(); addSkill()"
+          >
+          <button type="button" class="btn-add-skill" (click)="addSkill()">Add</button>
+        </div>
+        <div class="skill-suggestions">
+          @for (skill of skillOptions; track skill) {
+            @if (!skills.includes(skill)) {
+              <button type="button" class="skill-suggestion" (click)="toggleSkill(skill)">+ {{ skill }}</button>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Years of Experience -->
+      <div class="form-section">
+        <label class="field-label">Years of Experience</label>
+        <input
+          type="number"
+          min="0"
+          class="form-input"
+          placeholder="e.g. 5"
+          [(ngModel)]="yearsExperience"
+          name="yearsExperience"
+        >
+      </div>
+
+      <!-- Short Bio -->
+      <div class="form-section">
+        <label class="field-label">Short Bio</label>
+        <textarea
+          class="form-input"
+          rows="3"
+          placeholder="Tell mentees about yourself, your experience, and what you can help with..."
+          [(ngModel)]="bio"
+          name="bio"
+        ></textarea>
+      </div>
+
+      <!-- Phone Number (required) -->
+      <div class="form-section">
+        <label class="field-label">Phone Number <span class="required">*</span></label>
+        <input
+          type="tel"
+          class="form-input"
+          placeholder="e.g. +63 912 345 6789"
+          [(ngModel)]="phoneNumber"
+          name="phoneNumber"
+        >
+      </div>
+
+      <!-- Social Media / GitHub -->
+      <div class="form-section">
+        <label class="field-label">GitHub URL</label>
+        <input
+          type="url"
+          class="form-input"
+          placeholder="https://github.com/username"
+          [(ngModel)]="githubUrl"
+          name="githubUrl"
+        >
+      </div>
+
+      <div class="form-section">
+        <label class="field-label">LinkedIn URL</label>
+        <input
+          type="url"
+          class="form-input"
+          placeholder="https://linkedin.com/in/username"
+          [(ngModel)]="linkedinUrl"
+          name="linkedinUrl"
+        >
+      </div>
+
+      <div class="form-section">
+        <label class="field-label">Twitter / X URL</label>
+        <input
+          type="url"
+          class="form-input"
+          placeholder="https://twitter.com/username"
+          [(ngModel)]="twitterUrl"
+          name="twitterUrl"
+        >
+      </div>
+
+      <!-- Error -->
+      @if (errorMsg) {
+        <div class="form-error">{{ errorMsg }}</div>
+      }
+
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn-previous" (click)="onPrevious()">Previous</button>
+      <button class="btn-next" (click)="onNext()">Next</button>
+    </div>
+
+  </div>
+</div>
