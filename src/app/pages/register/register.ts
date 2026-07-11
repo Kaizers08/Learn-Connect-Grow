@@ -52,4 +52,12 @@ export class RegisterComponent {
   goToLogin() {
     this.router.navigate(['/login']);
   }
+
+  async signUpWithGoogle() {
+    const { error } = await this.supabase.signInWithGoogle();
+    if (error) {
+      alert(error.message || 'Google sign-up failed. Please try again.');
+    }
+    // Supabase redirects browser to Google → then to /auth/callback
+  }
 }

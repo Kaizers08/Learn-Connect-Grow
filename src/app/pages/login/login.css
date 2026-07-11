@@ -337,3 +337,92 @@
     font-size: 0.8rem;
   }
 }
+
+/* ===========================
+   Forgot Password Modal
+=========================== */
+.fp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.fp-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: fpSlideIn 0.25s ease;
+}
+
+@keyframes fpSlideIn {
+  from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.fp-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #999;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.fp-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.fp-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.fp-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.5rem;
+}
+
+.fp-desc {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.fp-desc strong {
+  color: #04A2D7;
+}
+
+.fp-modal .form-group {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.fp-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  text-align: left;
+}

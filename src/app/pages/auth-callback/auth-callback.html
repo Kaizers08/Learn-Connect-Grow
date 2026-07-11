@@ -1,0 +1,21 @@
+<div class="callback-page">
+  <div class="wave-top-left"></div>
+  <div class="wave-bottom-right"></div>
+
+  <div class="callback-card">
+    <div class="callback-logo">
+      <img src="/landing page logo.png" alt="EdTech Logo" class="callback-logo-img">
+    </div>
+
+    @if (errorMsg) {
+      <div class="cb-icon">❌</div>
+      <h3 class="cb-title">Something went wrong</h3>
+      <p class="cb-desc">{{ errorMsg }}</p>
+      <button class="btn-primary" (click)="goToLogin()">Back to Sign In</button>
+    } @else {
+      <div class="cb-spinner"></div>
+      <h3 class="cb-title">Signing you in...</h3>
+      <p class="cb-desc">Please wait while we set up your account.</p>
+    }
+  </div>
+</div>

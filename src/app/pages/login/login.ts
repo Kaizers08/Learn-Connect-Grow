@@ -16,6 +16,13 @@ export class LoginComponent {
   password = '';
   showPassword = false;
 
+  // Forgot password modal state
+  showForgotModal = false;
+  resetEmail = '';
+  resetEmailSent = false;
+  resetLoading = false;
+  resetError = '';
+
   constructor(
     private router: Router,
     private supabase: SupabaseService,
@@ -24,6 +31,37 @@ export class LoginComponent {
 
   togglePassword() {
     this.showPassword = !this.showPassword;
+  }
+
+  openForgotPassword() {
+    this.showForgotModal = true;
+    this.resetEmail = this.email; // pre-fill with whatever they typed
+    this.resetEmailSent = false;
+    this.resetError = '';
+  }
+
+  closeForgotPassword() {
+    this.showForgotModal = false;
+    this.resetEmail = '';
+    this.resetEmailSent = false;
+    this.resetError = '';
+    this.resetLoading = false;
+  }
+
+  async sendResetEmail() {
+    if (!this.resetEmail || !this.resetEmail.includes('@')) {
+      this.resetError = 'Please enter a valid email address.';
+      return;
+    }
+    this.resetLoading = true;
+    this.resetError = '';
+    const { error } = await this.supabase.sendPasswordResetEmail(this.resetEmail);
+    this.resetLoading = false;
+    if (error) {
+      this.resetError = error.message || 'Something went wrong. Please try again.';
+    } else {
+      this.resetEmailSent = true;
+    }
   }
 
   async onSignIn() {
@@ -55,5 +93,14 @@ export class LoginComponent {
 
   goToRegister() {
     this.router.navigate(['/register']);
+  }
+
+  async signInWithGoogle() {
+    const { error } = await this.supabase.signInWithGoogle();
+    if (error) {
+      alert(error.message || 'Google sign-in failed. Please try again.');
+    }
+    // No navigation needed — Supabase redirects the browser to Google,
+    // then Google redirects back to /auth/callback
   }
 }

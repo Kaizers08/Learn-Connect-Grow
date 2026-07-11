@@ -144,8 +144,44 @@ export class SupabaseService {
     return this.client.auth.signInWithPassword({ email, password });
   }
 
+  /**
+   * Initiates Google OAuth sign-in/sign-up.
+   * Supabase will redirect to /auth/callback after Google auth completes.
+   */
+  async signInWithGoogle(): Promise<{ error: any }> {
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+    if (error) this.logError('signInWithGoogle', error);
+    return { error };
+  }
+
   signOut() {
     return this.client.auth.signOut();
+  }
+
+  /**
+   * Sends a password reset email to the given address.
+   * Supabase will email a link; the redirectTo must match
+   * your Supabase Auth → URL Configuration → Redirect URLs.
+   */
+  async sendPasswordResetEmail(email: string): Promise<{ error: any }> {
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await this.client.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) this.logError('sendPasswordResetEmail', error);
+    return { error };
+  }
+
+  /**
+   * Updates the authenticated user's password.
+   * Call this after the user has clicked the reset link and is on /reset-password.
+   */
+  async updatePassword(newPassword: string): Promise<{ error: any }> {
+    const { error } = await this.client.auth.updateUser({ password: newPassword });
+    if (error) this.logError('updatePassword', error);
+    return { error };
   }
 
   async getCurrentUserId(): Promise<string | undefined> {

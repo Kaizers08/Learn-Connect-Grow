@@ -16,6 +16,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register').then(m => m.RegisterComponent)
   },
   {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/reset-password/reset-password').then(m => m.ResetPasswordComponent)
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./pages/auth-callback/auth-callback').then(m => m.AuthCallbackComponent)
+  },
+  {
     path: 'complete-profile',
     loadComponent: () => import('./pages/complete-profile/complete-profile').then(m => m.CompleteProfileComponent)
   },
