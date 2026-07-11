@@ -1444,19 +1444,33 @@
   <div class="modal-overlay" (click)="closeResourcesUploadModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📤 Upload Learning Material</h3>
+        <div class="modal-header-info">
+          <h3>📤 Upload Learning Material</h3>
+          <p class="modal-subtitle">Add a new material for your mentees</p>
+        </div>
         <button class="btn-close" (click)="closeResourcesUploadModal()">✕</button>
       </div>
 
       <div class="modal-body">
-        <div class="form-group">
-          <label>Order Number *</label>
-          <input 
-            type="text" 
-            [(ngModel)]="resourceUploadOrderNumber" 
-            placeholder="e.g., 1.1, 1.2, 2.1"
-            class="form-control">
-          <small>Format: Major.Minor (e.g., 1.1, 1.2, 2.1)</small>
+        <div class="upload-form-grid">
+          <div class="form-group">
+            <label>Order Number *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="resourceUploadOrderNumber" 
+              placeholder="e.g., 1.1, 1.2, 2.1"
+              class="form-control">
+            <small>Format: Major.Minor (e.g., 1.1, 1.2, 2.1)</small>
+          </div>
+
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="resourceUploadDuration" 
+              placeholder="e.g., 30"
+              class="form-control">
+          </div>
         </div>
 
         <div class="form-group">
@@ -1464,35 +1478,27 @@
           <input 
             type="text" 
             [(ngModel)]="resourceUploadTitle" 
-            placeholder="Enter material title"
+            placeholder="Enter a clear, descriptive title"
             class="form-control">
         </div>
 
         <div class="form-group">
-          <label>Description</label>
+          <label>Description <span style="font-weight:400;color:#9ca3af">(optional)</span></label>
           <textarea 
             [(ngModel)]="resourceUploadDescription" 
-            placeholder="Enter description (optional)"
+            placeholder="Brief description of what this material covers..."
             class="form-control"
             rows="3"></textarea>
         </div>
 
         <div class="form-group">
-          <label>Duration (minutes)</label>
-          <input 
-            type="number" 
-            [(ngModel)]="resourceUploadDuration" 
-            placeholder="Estimated duration"
-            class="form-control">
-        </div>
-
-        <div class="form-group">
-          <label>File * (Video, PDF, Documents, etc.)</label>
+          <label>File *</label>
           <input 
             type="file" 
             (change)="onResourceFileSelected($event)"
             class="form-control file-input"
             accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
+          <small>Supports: Video, PDF, Word, PowerPoint, Text — max 50 MB</small>
           @if (resourceUploadFileName) {
             <div class="file-preview">
               📎 {{ resourceUploadFileName }}
@@ -1508,7 +1514,7 @@
           class="btn-submit" 
           (click)="uploadResourceMaterial()"
           [disabled]="isResourceUploading || !resourceUploadTitle || !resourceUploadFile || !resourceUploadOrderNumber">
-          {{ isResourceUploading ? 'Uploading...' : 'Upload' }}
+          {{ isResourceUploading ? '⏳ Uploading...' : '📤 Upload Material' }}
         </button>
       </div>
     </div>

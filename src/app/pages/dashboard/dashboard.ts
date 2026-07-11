@@ -589,6 +589,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
+    
+    // Close any open modals when switching tabs
+    this.closeMaterialsModal();
+    this.closeMenteeProgressModal();
+    
     if (id === 'mentors') {
       if (this.isMentor) {
         await this.loadMenteesFeedback();
