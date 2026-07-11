@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
@@ -20,11 +20,28 @@ export class ProfileViewComponent implements OnInit {
   isLoading = true;
   errorMsg = '';
 
+  // 3-dots menu
+  showOptionsMenu = false;
+  isConnected = false;
+  isUnfollowing = false;
+  currentUserId = '';
+
   constructor(
     private route: ActivatedRoute,
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  // Close menu when clicking outside
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.showOptionsMenu = false;
+  }
+
+  toggleOptionsMenu(event: Event) {
+    event.stopPropagation();
+    this.showOptionsMenu = !this.showOptionsMenu;
+  }
 
   async ngOnInit() {
     // Reset state
@@ -60,7 +77,8 @@ export class ProfileViewComponent implements OnInit {
     try {
       await Promise.all([
         this.loadUserProfile(),
-        this.loadUserFeedback()
+        this.loadUserFeedback(),
+        this.checkConnectionStatus()
       ]);
     } catch (error) {
       console.error('Error loading profile data:', error);
@@ -162,6 +180,34 @@ export class ProfileViewComponent implements OnInit {
 
   isFilled(star: number, rating: number): boolean {
     return star <= Math.round(rating);
+  }
+
+  async checkConnectionStatus() {
+    const myId = await this.supabase.getCurrentUserId();
+    if (!myId) return;
+    this.currentUserId = myId;
+
+    const connections = await this.supabase.getMyConnections();
+    this.isConnected = connections.some((c: any) =>
+      (c.mentee_user_id === myId && c.mentor_user_id === this.userId) ||
+      (c.mentor_user_id === myId && c.mentee_user_id === this.userId)
+    );
+  }
+
+  async unfollow() {
+    if (!this.currentUserId || this.isUnfollowing) return;
+    this.isUnfollowing = true;
+    this.showOptionsMenu = false;
+
+    // figure out which is mentor vs mentee
+    const iAmMentor = this.userType === 'mentee'; // if viewing a mentee, I'm the mentor
+    const menteeId = iAmMentor ? this.userId : this.currentUserId;
+    const mentorId = iAmMentor ? this.currentUserId : this.userId;
+
+    await this.supabase.disconnect(menteeId, mentorId);
+    this.isConnected = false;
+    this.isUnfollowing = false;
+    this.cdr.detectChanges();
   }
 
   goBack() {

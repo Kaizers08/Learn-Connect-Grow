@@ -30,6 +30,31 @@
     <!-- Profile Card -->
     @if (!isLoading && profile) {
       <div class="profile-card">
+
+        <!-- 3-dots options menu (only if connected) -->
+        @if (isConnected) {
+          <div class="profile-options-wrap">
+            <button class="profile-options-btn" (click)="toggleOptionsMenu($event)" title="Options">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5"  r="1.5"/>
+                <circle cx="12" cy="12" r="1.5"/>
+                <circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </button>
+            @if (showOptionsMenu) {
+              <div class="profile-options-dropdown" (click)="$event.stopPropagation()">
+                <button class="profile-option-item danger" (click)="unfollow()" [disabled]="isUnfollowing">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M17 13H7m10 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 12a9 9 0 1018 0A9 9 0 003 12z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  {{ isUnfollowing ? 'Unfollowing…' : 'Unfollow' }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+
         <!-- Profile Header -->
         <div class="profile-header">
           <div class="profile-avatar-lg">

@@ -92,7 +92,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   mentorSearchQuery = '';
   selectedExpertise = '';
   selectedSkills: string[] = [];
-  expertiseLevels: string[] = [];
   currentPage = 1;
   totalPages = 4;
 
@@ -117,28 +116,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   levelOptions = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 
-  allMentors = [
-    { name: 'Julian Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Janine Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Michael Jackson', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] }
-  ];
+  allMentors: any[] = []; // kept for backwards compat, unused
 
   get filteredMentors() {
-    return this.allMentors.filter(m => {
-      const matchName = !this.mentorSearchQuery || m.name.toLowerCase().includes(this.mentorSearchQuery.toLowerCase());
-      const matchExpertise = !this.selectedExpertise || m.role.toLowerCase().includes(this.selectedExpertise.toLowerCase());
-      return matchName && matchExpertise;
+    return this.recommendedMentors.filter((m: any) => {
+      const name = (m.full_name || m.name || '').toLowerCase();
+      const expertise = (m.expertise || m.role || '').toLowerCase();
+      const skills: string[] = m.skills || [];
+
+      const matchName = !this.mentorSearchQuery || name.includes(this.mentorSearchQuery.toLowerCase());
+      const matchExpertise = !this.selectedExpertise || expertise.includes(this.selectedExpertise.toLowerCase());
+      const matchSkills = this.selectedSkills.length === 0 ||
+        this.selectedSkills.every(s => skills.map(sk => sk.toLowerCase()).includes(s.toLowerCase()));
+
+      return matchName && matchExpertise && matchSkills;
     });
+  }
+
+  addSkillFilter(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const val = select.value;
+    if (val && !this.selectedSkills.includes(val)) {
+      this.selectedSkills = [...this.selectedSkills, val];
+    }
+    select.value = '';
   }
 
   removeSkill(skill: string) { this.selectedSkills = this.selectedSkills.filter(s => s !== skill); }
 
-  toggleLevel(level: string) {
-    if (this.expertiseLevels.includes(level)) this.expertiseLevels = this.expertiseLevels.filter(l => l !== level);
-    else this.expertiseLevels.push(level);
-  }
-
-  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.expertiseLevels = []; }
+  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; }
   goToPage(page: number) { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
@@ -152,7 +158,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
   activeConversation: any = null;
 
-  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
+  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean; imageUrl?: string; fileUrl?: string; fileName?: string }[] = [];
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
@@ -184,27 +190,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async sendMessage() {
-    if (!this.newMessageText.trim() || !this.activeConversation) return;
+    if (!this.newMessageText.trim() && !this.chatAttachmentFile) return;
+    if (!this.activeConversation) return;
 
     const message = this.newMessageText.trim();
     this.newMessageText = '';
+    this.showEmojiPicker = false;
 
-    // Optimistic UI update - add message immediately
+    const attachmentFile = this.chatAttachmentFile;
+    const attachmentIsImage = this.chatAttachmentIsImage;
+    const attachmentPreview = this.chatAttachmentPreview;
+    this.removeChatAttachment();
+
+    // Optimistic UI update
     const tempId = Date.now();
     this.messages.push({
       id: tempId,
       text: message,
       fromMe: true,
       timestamp: new Date().toISOString(),
-      status: 'sent'
+      status: 'sent',
+      imageUrl: attachmentIsImage && attachmentPreview ? attachmentPreview : undefined,
+      fileUrl: !attachmentIsImage && attachmentFile ? '#' : undefined,
+      fileName: attachmentFile?.name
     });
 
     try {
-      // Send to database
       const result = await this.supabase.sendMessage(this.activeConversation.id, message);
-      
       if (result.data) {
-        // Replace temp message with real one
         const index = this.messages.findIndex(m => m.id === tempId);
         if (index !== -1) {
           this.messages[index] = {
@@ -212,13 +225,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
             text: message,
             fromMe: true,
             timestamp: result.data.created_at,
-            status: result.data.status
+            status: result.data.status,
+            imageUrl: attachmentIsImage && attachmentPreview ? attachmentPreview : undefined,
+            fileUrl: !attachmentIsImage && attachmentFile ? '#' : undefined,
+            fileName: attachmentFile?.name
           };
         }
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove temp message on error
       this.messages = this.messages.filter(m => m.id !== tempId);
     }
   }
@@ -247,6 +262,72 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   onMessageKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.sendMessage(); }
+  }
+
+  // ─── Emoji picker ───────────────────────────────────────────────────────────
+  showEmojiPicker = false;
+  commonEmojis = [
+    '😀','😂','😊','😍','🥰','😎','😭','😅','🤔','😏',
+    '👍','👎','👏','🙌','🤝','❤️','🔥','✅','⭐','🎉',
+    '😢','😡','🤩','😴','🥳','🙏','💪','👀','💡','📚',
+    '🚀','💯','✨','🎯','📝','💬','📞','🔔','⏰','🌟'
+  ];
+
+  toggleEmojiPicker() {
+    this.showEmojiPicker = !this.showEmojiPicker;
+  }
+
+  insertEmoji(emoji: string) {
+    this.newMessageText += emoji;
+    this.showEmojiPicker = false;
+  }
+
+  // ─── File/image attachment ──────────────────────────────────────────────────
+  chatAttachmentFile: File | null = null;
+  chatAttachmentPreview: string | null = null;
+  chatAttachmentIsImage = false;
+
+  onChatFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    this.chatAttachmentFile = file;
+    this.chatAttachmentIsImage = file.type.startsWith('image/');
+    if (this.chatAttachmentIsImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => { this.chatAttachmentPreview = e.target?.result as string; };
+      reader.readAsDataURL(file);
+    } else {
+      this.chatAttachmentPreview = file.name;
+    }
+    // reset so same file can be re-selected
+    input.value = '';
+  }
+
+  removeChatAttachment() {
+    this.chatAttachmentFile = null;
+    this.chatAttachmentPreview = null;
+    this.chatAttachmentIsImage = false;
+  }
+
+  // ─── Auto-grow textarea ─────────────────────────────────────────────────────
+  autoGrowTextarea(event: Event) {
+    const el = event.target as HTMLTextAreaElement;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  // ─── Message time formatter ─────────────────────────────────────────────────
+  formatMsgTime(timestamp?: string): string {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    if (isToday) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+           d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   // ─── Feedback Modal Properties ──────────────────────────────────────────────
@@ -589,6 +670,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
+
+    // Always close resource modals when navigating away
+    this.closeMaterialsModal();
+    this.closeMenteeProgressModal();
+
     if (id === 'mentors') {
       if (this.isMentor) {
         await this.loadMenteesFeedback();
@@ -1065,25 +1151,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `${major}.${minor + 1}`;
   }
 
+  // Upload progress
+  resourceUploadProgress = 0;
+
   async uploadResourceMaterial() {
     if (!this.resourceUploadTitle || !this.resourceUploadFile || !this.resourceUploadOrderNumber) {
-      alert('Please fill in all required fields');
+      alert('Please fill in all required fields (Order Number, Title, and File).');
+      return;
+    }
+
+    // Hard limit: 50MB
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (this.resourceUploadFile.size > MAX_SIZE) {
+      alert('❌ File is too large. Maximum size is 50 MB.');
       return;
     }
 
     this.isResourceUploading = true;
+    this.resourceUploadProgress = 0;
 
     try {
       const fileExt = this.resourceUploadFile.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `learning-materials/${this.currentUserId}/${fileName}`;
+      const filePath = `${this.currentUserId}/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await this.supabase.getClient()
+      // Simulate progress for small files
+      const progressInterval = setInterval(() => {
+        if (this.resourceUploadProgress < 85) {
+          this.resourceUploadProgress += 10;
+        }
+      }, 200);
+
+      const { error: uploadError } = await this.supabase.getClient()
         .storage
         .from('learning-materials')
-        .upload(filePath, this.resourceUploadFile);
+        .upload(filePath, this.resourceUploadFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      clearInterval(progressInterval);
 
       if (uploadError) throw uploadError;
+
+      this.resourceUploadProgress = 95;
 
       const { data: urlData } = this.supabase.getClient()
         .storage
@@ -1097,25 +1208,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
         .insert({
           mentor_user_id: this.currentUserId,
           title: this.resourceUploadTitle,
-          description: this.resourceUploadDescription,
+          description: this.resourceUploadDescription || null,
           order_number: this.resourceUploadOrderNumber,
           file_url: urlData.publicUrl,
           file_type: fileType,
           file_name: this.resourceUploadFile.name,
-          duration_minutes: this.resourceUploadDuration
+          duration_minutes: this.resourceUploadDuration || null
         });
 
       if (insertError) throw insertError;
 
-      alert('✅ Material uploaded successfully!');
+      this.resourceUploadProgress = 100;
       this.closeResourcesUploadModal();
       await this.loadResourceMaterials();
       await this.loadResourceMenteesProgress();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading material:', error);
-      alert('❌ Failed to upload material. Please try again.');
+      alert(`❌ Upload failed: ${error?.message || 'Please try again.'}`);
     } finally {
       this.isResourceUploading = false;
+      this.resourceUploadProgress = 0;
     }
   }
 
