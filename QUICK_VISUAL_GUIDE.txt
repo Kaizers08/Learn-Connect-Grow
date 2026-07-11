@@ -1,0 +1,190 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║         📚 RESOURCES - VISUAL QUICK GUIDE                        ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  🎯 MENTOR VIEW                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+  Main Screen:
+  ─────────────────────────────────────────────────────────
+  │ Learning Materials              [➕ Upload Material]  │
+  │ Manage your learning materials and track progress     │
+  ─────────────────────────────────────────────────────────
+
+  ┌──────────────────────────────────────┐
+  │  📚 12 Materials                     │
+  │  You have uploaded 12 learning...   │
+  └──────────────────────────────────────┘
+
+  📊 Mentee Progress
+
+  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+  │ 👤 John Doe │  │ 👤 Jane     │  │ 👤 Mike     │
+  │ Mentee      │  │ Mentee      │  │ Mentee      │
+  │             │  │             │  │             │
+  │ Progress    │  │ Progress    │  │ Progress    │
+  │ ████░░ 60%  │  │ █████░ 75%  │  │ ██████ 100% │
+  │ 6/10 done   │  │ 9/12 done   │  │ 8/8 done ✅ │
+  └─────────────┘  └─────────────┘  └─────────────┘
+       CLICK           CLICK            CLICK
+         ↓               ↓                ↓
+      MODAL           MODAL            MODAL
+
+
+  Click Mentee Card → Modal Opens:
+  ═══════════════════════════════════════════════════
+  ║  📊 John Doe's Progress              [✕]       ║
+  ║  Mentee Progress Report                        ║
+  ╠════════════════════════════════════════════════╣
+  ║                                                ║
+  ║  ✅ 1.1  Introduction to HTML                  ║
+  ║         📎 intro.mp4  ⏱️ 30 min                ║
+  ║         [👁️ View] [✏️ Edit] [🗑️]              ║
+  ║                                                ║
+  ║  ✅ 1.2  HTML Structure                        ║
+  ║         📄 structure.pdf  ⏱️ 20 min            ║
+  ║         [👁️ View] [✏️ Edit] [🗑️]              ║
+  ║                                                ║
+  ║  ⏳ 1.3  HTML Forms                            ║
+  ║         📎 forms.mp4  ⏱️ 45 min                ║
+  ║         [👁️ View] [✏️ Edit] [🗑️]              ║
+  ║                                                ║
+  ╠════════════════════════════════════════════════╣
+  ║  Progress: ████░░░ 2/3 completed (67%)         ║
+  ═══════════════════════════════════════════════════
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  🎓 MENTEE VIEW                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+  Main Screen:
+  ─────────────────────────────────────────────────────────
+  │ Learning Resources                                    │
+  │ Access learning materials from your mentors           │
+  ─────────────────────────────────────────────────────────
+
+  📚 Your Mentors
+
+  ┌──────────────────┐  ┌──────────────────┐
+  │ 👤 Prof. Smith   │  │ 👤 Dr. Johnson   │
+  │ Web Development  │  │ Data Science     │
+  │                  │  │                  │
+  │ Your Progress    │  │ Your Progress    │
+  │ ████░░░ 60%      │  │ █████░░ 75%      │
+  │ 6/10 completed   │  │ 9/12 completed   │
+  └──────────────────┘  └──────────────────┘
+       CLICK                 CLICK
+         ↓                     ↓
+      MODAL                 MODAL
+
+
+  Click Mentor Card → Modal Opens:
+  ═══════════════════════════════════════════════════
+  ║  📚 Prof. Smith's Learning Materials    [✕]    ║
+  ║  Web Development                               ║
+  ╠════════════════════════════════════════════════╣
+  ║                                                ║
+  ║  ☑️ 1.1  Introduction to HTML                  ║
+  ║         📎 intro.mp4  ⏱️ 30 min                ║
+  ║         [👁️ View]                              ║
+  ║                                                ║
+  ║  ☐ 1.2  HTML Structure                         ║
+  ║         📄 structure.pdf  ⏱️ 20 min            ║
+  ║         [👁️ View]                              ║
+  ║                                                ║
+  ║  ☐ 1.3  HTML Forms                             ║
+  ║         📎 forms.mp4  ⏱️ 45 min                ║
+  ║         [👁️ View]                              ║
+  ║                                                ║
+  ╠════════════════════════════════════════════════╣
+  ║  Your Progress: ██░░░ 1/3 completed (33%)      ║
+  ═══════════════════════════════════════════════════
+
+  Click checkbox → Progress updates automatically!
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  🔥 KEY ACTIONS                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+  MENTOR:
+  ───────
+  1. Click "➕ Upload Material" → Upload modal opens
+  2. Fill form + select file → Upload
+  3. Click mentee card → See their progress
+  4. Edit/Delete materials from modal
+  5. Track all mentees' progress
+
+
+  MENTEE:
+  ───────
+  1. Click mentor card → Materials modal opens
+  2. See all materials with checkboxes
+  3. Click checkbox → Mark as complete
+  4. Progress bar updates automatically
+  5. Repeat for all materials → 100% 🎉
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  📊 PROGRESS BAR COLORS                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+  0-24%:   🔴 ████░░░░░░ RED     (Just started)
+  25-49%:  🟠 █████░░░░░ ORANGE  (Making progress)
+  50-74%:  🔵 ███████░░░ BLUE    (Halfway there!)
+  75-100%: 🟢 ██████████ GREEN   (Almost done/Complete!)
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  ✅ FEATURES SUMMARY                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+  ✅ Card-based layout (clean & organized)
+  ✅ Modal system (materials grouped)
+  ✅ Progress bars (color-coded)
+  ✅ Checkboxes (easy completion tracking)
+  ✅ Real-time updates (automatic progress)
+  ✅ File upload (50MB limit, validated)
+  ✅ Edit/Delete (for mentors)
+  ✅ View files (opens in new tab)
+  ✅ Responsive (works on mobile)
+  ✅ Beautiful UI (website colors)
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  🚀 SETUP (2 STEPS)                                              │
+└──────────────────────────────────────────────────────────────────┘
+
+  Step 1: Database
+  ────────────────
+  Supabase → SQL Editor → New Query
+  Copy: supabase/learning-materials-only.sql
+  Click: RUN ▶️
+
+
+  Step 2: Storage
+  ───────────────
+  Supabase → Storage → New Bucket
+  Name: learning-materials
+  Public: ✅ YES
+  Click: Create
+
+
+  DONE! Ready to use! ✅
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  📍 NAVIGATION                                                   │
+└──────────────────────────────────────────────────────────────────┘
+
+  Dashboard → Sidebar → Resources (📚 icon)
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  ✨ EVERYTHING IS READY! START USING NOW! 🚀                     ║
+╚══════════════════════════════════════════════════════════════════╝

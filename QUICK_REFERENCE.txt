@@ -1,0 +1,132 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║         📚 LEARNING MATERIALS - QUICK SETUP GUIDE                ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 1: DATABASE (1 minute)                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+  1. Supabase Dashboard
+     ↓
+  2. SQL Editor → New Query
+     ↓
+  3. Copy paste: supabase/learning-materials-only.sql
+     ↓
+  4. Click RUN ▶️
+     ↓
+  5. ✅ Success!
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 2: STORAGE BUCKET (30 seconds)                             │
+└──────────────────────────────────────────────────────────────────┘
+
+  1. Supabase Dashboard
+     ↓
+  2. Storage → New Bucket
+     ↓
+  3. Name: learning-materials
+     Public: ✅ YES
+     ↓
+  4. Create Bucket
+     ↓
+  5. ✅ Done!
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  ✅ TAPOS NA! READY TO USE!                                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  HOW TO USE                                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+  AS MENTOR:
+  ──────────
+  1. Login → Dashboard
+  2. Click "Learning Materials" (sidebar)
+  3. Click "➕ Upload Material"
+  4. Fill form + select file
+  5. Upload!
+  6. Monitor mentees sa "Progress" section
+
+
+  AS MENTEE:
+  ──────────
+  1. Login → Dashboard
+  2. Click "Learning Materials" (sidebar)
+  3. View materials
+  4. Click "View" to see file
+  5. Click "Mark Complete" ✅ when done
+  6. Track progress sa "Your Progress" card
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  FEATURES                                                        │
+└──────────────────────────────────────────────────────────────────┘
+
+  ✅ Upload files (videos, PDFs, documents)
+  ✅ Organized numbering (1.1, 1.2, 2.1, etc.)
+  ✅ Progress tracking with checkboxes
+  ✅ Progress bars (color-coded)
+  ✅ File size limit: 50MB (free tier)
+  ✅ Beautiful card layouts
+  ✅ Mobile responsive
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  FILE LIMITS                                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+  FREE TIER:
+  ─────────
+  Per file:  50MB max
+  Total:     1GB
+  Perfect for: PDFs, compressed videos, documents
+
+
+  PRO TIER ($25/month):
+  ────────────────────
+  Per file:  5GB max
+  Total:     100GB
+  Perfect for: HD videos, large courses
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  TROUBLESHOOTING                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  ❌ "Upload failed"
+     → Check if storage bucket exists
+
+  ❌ "Cannot see materials"
+     → Check mentor-mentee connection
+
+  ❌ "File too large"
+     → Compress video or use YouTube
+
+
+┌──────────────────────────────────────────────────────────────────┐
+│  FILES                                                           │
+└──────────────────────────────────────────────────────────────────┘
+
+  SQL TO RUN:
+  ──────────
+  📄 supabase/learning-materials-only.sql
+
+  DOCUMENTATION:
+  ─────────────
+  📘 SETUP_2_STEPS_ONLY.md         ← Start here!
+  📘 QUICK_START_LEARNING_MATERIALS.md
+  📘 FILE_STORAGE_EXPLAINED.md
+  📘 LEARNING_MATERIALS_SUMMARY_TAGALOG.md
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  NEED HELP?                                                      ║
+║  Check: SETUP_2_STEPS_ONLY.md                                    ║
+╚══════════════════════════════════════════════════════════════════╝

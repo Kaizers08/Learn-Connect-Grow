@@ -1,0 +1,320 @@
+<div class="learning-materials-container">
+  
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="mentor-card">
+      <div class="mentor-avatar">
+        @if (mentorPicture) {
+          <img [src]="mentorPicture" alt="Mentor">
+        } @else {
+          <div class="avatar-placeholder">{{ getInitials(mentorName) }}</div>
+        }
+      </div>
+      <div class="mentor-info">
+        <h2>{{ mentorName }}</h2>
+        <p class="mentor-label">{{ isMentor ? 'Your Learning Materials' : 'Learning Materials' }}</p>
+      </div>
+      
+      @if (isMentor) {
+        <button class="btn-upload" (click)="openUploadModal()">
+          <span>➕</span> Upload Material
+        </button>
+      }
+    </div>
+
+    <!-- Mentor Selector for Mentees -->
+    @if (!isMentor && availableMentors.length > 1) {
+      <div class="mentor-selector">
+        <label>Select Mentor:</label>
+        <select [(ngModel)]="selectedMentorId" (change)="selectMentor(selectedMentorId)">
+          @for (mentor of availableMentors; track mentor.user_id) {
+            <option [value]="mentor.user_id">{{ mentor.full_name }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+
+  <!-- Materials List -->
+  <div class="materials-section">
+    <h3 class="section-title">📚 Learning Materials</h3>
+    
+    @if (materials.length === 0) {
+      <div class="empty-state">
+        <p>{{ isMentor ? 'No materials uploaded yet. Click "Upload Material" to add your first learning resource.' : 'No materials available from this mentor yet.' }}</p>
+      </div>
+    }
+
+    <div class="materials-grid">
+      @for (material of materials; track material.id) {
+        <div class="material-card">
+          <div class="material-header">
+            <div class="material-order">{{ material.order_number }}</div>
+            <div class="material-type">{{ getFileIcon(material.file_type) }}</div>
+          </div>
+
+          <div class="material-content">
+            <h4 class="material-title">{{ material.title }}</h4>
+            @if (material.description) {
+              <p class="material-description">{{ material.description }}</p>
+            }
+            
+            <div class="material-meta">
+              @if (material.duration_minutes) {
+                <span class="duration">⏱️ {{ material.duration_minutes }} min</span>
+              }
+              <span class="file-name">📎 {{ material.file_name }}</span>
+            </div>
+          </div>
+
+          <div class="material-actions">
+            @if (isMentor) {
+              <!-- Mentor Actions -->
+              <a [href]="material.file_url" target="_blank" class="btn-view">
+                👁️ View
+              </a>
+              <button class="btn-edit" (click)="openEditModal(material)">
+                ✏️ Edit
+              </button>
+              <button class="btn-delete" (click)="deleteMaterial(material)">
+                🗑️ Delete
+              </button>
+            } @else {
+              <!-- Mentee Actions -->
+              <a [href]="material.file_url" target="_blank" class="btn-view">
+                👁️ View
+              </a>
+              <button 
+                class="btn-checkbox" 
+                [class.completed]="material.completed"
+                (click)="toggleCompletion(material)">
+                <span class="checkbox">{{ material.completed ? '✅' : '☐' }}</span>
+                {{ material.completed ? 'Completed' : 'Mark Complete' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Mentees Progress (Mentor View Only) -->
+  @if (isMentor && menteesProgress.length > 0) {
+    <div class="progress-section">
+      <h3 class="section-title">📊 Mentee Progress</h3>
+      
+      <div class="progress-grid">
+        @for (mentee of menteesProgress; track mentee.mentee_user_id) {
+          <div class="progress-card">
+            <div class="mentee-header">
+              <div class="mentee-avatar">
+                @if (mentee.mentee_picture) {
+                  <img [src]="mentee.mentee_picture" alt="Mentee">
+                } @else {
+                  <div class="avatar-placeholder small">{{ getInitials(mentee.mentee_name) }}</div>
+                }
+              </div>
+              <div class="mentee-info">
+                <h4>{{ mentee.mentee_name }}</h4>
+                <p class="progress-stats">
+                  {{ mentee.completed_materials }} / {{ mentee.total_materials }} completed
+                </p>
+              </div>
+            </div>
+
+            <div class="progress-bar-container">
+              <div class="progress-bar">
+                <div 
+                  class="progress-fill" 
+                  [style.width.%]="mentee.progress_percentage"
+                  [style.background-color]="getProgressColor(mentee.progress_percentage)">
+                </div>
+              </div>
+              <span class="progress-percentage">{{ mentee.progress_percentage }}%</span>
+            </div>
+
+            @if (mentee.progress_percentage === 100) {
+              <div class="completion-badge">🎉 Course Completed!</div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Mentee Progress Summary (Mentee View) -->
+  @if (!isMentor && materials.length > 0) {
+    <div class="my-progress-section">
+      <h3 class="section-title">📈 Your Progress</h3>
+      
+      @let completedCount = materials.filter(m => m.completed).length;
+      @let totalCount = materials.length;
+      @let percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      <div class="my-progress-card">
+        <div class="progress-info">
+          <h4>Course Progress</h4>
+          <p>{{ completedCount }} / {{ totalCount }} materials completed</p>
+        </div>
+
+        <div class="progress-bar-container large">
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="percentage"
+              [style.background-color]="getProgressColor(percentage)">
+            </div>
+          </div>
+          <span class="progress-percentage">{{ percentage }}%</span>
+        </div>
+
+        @if (percentage === 100) {
+          <div class="completion-message">
+            🎉 Congratulations! You've completed all learning materials!
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Upload Modal -->
+@if (showUploadModal) {
+  <div class="modal-overlay" (click)="closeUploadModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📤 Upload Learning Material</h3>
+        <button class="btn-close" (click)="closeUploadModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Order Number *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="uploadOrderNumber" 
+            placeholder="e.g., 1.1, 1.2, 2.1"
+            class="form-control">
+          <small>Format: Major.Minor (e.g., 1.1, 1.2, 2.1)</small>
+        </div>
+
+        <div class="form-group">
+          <label>Title *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="uploadTitle" 
+            placeholder="Enter material title"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="uploadDescription" 
+            placeholder="Enter description (optional)"
+            class="form-control"
+            rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="uploadDuration" 
+            placeholder="Estimated duration"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>File * (Video, PDF, Documents, etc.)</label>
+          <input 
+            type="file" 
+            (change)="onFileSelected($event)"
+            class="form-control file-input"
+            accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
+          @if (uploadFileName) {
+            <div class="file-preview">
+              📎 {{ uploadFileName }}
+              <span class="file-size">{{ getFileSizeLabel(uploadFileSize) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeUploadModal()">Cancel</button>
+        <button 
+          class="btn-submit" 
+          (click)="uploadMaterial()"
+          [disabled]="isUploading || !uploadTitle || !uploadFile || !uploadOrderNumber">
+          {{ isUploading ? 'Uploading...' : 'Upload' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Edit Modal -->
+@if (showEditModal && editingMaterial) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Edit Learning Material</h3>
+        <button class="btn-close" (click)="closeEditModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Order Number *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="editOrderNumber" 
+            placeholder="e.g., 1.1, 1.2, 2.1"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Title *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="editTitle" 
+            placeholder="Enter material title"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="editDescription" 
+            placeholder="Enter description (optional)"
+            class="form-control"
+            rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="editDuration" 
+            placeholder="Estimated duration"
+            class="form-control">
+        </div>
+
+        <div class="info-box">
+          <p>📎 Current file: {{ editingMaterial.file_name }}</p>
+          <small>To change the file, delete this material and upload a new one.</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button 
+          class="btn-submit" 
+          (click)="updateMaterial()"
+          [disabled]="!editTitle || !editOrderNumber">
+          Update
+        </button>
+      </div>
+    </div>
+  </div>
+}

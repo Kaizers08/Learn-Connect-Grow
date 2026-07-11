@@ -672,78 +672,290 @@
       </div>
       } <!-- end messages view -->
 
+      <!-- ── RESOURCES / LEARNING MATERIALS VIEW ──────────────────────────── -->
+      @if (activeNavItem === 'library') {
+      <div class="resources-wrapper">
+        
+        <!-- MENTOR VIEW -->
+        @if (isMentor) {
+          <!-- Header with Upload Button -->
+          <div class="res-header">
+            <div class="res-header-content">
+              <h1 class="res-title">Learning Materials</h1>
+              <p class="res-subtitle">Manage your learning materials and track mentee progress</p>
+            </div>
+            <button class="res-btn-upload-main" (click)="openResourcesUploadModal()">
+              <span>➕</span> Upload Material
+            </button>
+          </div>
+
+          <!-- My Materials Summary -->
+          @if (resourceMaterials.length > 0) {
+            <div class="res-summary-card">
+              <div class="res-summary-icon">📚</div>
+              <div class="res-summary-info">
+                <h3>{{ resourceMaterials.length }} Materials</h3>
+                <p>You have uploaded {{ resourceMaterials.length }} learning materials</p>
+              </div>
+            </div>
+          }
+
+          <!-- Mentees Progress Cards -->
+          <div class="res-section">
+            <h2 class="res-section-title">📊 Mentee Progress</h2>
+            
+            @if (resourceMenteesProgress.length === 0) {
+              <div class="res-empty-state">
+                <p>No mentees connected yet. When mentees connect with you, their progress will appear here.</p>
+              </div>
+            }
+
+            <div class="res-cards-grid">
+              @for (mentee of resourceMenteesProgress; track mentee.mentee_user_id) {
+                <div class="res-mentee-card" (click)="openMenteeProgressModal(mentee)">
+                  <div class="res-card-header">
+                    <div class="res-card-avatar">
+                      @if (mentee.mentee_picture) {
+                        <img [src]="mentee.mentee_picture" alt="Mentee">
+                      } @else {
+                        <div class="res-avatar-placeholder small">{{ getInitials(mentee.mentee_name) }}</div>
+                      }
+                    </div>
+                    <div class="res-card-info">
+                      <h3>{{ mentee.mentee_name }}</h3>
+                      <p class="res-card-role">Mentee</p>
+                    </div>
+                  </div>
+
+                  <div class="res-card-progress">
+                    <div class="res-progress-label">
+                      <span>Progress</span>
+                      <span class="res-progress-value">{{ mentee.progress_percentage }}%</span>
+                    </div>
+                    <div class="res-progress-bar">
+                      <div 
+                        class="res-progress-fill" 
+                        [style.width.%]="mentee.progress_percentage"
+                        [style.background-color]="getResourceProgressColor(mentee.progress_percentage)">
+                      </div>
+                    </div>
+                    <p class="res-progress-text">{{ mentee.completed_materials }} / {{ mentee.total_materials }} completed</p>
+                  </div>
+
+                  @if (mentee.progress_percentage === 100) {
+                    <div class="res-card-badge">✅ Completed</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- MENTEE VIEW -->
+        @if (!isMentor) {
+          <!-- Header -->
+          <div class="res-header">
+            <div class="res-header-content">
+              <h1 class="res-title">Learning Resources</h1>
+              <p class="res-subtitle">Access learning materials from your mentors</p>
+            </div>
+          </div>
+
+          <!-- Mentor Cards -->
+          <div class="res-section">
+            <h2 class="res-section-title">📚 Your Mentors</h2>
+            
+            @if (availableResourceMentors.length === 0) {
+              <div class="res-empty-state">
+                <p>No mentors connected yet. Connect with mentors to access their learning materials.</p>
+              </div>
+            }
+
+            <div class="res-cards-grid">
+              @for (mentor of availableResourceMentors; track mentor.user_id) {
+                <div class="res-mentor-card-item" (click)="openMentorMaterialsModal(mentor)">
+                  <div class="res-card-header">
+                    <div class="res-card-avatar">
+                      @if (mentor.profile_picture) {
+                        <img [src]="mentor.profile_picture" alt="Mentor">
+                      } @else {
+                        <div class="res-avatar-placeholder small">{{ getInitials(mentor.full_name) }}</div>
+                      }
+                    </div>
+                    <div class="res-card-info">
+                      <h3>{{ mentor.full_name }}</h3>
+                      <p class="res-card-role">{{ mentor.expertise || 'Mentor' }}</p>
+                    </div>
+                  </div>
+
+                  <div class="res-card-progress">
+                    <div class="res-progress-label">
+                      <span>Your Progress</span>
+                      <span class="res-progress-value">{{ mentor.progress_percentage }}%</span>
+                    </div>
+                    <div class="res-progress-bar">
+                      <div 
+                        class="res-progress-fill" 
+                        [style.width.%]="mentor.progress_percentage"
+                        [style.background-color]="getResourceProgressColor(mentor.progress_percentage)">
+                      </div>
+                    </div>
+                    <p class="res-progress-text">{{ mentor.completed_materials }} / {{ mentor.total_materials }} completed</p>
+                  </div>
+
+                  @if (mentor.total_materials === 0) {
+                    <div class="res-card-badge empty">No materials yet</div>
+                  } @else if (mentor.progress_percentage === 100) {
+                    <div class="res-card-badge">✅ Completed</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      } <!-- end resources view -->
+
       <!-- ── MENTORS & FEEDBACK VIEW ──────────────────────────────────────── -->
       @if (activeNavItem === 'mentors') {
       <div class="mf-wrapper">
 
         <div class="mf-header">
           <h1 class="mf-title">
-            @if (isMentor) { Mentees and Feedback } @else { Mentors and Feedback }
+            @if (isMentor) { Mentees &amp; Feedback } @else { Mentors &amp; Feedback }
           </h1>
           <p class="mf-subtitle">
             @if (isMentor) {
-              Connect with your mentees and help accelerate their learning journey
+              View feedback from your mentees
             } @else {
-              Connect with experienced mentors and accelerate your learning journey
+              Rate and provide feedback to your mentors
             }
           </p>
         </div>
 
-        <!-- Mentor Cards Grid -->
-        <div class="mf-mentors-grid">
-          @for (mentor of myMentors; track mentor.name + $index) {
-            <div class="mf-mentor-card">
-              <div class="mf-mentor-avatar">
-                <span>{{ getInitials(mentor.name) }}</span>
-              </div>
-              <h3 class="mf-mentor-name">{{ mentor.name }}</h3>
-              <p class="mf-mentor-specialty">{{ mentor.specialty }}</p>
-              <div class="mf-mentor-rating">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        <!-- Mentee View: Connected Mentors with Feedback -->
+        @if (!isMentor) {
+          <div class="mf-body">
+            @if (connectedMentors.length === 0) {
+              <div class="mf-empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="4" stroke="#ccc" stroke-width="1.5"/>
+                  <path d="M4 20C4 17.8 7.58 16 12 16C16.42 16 20 17.8 20 20" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                <span class="mf-rating-val">{{ mentor.rating }}</span>
-                <span class="mf-rating-count">({{ mentor.reviews }} reviews)</span>
+                <p>You haven't connected with any mentors yet.</p>
+                <button class="mf-btn-find" (click)="setActiveNav('search')">Find Mentors</button>
               </div>
-              <button class="mf-btn-feedback">Send Rate &amp; Feedback</button>
-              <button class="mf-btn-view">View Profile</button>
+            }
+
+            <div class="mf-mentors-grid">
+              @for (mentor of connectedMentors; track mentor.user_id) {
+                <div class="mf-mentor-card">
+                  <div class="mf-card-header">
+                    <div class="mf-avatar">
+                      @if (mentor.profile_picture) {
+                        <img [src]="mentor.profile_picture" alt="Mentor" class="mf-avatar-img">
+                      } @else {
+                        <span>{{ getInitials(mentor.full_name || 'Mentor') }}</span>
+                      }
+                    </div>
+                    <div class="mf-info">
+                      <h3 class="mf-name">{{ mentor.full_name || 'Mentor' }}</h3>
+                      <p class="mf-specialty">{{ mentor.expertise || 'Mentor' }}</p>
+                    </div>
+                  </div>
+
+                  <div class="mf-card-body">
+                    @if (mentor.feedback) {
+                      <div class="mf-existing-feedback">
+                        <div class="mf-rating-display">
+                          @for (star of getStars(); track star) {
+                            <svg 
+                              width="16" 
+                              height="16" 
+                              viewBox="0 0 24 24" 
+                              fill="currentColor"
+                              [class.filled]="isFilled(star, mentor.feedback.rating)"
+                            >
+                              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                            </svg>
+                          }
+                        </div>
+                        @if (mentor.feedback.feedback_text) {
+                          <p class="mf-feedback-text">{{ mentor.feedback.feedback_text }}</p>
+                        }
+                        <p class="mf-feedback-date">{{ mentor.feedback.created_at | date:'short' }}</p>
+                        @if (mentor.feedback.updated_at !== mentor.feedback.created_at) {
+                          <p class="mf-edited-note">Edited</p>
+                        }
+                      </div>
+                    } @else {
+                      <p class="mf-no-feedback">No feedback yet</p>
+                    }
+                  </div>
+
+                  <div class="mf-card-actions">
+                    <button class="mf-btn-rate" (click)="openFeedbackModal(mentor)">
+                      {{ mentor.feedback ? 'Edit Feedback' : 'Rate & Feedback' }}
+                    </button>
+                    @if (mentor.feedback) {
+                      <button class="mf-btn-delete" (click)="deleteFeedback(mentor)">Delete</button>
+                    }
+                  </div>
+                </div>
+              }
             </div>
-          }
-        </div>
+          </div>
+        }
 
-        <!-- Rates & Feedback -->
-        <h2 class="mf-section-title">Rates &amp; Feedback</h2>
-
-        <div class="mf-feedback-list">
-          @for (fb of feedbackList; track fb.name + $index) {
-            <div class="mf-feedback-card">
-              <div class="mf-fb-avatar">
-                <span>{{ getInitials(fb.name) }}</span>
+        <!-- Mentor View: Feedback Received -->
+        @if (isMentor) {
+          <div class="mf-body">
+            @if (menteesFeedback.length === 0) {
+              <div class="mf-empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="#ccc" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+                <p>No feedback received yet.</p>
               </div>
-              <div class="mf-fb-info">
-                <div class="mf-fb-top">
-                  <span class="mf-fb-name">{{ fb.name }}</span>
-                  <div class="mf-fb-stars">
-                    @for (star of getStars(fb.rating); track star) {
-                      <svg width="16" height="16" viewBox="0 0 24 24" [attr.fill]="isFilled(star, fb.rating) ? '#F59E0B' : '#e0e0e0'">
+            }
+
+            <div class="mf-feedbacks-list">
+              @for (feedback of menteesFeedback; track feedback.id) {
+                <div class="mf-feedback-item">
+                  <div class="mf-feedback-header">
+                    <div class="mf-avatar-sm">
+                      @if (feedback.mentee_picture) {
+                        <img [src]="feedback.mentee_picture" alt="Mentee" class="mf-avatar-img">
+                      } @else {
+                        <span>{{ getInitials(feedback.mentee_name) }}</span>
+                      }
+                    </div>
+                    <div class="mf-feedback-info">
+                      <h4 class="mf-mentee-name">{{ feedback.mentee_name }}</h4>
+                      <p class="mf-feedback-date">{{ feedback.created_at | date:'short' }}</p>
+                    </div>
+                  </div>
+                  <div class="mf-rating-display">
+                    @for (star of getStars(); track star) {
+                      <svg 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="currentColor"
+                        [class.filled]="isFilled(star, feedback.rating)"
+                      >
                         <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                       </svg>
                     }
                   </div>
+                  @if (feedback.feedback_text) {
+                    <p class="mf-feedback-text">{{ feedback.feedback_text }}</p>
+                  }
                 </div>
-                <p class="mf-fb-comment">{{ fb.comment }}</p>
-              </div>
-              <button class="mf-fb-menu-btn" title="Options">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="5" r="1.5" fill="#888"/>
-                  <circle cx="12" cy="12" r="1.5" fill="#888"/>
-                  <circle cx="12" cy="19" r="1.5" fill="#888"/>
-                </svg>
-              </button>
+              }
             </div>
-          }
-        </div>
-
+          </div>
+        }
       </div>
       } <!-- end mentors & feedback view -->
 
@@ -1104,9 +1316,7 @@
       } <!-- end settings view -->
 
     </div>
-  </main>
-
-</div>
+    <!-- end page-body -->
 
 <!-- ── PROFILE MODAL ─────────────────────────────────────────────────────── -->
 @if (showProfileModal && selectedProfile) {
@@ -1227,3 +1437,302 @@
     </div>
   </div>
 }
+
+
+<!-- ── RESOURCES UPLOAD MODAL ─────────────────────────────────────────────────── -->
+@if (showResourcesUploadModal) {
+  <div class="modal-overlay" (click)="closeResourcesUploadModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📤 Upload Learning Material</h3>
+        <button class="btn-close" (click)="closeResourcesUploadModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Order Number *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="resourceUploadOrderNumber" 
+            placeholder="e.g., 1.1, 1.2, 2.1"
+            class="form-control">
+          <small>Format: Major.Minor (e.g., 1.1, 1.2, 2.1)</small>
+        </div>
+
+        <div class="form-group">
+          <label>Title *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="resourceUploadTitle" 
+            placeholder="Enter material title"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="resourceUploadDescription" 
+            placeholder="Enter description (optional)"
+            class="form-control"
+            rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="resourceUploadDuration" 
+            placeholder="Estimated duration"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>File * (Video, PDF, Documents, etc.)</label>
+          <input 
+            type="file" 
+            (change)="onResourceFileSelected($event)"
+            class="form-control file-input"
+            accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
+          @if (resourceUploadFileName) {
+            <div class="file-preview">
+              📎 {{ resourceUploadFileName }}
+              <span class="file-size">{{ getResourceFileSizeLabel(resourceUploadFileSize) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeResourcesUploadModal()">Cancel</button>
+        <button 
+          class="btn-submit" 
+          (click)="uploadResourceMaterial()"
+          [disabled]="isResourceUploading || !resourceUploadTitle || !resourceUploadFile || !resourceUploadOrderNumber">
+          {{ isResourceUploading ? 'Uploading...' : 'Upload' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── RESOURCES EDIT MODAL ────────────────────────────────────────────────── -->
+@if (showResourcesEditModal && editingResourceMaterial) {
+  <div class="modal-overlay" (click)="closeResourcesEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Edit Learning Material</h3>
+        <button class="btn-close" (click)="closeResourcesEditModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Order Number *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="resourceEditOrderNumber" 
+            placeholder="e.g., 1.1, 1.2, 2.1"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Title *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="resourceEditTitle" 
+            placeholder="Enter material title"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="resourceEditDescription" 
+            placeholder="Enter description (optional)"
+            class="form-control"
+            rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input 
+            type="number" 
+            [(ngModel)]="resourceEditDuration" 
+            placeholder="Estimated duration"
+            class="form-control">
+        </div>
+
+        <div class="info-box">
+          <p>📎 Current file: {{ editingResourceMaterial.file_name }}</p>
+          <small>To change the file, delete this material and upload a new one.</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeResourcesEditModal()">Cancel</button>
+        <button 
+          class="btn-submit" 
+          (click)="updateResourceMaterial()"
+          [disabled]="!resourceEditTitle || !resourceEditOrderNumber">
+          Update
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── MATERIALS MODAL (For Mentee - View Mentor's Materials) ───────────────── -->
+@if (showMaterialsModal && selectedMentorForMaterials) {
+  <div class="modal-overlay" (click)="closeMaterialsModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3>📚 {{ selectedMentorForMaterials.full_name }}'s Learning Materials</h3>
+          <p class="modal-subtitle">{{ selectedMentorForMaterials.expertise || 'Mentor' }}</p>
+        </div>
+        <button class="btn-close" (click)="closeMaterialsModal()">✕</button>
+      </div>
+
+      <div class="modal-body scrollable">
+        @if (modalMaterials.length === 0) {
+          <div class="empty-state-modal">
+            <p>No materials uploaded yet by this mentor.</p>
+          </div>
+        }
+
+        <div class="materials-list">
+          @for (material of modalMaterials; track material.id) {
+            <div class="material-item" [class.completed]="material.completed">
+              <div class="material-check">
+                <input 
+                  type="checkbox" 
+                  [checked]="material.completed"
+                  (change)="toggleMaterialCompletion(material)"
+                  class="material-checkbox">
+              </div>
+              
+              <div class="material-order-badge">{{ material.order_number }}</div>
+              
+              <div class="material-details">
+                <h4>{{ material.title }}</h4>
+                @if (material.description) {
+                  <p class="material-desc">{{ material.description }}</p>
+                }
+                <div class="material-meta-row">
+                  <span>{{ getResourceFileIcon(material.file_type) }} {{ material.file_name }}</span>
+                  @if (material.duration_minutes) {
+                    <span>⏱️ {{ material.duration_minutes }} min</span>
+                  }
+                </div>
+              </div>
+
+              <a [href]="material.file_url" target="_blank" class="material-view-btn">
+                👁️ View
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer progress-footer">
+        <div class="progress-summary">
+          <span class="progress-label">Your Progress:</span>
+          <div class="progress-bar-small">
+            <div 
+              class="progress-fill-small" 
+              [style.width.%]="modalProgressPercentage"
+              [style.background-color]="getResourceProgressColor(modalProgressPercentage)">
+            </div>
+          </div>
+          <span class="progress-text-small">{{ modalCompletedCount }} / {{ modalMaterials.length }} completed ({{ modalProgressPercentage }}%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── MENTEE PROGRESS MODAL (For Mentor - View Mentee's Progress) ──────────── -->
+@if (showMenteeProgressModal && selectedMenteeForProgress) {
+  <div class="modal-overlay" (click)="closeMenteeProgressModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3>📊 {{ selectedMenteeForProgress.mentee_name }}'s Progress</h3>
+          <p class="modal-subtitle">Mentee Progress Report</p>
+        </div>
+        <button class="btn-close" (click)="closeMenteeProgressModal()">✕</button>
+      </div>
+
+      <div class="modal-body scrollable">
+        @if (modalMaterials.length === 0) {
+          <div class="empty-state-modal">
+            <p>No materials uploaded yet. Upload materials to track progress.</p>
+          </div>
+        }
+
+        <div class="materials-list">
+          @for (material of modalMaterials; track material.id) {
+            <div class="material-item" [class.completed]="material.completed">
+              <div class="material-status-icon">
+                @if (material.completed) {
+                  <span class="status-complete">✅</span>
+                } @else {
+                  <span class="status-pending">⏳</span>
+                }
+              </div>
+              
+              <div class="material-order-badge">{{ material.order_number }}</div>
+              
+              <div class="material-details">
+                <h4>{{ material.title }}</h4>
+                @if (material.description) {
+                  <p class="material-desc">{{ material.description }}</p>
+                }
+                <div class="material-meta-row">
+                  <span>{{ getResourceFileIcon(material.file_type) }} {{ material.file_name }}</span>
+                  @if (material.duration_minutes) {
+                    <span>⏱️ {{ material.duration_minutes }} min</span>
+                  }
+                </div>
+              </div>
+
+              <div class="material-actions-modal">
+                <a [href]="material.file_url" target="_blank" class="material-view-btn">
+                  👁️ View
+                </a>
+                <button class="material-edit-btn" (click)="openResourcesEditModal(material)">
+                  ✏️ Edit
+                </button>
+                <button class="material-delete-btn" (click)="deleteResourceMaterial(material)">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer progress-footer">
+        <div class="progress-summary">
+          <span class="progress-label">Mentee Progress:</span>
+          <div class="progress-bar-small">
+            <div 
+              class="progress-fill-small" 
+              [style.width.%]="modalProgressPercentage"
+              [style.background-color]="getResourceProgressColor(modalProgressPercentage)">
+            </div>
+          </div>
+          <span class="progress-text-small">{{ modalCompletedCount }} / {{ modalMaterials.length }} completed ({{ modalProgressPercentage }}%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── FEEDBACK MODAL ────────────────────────────────────────────────────── -->
+<app-feedback-modal 
+  [isOpen]="showFeedbackModal"
+  [mentor]="selectedMentorForFeedback"
+  [existingFeedback]="existingFeedback"
+  (onSubmit)="submitFeedback($event)"
+  (onClose)="closeFeedbackModal()"
+></app-feedback-modal>

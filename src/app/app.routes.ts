@@ -32,6 +32,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/mentor-documents/mentor-documents').then(m => m.MentorDocumentsComponent)
   },
   {
+    path: 'mentor/:id',
+    loadComponent: () => import('./pages/profile-view/profile-view').then(m => m.ProfileViewComponent)
+  },
+  {
+    path: 'mentee/:id',
+    loadComponent: () => import('./pages/profile-view/profile-view').then(m => m.ProfileViewComponent)
+  },
+  {
     path: 'journey',
     loadComponent: () => import('./pages/journey/journey').then(m => m.JourneyComponent)
   },

@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { FeedbackModalComponent } from './feedback-modal.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FeedbackModalComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -188,22 +189,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const message = this.newMessageText.trim();
     this.newMessageText = '';
 
-    // Send to database
-    const result = await this.supabase.sendMessage(this.activeConversation.id, message);
-    
-    // Add to local messages immediately for better UX
-    if (result.data) {
-      this.messages.push({
-        id: result.data.id,
-        text: message,
-        fromMe: true,
-        timestamp: result.data.created_at,
-        status: result.data.status
-      });
-    }
+    // Optimistic UI update - add message immediately
+    const tempId = Date.now();
+    this.messages.push({
+      id: tempId,
+      text: message,
+      fromMe: true,
+      timestamp: new Date().toISOString(),
+      status: 'sent'
+    });
 
-    // Refresh messages from database to ensure consistency
-    setTimeout(() => this.loadMessages(this.activeConversation.id), 100);
+    try {
+      // Send to database
+      const result = await this.supabase.sendMessage(this.activeConversation.id, message);
+      
+      if (result.data) {
+        // Replace temp message with real one
+        const index = this.messages.findIndex(m => m.id === tempId);
+        if (index !== -1) {
+          this.messages[index] = {
+            id: result.data.id,
+            text: message,
+            fromMe: true,
+            timestamp: result.data.created_at,
+            status: result.data.status
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove temp message on error
+      this.messages = this.messages.filter(m => m.id !== tempId);
+    }
   }
 
   updateTotalUnreadCount() {
@@ -232,22 +249,214 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.sendMessage(); }
   }
 
+  // ─── Feedback Modal Properties ──────────────────────────────────────────────
+  showFeedbackModal = false;
+  selectedMentorForFeedback: any = null;
+  existingFeedback: any = null;
+
+  // ─── Resources / Learning Materials Properties ──────────────────────────────
+  Math = Math; // Expose Math for template
+  resourceMaterials: any[] = [];
+  selectedResourceMentorId = '';
+  availableResourceMentors: any[] = [];
+  resourceMenteesProgress: any[] = [];
+  
+  // Upload modal
+  showResourcesUploadModal = false;
+  resourceUploadTitle = '';
+  resourceUploadDescription = '';
+  resourceUploadOrderNumber = '';
+  resourceUploadFile: File | null = null;
+  resourceUploadFileName = '';
+  resourceUploadFileSize = 0;
+  resourceUploadDuration: number | null = null;
+  isResourceUploading = false;
+  
+  // Edit modal
+  showResourcesEditModal = false;
+  editingResourceMaterial: any = null;
+  resourceEditTitle = '';
+  resourceEditDescription = '';
+  resourceEditOrderNumber = '';
+  resourceEditDuration: number | null = null;
+
+  // Materials modal (for mentee viewing mentor's materials)
+  showMaterialsModal = false;
+  selectedMentorForMaterials: any = null;
+  modalMaterials: any[] = [];
+  modalCompletedCount = 0;
+  modalProgressPercentage = 0;
+
+  // Mentee progress modal (for mentor viewing mentee's progress)
+  showMenteeProgressModal = false;
+  selectedMenteeForProgress: any = null;
+
   // ─── Mentors & Feedback ────────────────────────────────────────────────────
-  myMentors = [
-    { name: 'Emily Johnson', specialty: 'UI/UX', rating: 0, reviews: 0 },
-    { name: 'Peter Parker', specialty: 'Fullstack Developer', rating: 0, reviews: 0 },
-    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 0, reviews: 0 },
-    { name: 'Julian Hernandez', specialty: 'DevOps', rating: 0, reviews: 0 }
-  ];
+  connectedMentors: any[] = [];
+  menteesFeedback: any[] = [];
 
-  feedbackList = [
-    { name: 'Julian Hernandez', rating: 5, comment: 'Good mentor and very understanding for their students, I love her teaching skills' },
-    { name: 'Janine Hernandez', rating: 3, comment: 'Good mentor and very understanding for their students, I love her teaching skills' },
-    { name: 'Michael Jackson', rating: 4, comment: 'Good mentor and very understanding for their students, I love her teaching skills' }
-  ];
-
-  getStars(rating: number): number[] { return Array.from({ length: 5 }, (_, i) => i + 1); }
+  getStars(rating?: number): number[] { return Array.from({ length: 5 }, (_, i) => i + 1); }
   isFilled(star: number, rating: number): boolean { return star <= Math.round(rating); }
+
+  // ─── Feedback Methods ──────────────────────────────────────────────────────
+  async loadConnectedMentors() {
+    if (this.isMentor) return; // Only for mentees
+
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
+    const connections = await this.supabase.getMyConnections();
+    const mentorIds = connections
+      .filter((c: any) => c.mentee_user_id === userId && c.status === 'connected')
+      .map((c: any) => c.mentor_user_id);
+
+    if (!mentorIds.length) {
+      this.connectedMentors = [];
+      return;
+    }
+
+    // Get mentor profiles
+    const { data: mentors } = await this.supabase.getClient()
+      .from('mentor_profiles')
+      .select('*')
+      .in('user_id', mentorIds);
+
+    // Get feedback for each mentor
+    const mentorsWithFeedback = await Promise.all((mentors || []).map(async (mentor: any) => {
+      const { data: feedback } = await this.supabase.getClient()
+        .from('feedback_submissions')
+        .select('*')
+        .eq('mentee_user_id', userId)
+        .eq('mentor_user_id', mentor.user_id)
+        .maybeSingle();
+      return { ...mentor, feedback };
+    }));
+
+    this.connectedMentors = mentorsWithFeedback;
+  }
+
+  async loadMenteesFeedback() {
+    if (!this.isMentor) return; // Only for mentors
+
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+
+    // Get all feedback for this mentor
+    const { data: feedbacks } = await this.supabase.getClient()
+      .from('feedback_submissions')
+      .select('*')
+      .eq('mentor_user_id', userId)
+      .order('created_at', { ascending: false });
+
+    // Get mentee profiles for each feedback
+    const feedbacksWithMenteeInfo = await Promise.all((feedbacks || []).map(async (feedback: any) => {
+      const { data: mentee } = await this.supabase.getClient()
+        .from('mentee_profiles')
+        .select('full_name, profile_picture')
+        .eq('user_id', feedback.mentee_user_id)
+        .maybeSingle();
+      return {
+        ...feedback,
+        mentee_name: mentee?.full_name || 'Anonymous',
+        mentee_picture: mentee?.profile_picture || null
+      };
+    }));
+
+    this.menteesFeedback = feedbacksWithMenteeInfo;
+  }
+
+  async openFeedbackModal(mentor: any) {
+    this.selectedMentorForFeedback = mentor;
+    this.existingFeedback = mentor.feedback || null;
+    this.showFeedbackModal = true;
+  }
+
+  closeFeedbackModal() {
+    this.showFeedbackModal = false;
+    this.selectedMentorForFeedback = null;
+    this.existingFeedback = null;
+  }
+
+  async submitFeedback(event: { rating: number; feedback_text: string }) {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId || !this.selectedMentorForFeedback) {
+      alert('Error: Unable to submit feedback');
+      return;
+    }
+
+    const mentorId = this.selectedMentorForFeedback.user_id;
+
+    try {
+      // Check if feedback already exists
+      const { data: existingFeedback } = await this.supabase.getClient()
+        .from('feedback_submissions')
+        .select('*')
+        .eq('mentee_user_id', userId)
+        .eq('mentor_user_id', mentorId)
+        .maybeSingle();
+
+      if (existingFeedback) {
+        // Update existing feedback
+        const { error: updateError } = await this.supabase.getClient()
+          .from('feedback_submissions')
+          .update({
+            rating: event.rating,
+            feedback_text: event.feedback_text,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingFeedback.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new feedback
+        const { error: insertError } = await this.supabase.getClient()
+          .from('feedback_submissions')
+          .insert({
+            mentee_user_id: userId,
+            mentor_user_id: mentorId,
+            rating: event.rating,
+            feedback_text: event.feedback_text
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Close modal and reset
+      this.showFeedbackModal = false;
+      this.selectedMentorForFeedback = null;
+      this.existingFeedback = null;
+
+      // Reload connected mentors to show the new/updated feedback
+      await this.loadConnectedMentors();
+      
+      // Show success message
+      alert('✅ Feedback submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('❌ Failed to submit feedback. Please try again.');
+    }
+  }
+
+  async deleteFeedback(mentor: any) {
+    if (!confirm('Are you sure you want to delete this feedback?')) return;
+
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId || !mentor.feedback) return;
+
+    try {
+      await this.supabase.getClient()
+        .from('feedback_submissions')
+        .delete()
+        .eq('id', mentor.feedback.id);
+
+      // Reload connected mentors
+      await this.loadConnectedMentors();
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      alert('Failed to delete feedback. Please try again.');
+    }
+  }
+
 
   // ─── Settings ──────────────────────────────────────────────────────────────
   
@@ -309,9 +518,68 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // Also refresh connections every 2 minutes to update online status
       if (this.activeNavItem === 'messages') {
         this.loadConnections();
+        // Check for new messages
+        if (this.activeConversation) {
+          this.loadMessages(this.activeConversation.id);
+        }
       }
     }, 120000);
+    
+    // Frequent polling for messages tab (every 5 seconds when active)
+    setInterval(() => {
+      if (this.activeNavItem === 'messages' && this.activeConversation) {
+        this.checkForNewMessages();
+      }
+    }, 5000);
+    
+    // Update unread counts every 30 seconds
+    setInterval(() => {
+      this.updateAllUnreadCounts();
+    }, 30000);
+    
     this.isLoading = false;
+  }
+
+  async checkForNewMessages() {
+    if (!this.activeConversation || this.messages.length === 0) return;
+    
+    const lastMessageId = this.messages[this.messages.length - 1]?.id;
+    const myId = this.currentUserId;
+    
+    const { data } = await this.supabase.getMessages(myId, this.activeConversation.id);
+    const newMessages = (data || []).filter((msg: any) => {
+      // Only get messages newer than the last one we have
+      return msg.id > lastMessageId;
+    });
+    
+    if (newMessages.length > 0) {
+      // Add new messages
+      newMessages.forEach((msg: any) => {
+        this.messages.push({
+          id: msg.id,
+          text: msg.message,
+          fromMe: msg.sender_id === myId,
+          timestamp: msg.created_at,
+          status: msg.status
+        });
+      });
+      
+      // Mark as seen
+      await this.supabase.markMessagesAsSeen(this.activeConversation.id, myId);
+    }
+  }
+
+  async updateAllUnreadCounts() {
+    const userId = await this.supabase.getCurrentUserId();
+    if (!userId) return;
+    
+    // Update unread counts for all conversations
+    for (const conv of this.conversations) {
+      const unreadCount = await this.supabase.getUnreadCount(userId, conv.id);
+      conv.unreadCount = unreadCount;
+    }
+    
+    this.updateTotalUnreadCount();
   }
 
   ngOnDestroy() {
@@ -319,7 +587,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   // ─── Navigation ────────────────────────────────────────────────────────────
-  setActiveNav(id: string) { this.activeNavItem = id; }
+  async setActiveNav(id: string) { 
+    this.activeNavItem = id;
+    if (id === 'mentors') {
+      if (this.isMentor) {
+        await this.loadMenteesFeedback();
+      } else {
+        await this.loadConnectedMentors();
+      }
+    } else if (id === 'library') {
+      if (this.isMentor) {
+        await this.loadResourceMaterials();
+        await this.loadResourceMenteesProgress();
+      } else {
+        await this.loadResourceMentors();
+      }
+    }
+  }
   onViewAllSessions() {}
   onViewAllOnline() {}
   onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
@@ -363,12 +647,68 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const desiredExpertise = (data as any)?.desired_expertise;
       const desiredSkills: string[] = (data as any)?.desired_skills || [];
       const { data: matched } = await this.supabase.findMentorsForMentee(desiredExpertise, desiredSkills);
+      
       // Only show approved mentors
-      this.recommendedMentors = (matched || []).filter((m: any) => m.user_id !== userId && m.status === 'approved').map((m: any) => ({
-        ...m,
-        rating: 0,
-        reviews: 0
-      }));
+      const approvedMentors = (matched || []).filter((m: any) => m.user_id !== userId && m.status === 'approved');
+      
+      if (approvedMentors.length === 0) {
+        this.recommendedMentors = [];
+        return;
+      }
+
+      try {
+        // Get all mentor IDs
+        const mentorIds = approvedMentors.map((m: any) => m.user_id);
+        
+        // Fetch ALL feedback in ONE query (much faster!)
+        const { data: allFeedback, error } = await this.supabase.getClient()
+          .from('feedback_submissions')
+          .select('mentor_user_id, rating')
+          .in('mentor_user_id', mentorIds);
+
+        // If feedback table doesn't exist, just show mentors without ratings
+        if (error) {
+          console.warn('Feedback table not found, showing mentors without ratings');
+          this.recommendedMentors = approvedMentors.map((m: any) => ({
+            ...m,
+            rating: 0,
+            reviews: 0
+          }));
+          return;
+        }
+
+        // Group feedback by mentor_user_id
+        const feedbackByMentor = new Map<string, number[]>();
+        (allFeedback || []).forEach((fb: any) => {
+          if (!feedbackByMentor.has(fb.mentor_user_id)) {
+            feedbackByMentor.set(fb.mentor_user_id, []);
+          }
+          feedbackByMentor.get(fb.mentor_user_id)!.push(fb.rating);
+        });
+
+        // Calculate ratings for each mentor
+        this.recommendedMentors = approvedMentors.map((m: any) => {
+          const ratings = feedbackByMentor.get(m.user_id) || [];
+          const reviews = ratings.length;
+          const rating = reviews > 0 
+            ? Math.round((ratings.reduce((sum, r) => sum + r, 0) / reviews) * 10) / 10
+            : 0;
+          
+          return {
+            ...m,
+            rating,
+            reviews
+          };
+        });
+      } catch (error) {
+        console.error('Error loading ratings:', error);
+        // If error, just show mentors without ratings
+        this.recommendedMentors = approvedMentors.map((m: any) => ({
+          ...m,
+          rating: 0,
+          reviews: 0
+        }));
+      }
     }
   }
 
@@ -523,13 +863,539 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedProfile = null;
   }
 
-  onViewProfile(user: any) { this.openProfile(user); }
+  onViewProfile(user: any) { 
+    // Navigate to appropriate profile view page based on user role
+    if (user && user.user_id) {
+      // Determine if this is a mentor or mentee based on current user's role
+      // If I'm a mentor, I'm viewing mentees; if I'm a mentee, I'm viewing mentors
+      const viewType = this.isMentor ? 'mentee' : 'mentor';
+      this.router.navigate([`/${viewType}`, user.user_id]);
+    }
+  }
   onMessage(user: any) { 
     this.setActiveNav('messages');
     const conversation = this.conversations.find(c => c.id === user.user_id);
     if (conversation) {
       this.selectConversation(conversation);
     }
+  }
+
+  // ─── Resources / Learning Materials Methods ────────────────────────────────
+  
+  async loadResourceMentors() {
+    if (this.isMentor) return;
+    
+    const connections = await this.supabase.getMyConnections();
+    const mentorIds = connections
+      .filter((c: any) => c.mentee_user_id === this.currentUserId && c.status === 'connected')
+      .map((c: any) => c.mentor_user_id);
+
+    if (mentorIds.length === 0) {
+      this.availableResourceMentors = [];
+      return;
+    }
+
+    const { data: mentors } = await this.supabase.getClient()
+      .from('mentor_profiles')
+      .select('user_id, full_name, profile_picture, expertise')
+      .in('user_id', mentorIds);
+
+    // Calculate progress for each mentor
+    const mentorsWithProgress = await Promise.all((mentors || []).map(async (mentor: any) => {
+      // Get total materials from this mentor
+      const { data: materials } = await this.supabase.getClient()
+        .from('learning_materials')
+        .select('id')
+        .eq('mentor_user_id', mentor.user_id);
+
+      const totalMaterials = (materials || []).length;
+
+      // Get completed materials
+      const materialIds = (materials || []).map((m: any) => m.id);
+      let completedCount = 0;
+
+      if (materialIds.length > 0) {
+        const { data: progress } = await this.supabase.getClient()
+          .from('material_progress')
+          .select('material_id')
+          .eq('mentee_user_id', this.currentUserId)
+          .eq('completed', true)
+          .in('material_id', materialIds);
+
+        completedCount = (progress || []).length;
+      }
+
+      const progressPercentage = totalMaterials > 0 
+        ? Math.round((completedCount / totalMaterials) * 100)
+        : 0;
+
+      return {
+        ...mentor,
+        total_materials: totalMaterials,
+        completed_materials: completedCount,
+        progress_percentage: progressPercentage
+      };
+    }));
+
+    this.availableResourceMentors = mentorsWithProgress;
+  }
+
+  async selectResourceMentor(mentorId: string) {
+    this.selectedResourceMentorId = mentorId;
+    await this.loadResourceMaterialsForMentee();
+  }
+
+  async loadResourceMaterials() {
+    const { data } = await this.supabase.getClient()
+      .from('learning_materials')
+      .select('*')
+      .eq('mentor_user_id', this.currentUserId)
+      .order('order_number', { ascending: true });
+
+    this.resourceMaterials = data || [];
+  }
+
+  async loadResourceMaterialsForMentee() {
+    if (!this.selectedResourceMentorId) return;
+
+    const { data: materialsData } = await this.supabase.getClient()
+      .from('learning_materials')
+      .select('*')
+      .eq('mentor_user_id', this.selectedResourceMentorId)
+      .order('order_number', { ascending: true });
+
+    const { data: progressData } = await this.supabase.getClient()
+      .from('material_progress')
+      .select('material_id, completed')
+      .eq('mentee_user_id', this.currentUserId);
+
+    const progressMap = new Map(
+      (progressData || []).map((p: any) => [p.material_id, p.completed])
+    );
+
+    this.resourceMaterials = (materialsData || []).map(m => ({
+      ...m,
+      completed: progressMap.get(m.id) || false
+    }));
+  }
+
+  async loadResourceMenteesProgress() {
+    const connections = await this.supabase.getMyConnections();
+    const menteeIds = connections
+      .filter((c: any) => c.mentor_user_id === this.currentUserId && c.status === 'connected')
+      .map((c: any) => c.mentee_user_id);
+
+    if (menteeIds.length === 0) {
+      this.resourceMenteesProgress = [];
+      return;
+    }
+
+    const { data: mentees } = await this.supabase.getClient()
+      .from('mentee_profiles')
+      .select('user_id, full_name, profile_picture')
+      .in('user_id', menteeIds);
+
+    const totalMaterials = this.resourceMaterials.length;
+
+    const progressPromises = (mentees || []).map(async (mentee: any) => {
+      const { data: progress } = await this.supabase.getClient()
+        .from('material_progress')
+        .select('material_id, completed')
+        .eq('mentee_user_id', mentee.user_id)
+        .eq('completed', true);
+
+      const completedCount = (progress || []).length;
+      const percentage = totalMaterials > 0 
+        ? Math.round((completedCount / totalMaterials) * 100) 
+        : 0;
+
+      return {
+        mentee_user_id: mentee.user_id,
+        mentee_name: mentee.full_name || 'Mentee',
+        mentee_picture: mentee.profile_picture || '',
+        total_materials: totalMaterials,
+        completed_materials: completedCount,
+        progress_percentage: percentage
+      };
+    });
+
+    this.resourceMenteesProgress = await Promise.all(progressPromises);
+  }
+
+  openResourcesUploadModal() {
+    this.showResourcesUploadModal = true;
+    this.resourceUploadTitle = '';
+    this.resourceUploadDescription = '';
+    this.resourceUploadOrderNumber = this.getResourceNextOrderNumber();
+    this.resourceUploadFile = null;
+    this.resourceUploadFileName = '';
+    this.resourceUploadFileSize = 0;
+    this.resourceUploadDuration = null;
+  }
+
+  closeResourcesUploadModal() {
+    this.showResourcesUploadModal = false;
+    this.resourceUploadFile = null;
+  }
+
+  onResourceFileSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        alert(`⚠️ File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 50MB.\n\nTips:\n- Compress your video\n- Use lower resolution (720p)\n- Or upgrade to Supabase Pro for larger files`);
+        (event.target as HTMLInputElement).value = '';
+        return;
+      }
+      
+      this.resourceUploadFile = file;
+      this.resourceUploadFileName = file.name;
+      this.resourceUploadFileSize = file.size;
+    }
+  }
+
+  getResourceNextOrderNumber(): string {
+    if (this.resourceMaterials.length === 0) return '1.1';
+    
+    const lastOrder = this.resourceMaterials[this.resourceMaterials.length - 1].order_number;
+    const parts = lastOrder.split('.');
+    const major = parseInt(parts[0]);
+    const minor = parseInt(parts[1]);
+    
+    return `${major}.${minor + 1}`;
+  }
+
+  async uploadResourceMaterial() {
+    if (!this.resourceUploadTitle || !this.resourceUploadFile || !this.resourceUploadOrderNumber) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    this.isResourceUploading = true;
+
+    try {
+      const fileExt = this.resourceUploadFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `learning-materials/${this.currentUserId}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await this.supabase.getClient()
+        .storage
+        .from('learning-materials')
+        .upload(filePath, this.resourceUploadFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = this.supabase.getClient()
+        .storage
+        .from('learning-materials')
+        .getPublicUrl(filePath);
+
+      const fileType = this.getResourceFileType(fileExt || '');
+
+      const { error: insertError } = await this.supabase.getClient()
+        .from('learning_materials')
+        .insert({
+          mentor_user_id: this.currentUserId,
+          title: this.resourceUploadTitle,
+          description: this.resourceUploadDescription,
+          order_number: this.resourceUploadOrderNumber,
+          file_url: urlData.publicUrl,
+          file_type: fileType,
+          file_name: this.resourceUploadFile.name,
+          duration_minutes: this.resourceUploadDuration
+        });
+
+      if (insertError) throw insertError;
+
+      alert('✅ Material uploaded successfully!');
+      this.closeResourcesUploadModal();
+      await this.loadResourceMaterials();
+      await this.loadResourceMenteesProgress();
+    } catch (error) {
+      console.error('Error uploading material:', error);
+      alert('❌ Failed to upload material. Please try again.');
+    } finally {
+      this.isResourceUploading = false;
+    }
+  }
+
+  getResourceFileType(extension: string): string {
+    const ext = extension.toLowerCase();
+    if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return 'video';
+    if (['pdf'].includes(ext)) return 'pdf';
+    if (['doc', 'docx', 'txt', 'ppt', 'pptx'].includes(ext)) return 'document';
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image';
+    return 'file';
+  }
+
+  openResourcesEditModal(material: any) {
+    this.editingResourceMaterial = material;
+    this.resourceEditTitle = material.title;
+    this.resourceEditDescription = material.description;
+    this.resourceEditOrderNumber = material.order_number;
+    this.resourceEditDuration = material.duration_minutes;
+    this.showResourcesEditModal = true;
+  }
+
+  closeResourcesEditModal() {
+    this.showResourcesEditModal = false;
+    this.editingResourceMaterial = null;
+  }
+
+  async updateResourceMaterial() {
+    if (!this.editingResourceMaterial || !this.resourceEditTitle || !this.resourceEditOrderNumber) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const { error } = await this.supabase.getClient()
+        .from('learning_materials')
+        .update({
+          title: this.resourceEditTitle,
+          description: this.resourceEditDescription,
+          order_number: this.resourceEditOrderNumber,
+          duration_minutes: this.resourceEditDuration,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', this.editingResourceMaterial.id);
+
+      if (error) throw error;
+
+      alert('✅ Material updated successfully!');
+      this.closeResourcesEditModal();
+      
+      // Reload based on context
+      if (this.isMentor) {
+        await this.loadResourceMaterials();
+        await this.loadResourceMenteesProgress();
+        // If mentee progress modal is open, refresh it
+        if (this.showMenteeProgressModal && this.selectedMenteeForProgress) {
+          await this.openMenteeProgressModal(this.selectedMenteeForProgress);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating material:', error);
+      alert('❌ Failed to update material. Please try again.');
+    }
+  }
+
+  async deleteResourceMaterial(material: any) {
+    if (!confirm(`Are you sure you want to delete "${material.title}"?`)) return;
+
+    try {
+      const filePath = material.file_url.split('/learning-materials/')[1];
+      if (filePath) {
+        await this.supabase.getClient()
+          .storage
+          .from('learning-materials')
+          .remove([filePath]);
+      }
+
+      const { error } = await this.supabase.getClient()
+        .from('learning_materials')
+        .delete()
+        .eq('id', material.id);
+
+      if (error) throw error;
+
+      alert('✅ Material deleted successfully!');
+      await this.loadResourceMaterials();
+      await this.loadResourceMenteesProgress();
+      
+      // If mentee progress modal is open, refresh it
+      if (this.showMenteeProgressModal && this.selectedMenteeForProgress) {
+        await this.openMenteeProgressModal(this.selectedMenteeForProgress);
+      }
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      alert('❌ Failed to delete material. Please try again.');
+    }
+  }
+
+  async toggleResourceCompletion(material: any) {
+    if (this.isMentor) return;
+
+    try {
+      const newCompletedState = !material.completed;
+
+      const { data: existing } = await this.supabase.getClient()
+        .from('material_progress')
+        .select('id')
+        .eq('mentee_user_id', this.currentUserId)
+        .eq('material_id', material.id)
+        .maybeSingle();
+
+      if (existing) {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .update({
+            completed: newCompletedState,
+            completed_at: newCompletedState ? new Date().toISOString() : null
+          })
+          .eq('id', existing.id);
+      } else {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .insert({
+            mentee_user_id: this.currentUserId,
+            material_id: material.id,
+            completed: newCompletedState,
+            completed_at: newCompletedState ? new Date().toISOString() : null
+          });
+      }
+
+      material.completed = newCompletedState;
+    } catch (error) {
+      console.error('Error toggling completion:', error);
+      alert('❌ Failed to update progress. Please try again.');
+    }
+  }
+
+  getResourceFileIcon(fileType: string): string {
+    switch (fileType) {
+      case 'video': return '🎥';
+      case 'pdf': return '📄';
+      case 'document': return '📝';
+      case 'image': return '🖼️';
+      default: return '📎';
+    }
+  }
+
+  getResourceProgressColor(percentage: number): string {
+    if (percentage >= 75) return '#21AA3A'; // green
+    if (percentage >= 50) return '#04A2D7'; // blue
+    if (percentage >= 25) return '#f59e0b'; // orange
+    return '#ef4444'; // red
+  }
+
+  getResourceFileSizeLabel(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  // Modal methods for viewing materials
+  async openMentorMaterialsModal(mentor: any) {
+    this.selectedMentorForMaterials = mentor;
+    this.showMaterialsModal = true;
+
+    // Load materials from this mentor
+    const { data: materialsData } = await this.supabase.getClient()
+      .from('learning_materials')
+      .select('*')
+      .eq('mentor_user_id', mentor.user_id)
+      .order('order_number', { ascending: true });
+
+    // Load progress
+    const { data: progressData } = await this.supabase.getClient()
+      .from('material_progress')
+      .select('material_id, completed')
+      .eq('mentee_user_id', this.currentUserId);
+
+    const progressMap = new Map(
+      (progressData || []).map((p: any) => [p.material_id, p.completed])
+    );
+
+    this.modalMaterials = (materialsData || []).map(m => ({
+      ...m,
+      completed: progressMap.get(m.id) || false
+    }));
+
+    this.updateModalProgress();
+  }
+
+  closeMaterialsModal() {
+    this.showMaterialsModal = false;
+    this.selectedMentorForMaterials = null;
+    this.modalMaterials = [];
+  }
+
+  async openMenteeProgressModal(mentee: any) {
+    this.selectedMenteeForProgress = mentee;
+    this.showMenteeProgressModal = true;
+
+    // Load mentor's materials
+    const { data: materialsData } = await this.supabase.getClient()
+      .from('learning_materials')
+      .select('*')
+      .eq('mentor_user_id', this.currentUserId)
+      .order('order_number', { ascending: true });
+
+    // Load mentee's progress
+    const { data: progressData } = await this.supabase.getClient()
+      .from('material_progress')
+      .select('material_id, completed')
+      .eq('mentee_user_id', mentee.mentee_user_id);
+
+    const progressMap = new Map(
+      (progressData || []).map((p: any) => [p.material_id, p.completed])
+    );
+
+    this.modalMaterials = (materialsData || []).map(m => ({
+      ...m,
+      completed: progressMap.get(m.id) || false
+    }));
+
+    this.updateModalProgress();
+  }
+
+  closeMenteeProgressModal() {
+    this.showMenteeProgressModal = false;
+    this.selectedMenteeForProgress = null;
+    this.modalMaterials = [];
+  }
+
+  async toggleMaterialCompletion(material: any) {
+    if (this.isMentor) return;
+
+    try {
+      const newCompletedState = !material.completed;
+
+      const { data: existing } = await this.supabase.getClient()
+        .from('material_progress')
+        .select('id')
+        .eq('mentee_user_id', this.currentUserId)
+        .eq('material_id', material.id)
+        .maybeSingle();
+
+      if (existing) {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .update({
+            completed: newCompletedState,
+            completed_at: newCompletedState ? new Date().toISOString() : null
+          })
+          .eq('id', existing.id);
+      } else {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .insert({
+            mentee_user_id: this.currentUserId,
+            material_id: material.id,
+            completed: newCompletedState,
+            completed_at: newCompletedState ? new Date().toISOString() : null
+          });
+      }
+
+      material.completed = newCompletedState;
+      this.updateModalProgress();
+      
+      // Reload mentor list to update progress
+      await this.loadResourceMentors();
+    } catch (error) {
+      console.error('Error toggling completion:', error);
+      alert('❌ Failed to update progress. Please try again.');
+    }
+  }
+
+  updateModalProgress() {
+    this.modalCompletedCount = this.modalMaterials.filter(m => m.completed).length;
+    this.modalProgressPercentage = this.modalMaterials.length > 0
+      ? Math.round((this.modalCompletedCount / this.modalMaterials.length) * 100)
+      : 0;
   }
 
   // ─── Data ──────────────────────────────────────────────────────────────────
