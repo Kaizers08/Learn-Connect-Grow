@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -40,63 +40,95 @@ export class AdminComponent implements OnInit {
   constructor(
     private router: Router,
     private supabase: SupabaseService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit() {
     console.log('[AdminComponent] ngOnInit called');
     this.loadData();
+    
+    // Fallback: if still loading after 10 seconds, force it to false
+    setTimeout(() => {
+      if (this.loading) {
+        console.error('[AdminComponent] Loading timeout - forcing loading to false');
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    }, 10000);
   }
 
-  private async loadData() {
+  private loadData() {
     console.log('[AdminComponent] loadData starting...');
+    
     this.loading = true;
-    try {
-      await this.loadAdminProfile();
-      await this.refresh();
-    } catch (error) {
+    this.cdr.markForCheck();
+    
+    Promise.all([
+      this.loadAdminProfile(),
+      this.loadPlatformData()
+    ]).then(() => {
+      console.log('[AdminComponent] All data loaded');
+      this.loading = false;
+      this.cdr.markForCheck();
+    }).catch(error => {
       console.error('[AdminComponent] loadData error:', error);
       this.loading = false;
-    }
-    console.log('[AdminComponent] loadData complete');
+      this.cdr.markForCheck();
+    });
   }
-
-  async loadAdminProfile() {
-    const { data } = await this.supabase.getAdminProfile();
-    if (data) {
-      this.adminName = (data as any).email?.split('@')[0] || 'Admin';
-      this.adminEmail = (data as any).email || '';
-    }
-    // Trigger change detection after loading profile
-    this.cdr.detectChanges();
-  }
-
-  async refresh() {
+  
+  private async loadPlatformData() {
     try {
-      this.loading = true;
-      console.log('[AdminComponent] Starting data refresh...');
+      console.log('[AdminComponent] Starting platform data fetch...');
       
       const stats = await this.supabase.getPlatformStats();
       
       console.log('[AdminComponent] Stats received:', stats);
+      
       this.mentors = stats.mentors || [];
       this.mentees = stats.mentees || [];
       this.mentorCount = stats.mentorCount || 0;
       this.menteeCount = stats.menteeCount || 0;
       
-      console.log('[AdminComponent] Data loaded successfully');
+      console.log('[AdminComponent] Platform data loaded successfully');
+      
     } catch (error) {
-      console.error('[AdminComponent] Error refreshing platform stats:', error);
-      // Set empty arrays on error so UI doesn't break
+      console.error('[AdminComponent] Error loading platform data:', error);
       this.mentors = [];
       this.mentees = [];
       this.mentorCount = 0;
       this.menteeCount = 0;
-    } finally {
+    }
+  }
+
+  async loadAdminProfile() {
+    try {
+      const { data } = await this.supabase.getAdminProfile();
+      if (data) {
+        this.adminName = (data as any).email?.split('@')[0] || 'Admin';
+        this.adminEmail = (data as any).email || '';
+      }
+    } catch (error) {
+      console.error('[AdminComponent] Error loading admin profile:', error);
+    }
+  }
+
+  async refresh() {
+    try {
+      this.loading = true;
+      this.cdr.markForCheck();
+      
+      console.log('[AdminComponent] refresh() called');
+      await this.loadPlatformData();
+      
       this.loading = false;
-      console.log('[AdminComponent] Loading complete, loading =', this.loading);
-      // Manually trigger change detection
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
+      
+    } catch (error) {
+      console.error('[AdminComponent] Error in refresh:', error);
+      this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
