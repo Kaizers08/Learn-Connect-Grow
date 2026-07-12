@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -39,12 +39,26 @@ export class AdminComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    private cdr: ChangeDetectorRef
   ) {}
 
-  async ngOnInit() {
-    await this.loadAdminProfile();
-    await this.refresh();
+  ngOnInit() {
+    console.log('[AdminComponent] ngOnInit called');
+    this.loadData();
+  }
+
+  private async loadData() {
+    console.log('[AdminComponent] loadData starting...');
+    this.loading = true;
+    try {
+      await this.loadAdminProfile();
+      await this.refresh();
+    } catch (error) {
+      console.error('[AdminComponent] loadData error:', error);
+      this.loading = false;
+    }
+    console.log('[AdminComponent] loadData complete');
   }
 
   async loadAdminProfile() {
@@ -53,16 +67,37 @@ export class AdminComponent implements OnInit {
       this.adminName = (data as any).email?.split('@')[0] || 'Admin';
       this.adminEmail = (data as any).email || '';
     }
+    // Trigger change detection after loading profile
+    this.cdr.detectChanges();
   }
 
   async refresh() {
-    this.loading = true;
-    const stats = await this.supabase.getPlatformStats();
-    this.mentors = stats.mentors;
-    this.mentees = stats.mentees;
-    this.mentorCount = stats.mentorCount;
-    this.menteeCount = stats.menteeCount;
-    this.loading = false;
+    try {
+      this.loading = true;
+      console.log('[AdminComponent] Starting data refresh...');
+      
+      const stats = await this.supabase.getPlatformStats();
+      
+      console.log('[AdminComponent] Stats received:', stats);
+      this.mentors = stats.mentors || [];
+      this.mentees = stats.mentees || [];
+      this.mentorCount = stats.mentorCount || 0;
+      this.menteeCount = stats.menteeCount || 0;
+      
+      console.log('[AdminComponent] Data loaded successfully');
+    } catch (error) {
+      console.error('[AdminComponent] Error refreshing platform stats:', error);
+      // Set empty arrays on error so UI doesn't break
+      this.mentors = [];
+      this.mentees = [];
+      this.mentorCount = 0;
+      this.menteeCount = 0;
+    } finally {
+      this.loading = false;
+      console.log('[AdminComponent] Loading complete, loading =', this.loading);
+      // Manually trigger change detection
+      this.cdr.detectChanges();
+    }
   }
 
   get pendingMentors() {
