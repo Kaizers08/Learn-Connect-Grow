@@ -51,18 +51,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   calendarWeekLabel = 'May 12 – 18, 2025';
   calendarHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
   calendarDays = [
-    { name: 'Monday', date: 12 },
-    { name: 'Tuesday', date: 13 },
-    { name: 'Wednesday', date: 14 },
-    { name: 'Thursday', date: 15 },
-    { name: 'Friday', date: 16 },
-    { name: 'Saturday', date: 17 },
-    { name: 'Sunday', date: 18 }
+    { name: 'Monday', short: 'Mon', date: 12 },
+    { name: 'Tuesday', short: 'Tue', date: 13 },
+    { name: 'Wednesday', short: 'Wed', date: 14 },
+    { name: 'Thursday', short: 'Thu', date: 15 },
+    { name: 'Friday', short: 'Fri', date: 16 },
+    { name: 'Saturday', short: 'Sat', date: 17 },
+    { name: 'Sunday', short: 'Sun', date: 18 }
   ];
   /** Hour-row height in px — must match CSS --cal-hour-h */
-  readonly calendarHourHeight = 70;
+  readonly calendarHourHeight = 52;
   /** Demo “now” line around 15:15 */
-  calendarNowOffset = 6 * 70 + 15;
+  calendarNowOffset = 6 * 52 + 12;
   showNewEventPanel = true;
 
   calendarEvents: Array<{
@@ -71,31 +71,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
     durationHours: number;
     title: string;
     color: string;
-    badges: number;
+    badges: string[];
     avatars: number;
     compact?: boolean;
   }> = [
-    { day: 0, startHour: 9, durationHours: 2, title: 'Shooting Stars', color: '#29CC39', badges: 2, avatars: 2 },
-    { day: 0, startHour: 17, durationHours: 3, title: 'The Amazing Hubble', color: '#33BFFF', badges: 1, avatars: 2, compact: true },
-    { day: 1, startHour: 11, durationHours: 1, title: 'The Amazing Hubble', color: '#FF6633', badges: 1, avatars: 2, compact: true },
-    { day: 1, startHour: 13, durationHours: 2, title: 'Choosing A Quality Camera', color: '#8833FF', badges: 2, avatars: 2 },
-    { day: 2, startHour: 15, durationHours: 3, title: 'Astronomy Binoculars', color: '#E62E7B', badges: 2, avatars: 2 },
-    { day: 3, startHour: 10, durationHours: 2, title: 'Choosing A Quality Camera', color: '#FF6633', badges: 2, avatars: 2 },
-    { day: 3, startHour: 13, durationHours: 1, title: 'The Amazing Hubble', color: '#33BFFF', badges: 1, avatars: 2, compact: true },
-    { day: 4, startHour: 10, durationHours: 3, title: 'Astronomy Binoculars', color: '#FFCB33', badges: 2, avatars: 2 },
-    { day: 6, startHour: 11, durationHours: 3, title: 'The Universe Through a Telescope', color: '#CC7429', badges: 2, avatars: 2 },
-    { day: 6, startHour: 17, durationHours: 2, title: 'Choosing A Quality Camera', color: '#2EE6CA', badges: 2, avatars: 2 }
+    { day: 0, startHour: 9, durationHours: 2, title: 'Shooting Stars', color: '#29CC39', badges: ['MEET', 'LIVE'], avatars: 2 },
+    { day: 0, startHour: 17, durationHours: 3, title: 'The Amazing Hubble', color: '#33BFFF', badges: ['MEET'], avatars: 2, compact: true },
+    { day: 1, startHour: 11, durationHours: 1, title: 'The Amazing Hubble', color: '#FF6633', badges: ['1H'], avatars: 2, compact: true },
+    { day: 1, startHour: 13, durationHours: 2, title: 'Choosing A Quality Camera', color: '#8833FF', badges: ['MEET', 'Q&A'], avatars: 2 },
+    { day: 2, startHour: 15, durationHours: 3, title: 'Astronomy Binoculars', color: '#E62E7B', badges: ['MEET', 'LAB'], avatars: 2 },
+    { day: 3, startHour: 10, durationHours: 2, title: 'Choosing A Quality Camera', color: '#FF6633', badges: ['MEET', 'LIVE'], avatars: 2 },
+    { day: 3, startHour: 13, durationHours: 1, title: 'The Amazing Hubble', color: '#33BFFF', badges: ['1H'], avatars: 2, compact: true },
+    { day: 4, startHour: 10, durationHours: 3, title: 'Astronomy Binoculars', color: '#FFCB33', badges: ['MEET', 'LAB'], avatars: 2 },
+    { day: 6, startHour: 11, durationHours: 3, title: 'The Universe Through a Telescope', color: '#CC7429', badges: ['MEET', 'TALK'], avatars: 2 },
+    { day: 6, startHour: 17, durationHours: 2, title: 'Choosing A Quality Camera', color: '#2EE6CA', badges: ['MEET', 'Q&A'], avatars: 2 }
   ];
+
+  formatCalendarHour(hour: number): string {
+    return `${hour < 10 ? '0' : ''}${hour}`;
+  }
+
+  getCalendarEventTime(event: { startHour: number; durationHours: number }): string {
+    const end = event.startHour + event.durationHours;
+    return `${this.formatCalendarHour(event.startHour)}:00 – ${this.formatCalendarHour(end)}:00`;
+  }
 
   getCalendarEventStyle(event: { day: number; startHour: number; durationHours: number; color: string; compact?: boolean }) {
     const top = (event.startHour - 9) * this.calendarHourHeight;
-    const height = event.durationHours * this.calendarHourHeight;
-    const bg = event.compact ? `${event.color}0D` : '#FFFFFF';
+    const height = Math.max(event.durationHours * this.calendarHourHeight - 3, 40);
+    const bg = event.compact ? `${event.color}14` : '#FFFFFF';
     return {
-      top: `${top}px`,
+      top: `${top + 1}px`,
       height: `${height}px`,
       borderColor: event.color,
-      background: bg
+      background: bg,
+      ['--cal-event-accent' as string]: event.color
     };
   }
 
