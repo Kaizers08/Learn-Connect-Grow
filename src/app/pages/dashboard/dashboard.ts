@@ -49,7 +49,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // ─── Activity Calendar (static UI) ──────────────────────────────────────────
   calendarViewMode: 'day' | 'week' | 'month' | 'year' = 'week';
   calendarWeekLabel = 'May 12 – 18, 2025';
-  calendarHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+  calendarHours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
   calendarDays = [
     { name: 'Monday', short: 'Mon', date: 12 },
     { name: 'Tuesday', short: 'Tue', date: 13 },
@@ -60,8 +60,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { name: 'Sunday', short: 'Sun', date: 18 }
   ];
   /** Demo “now” line around 15:15 as % of 09–21 day span */
-  readonly calendarSlotCount = 12;
-  calendarNowPercent = ((15 + 15 / 60 - 9) / 12) * 100;
+  readonly calendarSlotCount = 24;
+  calendarNowPercent = 0;
+  private nowLineInterval: any;
   showNewEventPanel = true;
 
   calendarEvents: Array<{
@@ -88,6 +89,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   formatCalendarHour(hour: number): string {
     return `${hour < 10 ? '0' : ''}${hour}`;
+  }
+
+  updateCalendarNowLine(): void {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    // Calculate percentage based on 24-hour day (0-24)
+    const currentTimeInHours = hours + minutes / 60;
+    this.calendarNowPercent = (currentTimeInHours / 24) * 100;
   }
 
   getCalendarEventTime(event: { startHour: number; durationHours: number }): string {
@@ -585,6 +595,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loadMatchedUsers(),
       this.loadConnections()
     ]);
+    
+    // Initialize and update calendar "now" line
+    this.updateCalendarNowLine();
+    this.nowLineInterval = setInterval(() => {
+      this.updateCalendarNowLine();
+    }, 60000); // Update every minute
+    
     // Update last_seen every 2 minutes
     await this.supabase.updateLastSeen();
     this.lastSeenInterval = setInterval(() => {
@@ -658,6 +675,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
+    if (this.nowLineInterval) clearInterval(this.nowLineInterval);
   }
 
   // ─── Navigation ────────────────────────────────────────────────────────────

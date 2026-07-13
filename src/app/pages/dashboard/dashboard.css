@@ -4240,7 +4240,7 @@ textarea.form-control {
   display: flex;
   position: relative;
   flex: 0 0 auto;
-  height: 720px;
+  height: 1440px;
   min-width: 0;
   width: 100%;
 }
@@ -4279,7 +4279,7 @@ textarea.form-control {
 .cal-columns {
   position: relative;
   flex: 1;
-  height: 720px;
+  height: 1440px;
   min-height: 0;
   background:
     repeating-linear-gradient(
