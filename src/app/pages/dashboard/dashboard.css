@@ -4225,7 +4225,8 @@ textarea.form-control {
 }
 
 .cal-grid-scroll {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   min-height: 0;
   border-radius: 12px;
@@ -4238,9 +4239,8 @@ textarea.form-control {
 .cal-grid-body {
   display: flex;
   position: relative;
-  flex: 1;
-  height: 100%;
-  min-height: 0;
+  flex: 0 0 auto;
+  height: 720px;
   min-width: 0;
   width: 100%;
 }
@@ -4258,8 +4258,8 @@ textarea.form-control {
 }
 
 .cal-hour-label {
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 0 0 60px;
+  height: 60px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -4279,15 +4279,15 @@ textarea.form-control {
 .cal-columns {
   position: relative;
   flex: 1;
-  height: 100%;
+  height: 720px;
   min-height: 0;
   background:
     repeating-linear-gradient(
       to bottom,
       transparent 0,
-      transparent calc(100% / 12 - 1px),
-      #F0F2F5 calc(100% / 12 - 1px),
-      #F0F2F5 calc(100% / 12)
+      transparent 59px,
+      #F0F2F5 59px,
+      #F0F2F5 60px
     );
 }
 
