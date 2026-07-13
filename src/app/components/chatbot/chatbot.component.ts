@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, ApplicationRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -27,7 +27,7 @@ export class ChatbotComponent {
   
   messages: ChatMessage[] = [];
 
-  constructor(private cdr: ChangeDetectorRef) {
+  constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone, private appRef: ApplicationRef) {
     console.log('[Chatbot] Component initialized, isOpen:', this.isOpen);
     
     // Initialize system prompt
@@ -100,30 +100,41 @@ Keep responses friendly, concise, and helpful.`
 
       console.log('[Chatbot] Got bot response:', botResponse);
 
-      // Hide typing indicator and add bot message
-      this.isTyping = false;
-      this.messages.push({
-        type: 'bot',
-        text: botResponse,
-        time: this.getCurrentTime()
+      // Run inside Angular's zone to trigger change detection
+      this.ngZone.run(() => {
+        // Hide typing indicator and add bot message
+        this.isTyping = false;
+        
+        this.messages.push({
+          type: 'bot',
+          text: botResponse,
+          time: this.getCurrentTime()
+        });
+
+        console.log('[Chatbot] Messages array now:', this.messages);
       });
 
-      console.log('[Chatbot] Messages array now:', this.messages);
-      
-      // Force change detection
-      this.cdr.detectChanges();
+      // Force application-wide change detection
+      this.appRef.tick();
 
-      // Scroll to bottom
-      setTimeout(() => this.scrollToBottom(), 100);
+      // Scroll to bottom after DOM update
+      setTimeout(() => {
+        this.scrollToBottom();
+      }, 150);
     } catch (error) {
       console.error('[Chatbot] sendMessage error:', error);
-      this.isTyping = false;
-      this.messages.push({
-        type: 'bot',
-        text: 'Sorry, something went wrong. Please try again.',
-        time: this.getCurrentTime()
+      
+      this.ngZone.run(() => {
+        this.isTyping = false;
+        this.messages.push({
+          type: 'bot',
+          text: 'Sorry, something went wrong. Please try again.',
+          time: this.getCurrentTime()
+        });
       });
-      this.cdr.detectChanges();
+      
+      // Force application-wide change detection
+      this.appRef.tick();
     }
   }
 
@@ -194,7 +205,24 @@ Keep responses friendly, concise, and helpful.`
   private scrollToBottom() {
     const messagesContainer = document.querySelector('.chat-messages');
     if (messagesContainer) {
+      // Force scroll to absolute bottom
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      console.log('[Chatbot] Scrolled to bottom:', messagesContainer.scrollHeight);
+    } else {
+      console.log('[Chatbot] Messages container not found');
     }
+  }
+
+  formatMessage(text: string): string {
+    // Convert markdown to HTML
+    let formatted = text
+      // Bold: **text** -> <strong>text</strong>
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic: *text* -> <em>text</em>
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Line breaks
+      .replace(/\n/g, '<br>');
+    
+    return formatted;
   }
 }

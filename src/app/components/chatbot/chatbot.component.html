@@ -79,8 +79,7 @@
                 </div>
               }
               <div class="message-content">
-                <div class="message-bubble" [class.bot-bubble]="msg.type === 'bot'" [class.user-bubble]="msg.type === 'user'">
-                  {{ msg.text }}
+                <div class="message-bubble" [class.bot-bubble]="msg.type === 'bot'" [class.user-bubble]="msg.type === 'user'" [innerHTML]="formatMessage(msg.text)">
                 </div>
                 <span class="message-time">{{ msg.time }}</span>
               </div>
