@@ -191,6 +191,104 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   setCalendarView(mode: 'day' | 'week' | 'month' | 'year') {
     this.calendarViewMode = mode;
+    
+    // Update calendar display based on view mode
+    if (mode === 'day') {
+      this.initializeCurrentDay();
+    } else if (mode === 'week') {
+      this.initializeCurrentWeek();
+    } else if (mode === 'month') {
+      this.initializeCurrentMonth();
+    } else if (mode === 'year') {
+      this.initializeCurrentYear();
+    }
+  }
+
+  initializeCurrentDay(): void {
+    const now = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    const month = monthNames[now.getMonth()];
+    const date = now.getDate();
+    const year = now.getFullYear();
+    const dayIndex = now.getDay();
+    
+    this.calendarWeekLabel = `${month} ${date}, ${year}`;
+    
+    // Show only current day
+    this.calendarDays = [{
+      name: dayNames[dayIndex],
+      short: dayShorts[dayIndex],
+      date: date
+    }];
+  }
+
+  initializeCurrentMonth(): void {
+    const now = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    this.calendarWeekLabel = `${monthNames[month]} ${year}`;
+    
+    // Get first day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    // Get first Monday of the month view (might be from previous month)
+    const firstDayOfWeek = firstDay.getDay();
+    const startDate = new Date(firstDay);
+    startDate.setDate(1 - (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1));
+    
+    // Build 7 days starting from first day of calendar view
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    this.calendarDays = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(startDate);
+      currentDay.setDate(startDate.getDate() + i);
+      const dayIndex = currentDay.getDay();
+      
+      this.calendarDays.push({
+        name: dayNames[dayIndex],
+        short: dayShorts[dayIndex],
+        date: currentDay.getDate()
+      });
+    }
+  }
+
+  initializeCurrentYear(): void {
+    const now = new Date();
+    const year = now.getFullYear();
+    
+    this.calendarWeekLabel = `${year}`;
+    
+    // For year view, show the current week still
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    const dayOfWeek = now.getDay();
+    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + monday);
+    
+    this.calendarDays = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(weekStart);
+      currentDay.setDate(weekStart.getDate() + i);
+      const dayIndex = currentDay.getDay();
+      
+      this.calendarDays.push({
+        name: dayNames[dayIndex],
+        short: dayShorts[dayIndex],
+        date: currentDay.getDate()
+      });
+    }
   }
 
   calendarRange(n: number): number[] {
