@@ -46,6 +46,67 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   searchQuery = '';
 
+  // ─── Activity Calendar (static UI) ──────────────────────────────────────────
+  calendarViewMode: 'day' | 'week' | 'month' | 'year' = 'week';
+  calendarWeekLabel = 'May 12 – 18, 2025';
+  calendarHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+  calendarDays = [
+    { name: 'Monday', date: 12 },
+    { name: 'Tuesday', date: 13 },
+    { name: 'Wednesday', date: 14 },
+    { name: 'Thursday', date: 15 },
+    { name: 'Friday', date: 16 },
+    { name: 'Saturday', date: 17 },
+    { name: 'Sunday', date: 18 }
+  ];
+  /** Hour-row height in px — must match CSS --cal-hour-h */
+  readonly calendarHourHeight = 70;
+  /** Demo “now” line around 15:15 */
+  calendarNowOffset = 6 * 70 + 15;
+  showNewEventPanel = true;
+
+  calendarEvents: Array<{
+    day: number;
+    startHour: number;
+    durationHours: number;
+    title: string;
+    color: string;
+    badges: number;
+    avatars: number;
+    compact?: boolean;
+  }> = [
+    { day: 0, startHour: 9, durationHours: 2, title: 'Shooting Stars', color: '#29CC39', badges: 2, avatars: 2 },
+    { day: 0, startHour: 17, durationHours: 3, title: 'The Amazing Hubble', color: '#33BFFF', badges: 1, avatars: 2, compact: true },
+    { day: 1, startHour: 11, durationHours: 1, title: 'The Amazing Hubble', color: '#FF6633', badges: 1, avatars: 2, compact: true },
+    { day: 1, startHour: 13, durationHours: 2, title: 'Choosing A Quality Camera', color: '#8833FF', badges: 2, avatars: 2 },
+    { day: 2, startHour: 15, durationHours: 3, title: 'Astronomy Binoculars', color: '#E62E7B', badges: 2, avatars: 2 },
+    { day: 3, startHour: 10, durationHours: 2, title: 'Choosing A Quality Camera', color: '#FF6633', badges: 2, avatars: 2 },
+    { day: 3, startHour: 13, durationHours: 1, title: 'The Amazing Hubble', color: '#33BFFF', badges: 1, avatars: 2, compact: true },
+    { day: 4, startHour: 10, durationHours: 3, title: 'Astronomy Binoculars', color: '#FFCB33', badges: 2, avatars: 2 },
+    { day: 6, startHour: 11, durationHours: 3, title: 'The Universe Through a Telescope', color: '#CC7429', badges: 2, avatars: 2 },
+    { day: 6, startHour: 17, durationHours: 2, title: 'Choosing A Quality Camera', color: '#2EE6CA', badges: 2, avatars: 2 }
+  ];
+
+  getCalendarEventStyle(event: { day: number; startHour: number; durationHours: number; color: string; compact?: boolean }) {
+    const top = (event.startHour - 9) * this.calendarHourHeight;
+    const height = event.durationHours * this.calendarHourHeight;
+    const bg = event.compact ? `${event.color}0D` : '#FFFFFF';
+    return {
+      top: `${top}px`,
+      height: `${height}px`,
+      borderColor: event.color,
+      background: bg
+    };
+  }
+
+  setCalendarView(mode: 'day' | 'week' | 'month' | 'year') {
+    this.calendarViewMode = mode;
+  }
+
+  calendarRange(n: number): number[] {
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
   // ─── Settings Properties ───────────────────────────────────────────────────
   settingsFirstName = '';
   settingsLastName = '';
