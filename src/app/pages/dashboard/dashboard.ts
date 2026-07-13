@@ -50,17 +50,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // ─── Activity Calendar (static UI) ──────────────────────────────────────────
   calendarViewMode: 'day' | 'week' | 'month' | 'year' = 'week';
-  calendarWeekLabel = 'May 12 – 18, 2025';
+  calendarWeekLabel = '';
   calendarHours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
-  calendarDays = [
-    { name: 'Monday', short: 'Mon', date: 12 },
-    { name: 'Tuesday', short: 'Tue', date: 13 },
-    { name: 'Wednesday', short: 'Wed', date: 14 },
-    { name: 'Thursday', short: 'Thu', date: 15 },
-    { name: 'Friday', short: 'Fri', date: 16 },
-    { name: 'Saturday', short: 'Sat', date: 17 },
-    { name: 'Sunday', short: 'Sun', date: 18 }
-  ];
+  calendarDays: Array<{ name: string; short: string; date: number }> = [];
   /** Demo “now” line around 15:15 as % of 09–21 day span */
   readonly calendarSlotCount = 24;
   calendarNowPercent = 0;
@@ -92,6 +84,49 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   formatCalendarHour(hour: number): string {
     return `${hour < 10 ? '0' : ''}${hour}`;
+  }
+
+  initializeCurrentWeek(): void {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Get Monday of current week
+    
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + monday);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    // Format week label
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const startMonth = monthNames[weekStart.getMonth()];
+    const endMonth = monthNames[weekEnd.getMonth()];
+    const startDate = weekStart.getDate();
+    const endDate = weekEnd.getDate();
+    const year = weekEnd.getFullYear();
+    
+    if (weekStart.getMonth() === weekEnd.getMonth()) {
+      this.calendarWeekLabel = `${startMonth} ${startDate} – ${endDate}, ${year}`;
+    } else {
+      this.calendarWeekLabel = `${startMonth} ${startDate} – ${endMonth} ${endDate}, ${year}`;
+    }
+    
+    // Build calendar days
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    this.calendarDays = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(weekStart);
+      currentDay.setDate(weekStart.getDate() + i);
+      const dayIndex = currentDay.getDay();
+      
+      this.calendarDays.push({
+        name: dayNames[dayIndex],
+        short: dayShorts[dayIndex],
+        date: currentDay.getDate()
+      });
+    }
   }
 
   updateCalendarNowLine(scrollToPosition: boolean = false): void {
@@ -627,6 +662,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.loadMatchedUsers(),
       this.loadConnections()
     ]);
+    
+    // Initialize calendar with current week
+    this.initializeCurrentWeek();
     
     // Initialize and update calendar "now" line
     this.updateCalendarNowLine(false); // Don't scroll on init, will scroll when tab is opened
