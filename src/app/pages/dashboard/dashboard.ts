@@ -59,10 +59,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { name: 'Saturday', short: 'Sat', date: 17 },
     { name: 'Sunday', short: 'Sun', date: 18 }
   ];
-  /** Hour-row height in px — must match CSS --cal-hour-h */
-  readonly calendarHourHeight = 52;
-  /** Demo “now” line around 15:15 */
-  calendarNowOffset = 6 * 52 + 12;
+  /** Demo “now” line around 15:15 as % of 09–21 day span */
+  readonly calendarSlotCount = 12;
+  calendarNowPercent = ((15 + 15 / 60 - 9) / 12) * 100;
   showNewEventPanel = true;
 
   calendarEvents: Array<{
@@ -97,16 +96,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getCalendarEventStyle(event: { day: number; startHour: number; durationHours: number; color: string; compact?: boolean }) {
-    const top = (event.startHour - 9) * this.calendarHourHeight;
-    const height = Math.max(event.durationHours * this.calendarHourHeight - 3, 40);
+    const top = ((event.startHour - 9) / this.calendarSlotCount) * 100;
+    const height = (event.durationHours / this.calendarSlotCount) * 100;
     const bg = event.compact ? `${event.color}14` : '#FFFFFF';
     return {
-      top: `${top + 1}px`,
-      height: `${height}px`,
+      top: `calc(${top}% + 1px)`,
+      height: `calc(${height}% - 2px)`,
       borderColor: event.color,
       background: bg,
       ['--cal-event-accent' as string]: event.color
     };
+  }
+
+  getCalendarHourLinePercent(index: number): number {
+    return (index / this.calendarSlotCount) * 100;
   }
 
   setCalendarView(mode: 'day' | 'week' | 'month' | 'year') {

@@ -536,8 +536,6 @@
       <div class="cal-wrapper">
         <div class="cal-header">
           <div class="cal-header-text">
-            <h1 class="cal-title">Activity Calendar</h1>
-            <p class="cal-subtitle">Track your schedules and upcoming events.</p>
           </div>
         </div>
 
@@ -588,7 +586,7 @@
 
               <!-- Grid body -->
               <div class="cal-grid-scroll">
-                <div class="cal-grid-body" [style.--cal-hour-h.px]="calendarHourHeight">
+                <div class="cal-grid-body">
                   <div class="cal-time-col">
                     @for (hour of calendarHours; track hour) {
                       <div class="cal-hour-label">
@@ -599,15 +597,15 @@
 
                   <div class="cal-columns">
                     @for (hour of calendarHours; track hour; let i = $index) {
-                      <div class="cal-hour-line" [class.cal-hour-line-strong]="i === 0" [style.top.px]="i * calendarHourHeight"></div>
+                      <div class="cal-hour-line" [class.cal-hour-line-strong]="i === 0" [style.top.%]="getCalendarHourLinePercent(i)"></div>
                     }
-                    <div class="cal-hour-line" [style.top.px]="calendarHours.length * calendarHourHeight"></div>
+                    <div class="cal-hour-line" [style.top.%]="100"></div>
 
                     @for (day of calendarDays; track day.date; let i = $index) {
                       <div class="cal-day-line" [class.cal-day-line-strong]="i === 0" [style.left.%]="(i / 7) * 100"></div>
                     }
 
-                    <div class="cal-now" [style.top.px]="calendarNowOffset">
+                    <div class="cal-now" [style.top.%]="calendarNowPercent">
                       <span class="cal-now-dot"></span>
                       <span class="cal-now-line"></span>
                       <span class="cal-now-dot"></span>
