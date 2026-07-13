@@ -86,11 +86,90 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedEventIndex = null;
   }
 
-  deleteEvent() {
+  async deleteEvent() {
     if (this.selectedEventIndex !== null) {
+      const event = this.calendarEvents[this.selectedEventIndex];
+      
+      if (event.id) {
+        // Delete from database
+        const { success, error } = await this.supabase.deleteCalendarEvent(event.id);
+        
+        if (!success) {
+          this.displayNotification('Failed to delete event', 'error');
+          this.closeEventContextMenu();
+          return;
+        }
+      }
+      
+      // Remove from local array
       this.calendarEvents.splice(this.selectedEventIndex, 1);
       this.displayNotification('Event deleted successfully', 'success');
       this.closeEventContextMenu();
+    }
+  }
+
+  // Calendar event loading
+  async loadCalendarEvents() {
+    try {
+      const userId = await this.supabase.getCurrentUserId();
+      if (!userId) return;
+
+      const { data, error } = await this.supabase.getUserCalendarEvents(userId);
+      
+      if (error || !data) {
+        console.error('Error loading calendar events:', error);
+        return;
+      }
+
+      // Convert database events to calendar display format
+      this.calendarEvents = data.map((dbEvent: any) => {
+        // Parse the event date and times
+        const eventDate = new Date(dbEvent.event_date);
+        const [startHours, startMinutes] = dbEvent.start_time.split(':').map(Number);
+        
+        // Calculate duration
+        let durationHours = 1;
+        if (dbEvent.end_time) {
+          const [endHours, endMinutes] = dbEvent.end_time.split(':').map(Number);
+          const startTimeInMinutes = startHours * 60 + startMinutes;
+          const endTimeInMinutes = endHours * 60 + endMinutes;
+          durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
+        }
+
+        // Calculate which day of current week this event belongs to
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() + monday);
+        weekStart.setHours(0, 0, 0, 0);
+        
+        const timeDiff = eventDate.getTime() - weekStart.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+        // Generate badges
+        const badges: string[] = [];
+        if (dbEvent.place) badges.push('LOC');
+        if (dbEvent.notes) badges.push('NOTE');
+
+        return {
+          id: dbEvent.id,
+          day: daysDiff,
+          startHour: startHours,
+          durationHours: durationHours,
+          title: dbEvent.title,
+          color: dbEvent.color,
+          badges: badges.length > 0 ? badges : ['MEET'],
+          avatars: dbEvent.members?.length || 1,
+          compact: durationHours <= 1,
+          place: dbEvent.place,
+          notes: dbEvent.notes,
+          date: dbEvent.event_date
+        };
+      }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
+
+    } catch (error) {
+      console.error('Error loading calendar events:', error);
     }
   }
 
@@ -137,6 +216,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   currentColorIndex = 0;
 
   calendarEvents: Array<{
+    id?: string;
     day: number;
     startHour: number;
     durationHours: number;
@@ -259,7 +339,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.newEvent.color = this.availableColors[this.currentColorIndex];
   }
 
-  createEvent(): void {
+  async createEvent(): Promise<void> {
     if (!this.newEvent.title || !this.newEvent.date || !this.newEvent.startTime) {
       this.displayNotification('Please fill in Title, Date, and Start Time', 'warning');
       return;
@@ -310,38 +390,68 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.newEvent.notes) {
       badges.push('NOTE');
     }
-    
-    // Create event
-    const newCalendarEvent = {
-      day: daysDiff,
-      startHour: startHours,
-      durationHours: durationHours,
-      title: this.newEvent.title,
-      color: this.newEvent.color,
-      badges: badges.length > 0 ? badges : ['MEET'],
-      avatars: this.newEvent.members.length || 1,
-      compact: durationHours <= 1,
-      place: this.newEvent.place || undefined,
-      notes: this.newEvent.notes || undefined,
-      date: this.newEvent.date
-    };
 
-    this.calendarEvents.push(newCalendarEvent);
+    // Save to Supabase
+    try {
+      const userId = await this.supabase.getCurrentUserId();
+      if (!userId) {
+        this.displayNotification('Please log in to create events', 'error');
+        return;
+      }
 
-    // Reset form
-    this.newEvent = {
-      title: '',
-      place: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      members: [],
-      notes: '',
-      color: this.availableColors[0]
-    };
-    this.currentColorIndex = 0;
+      const { data, error } = await this.supabase.createCalendarEvent({
+        user_id: userId,
+        title: this.newEvent.title,
+        place: this.newEvent.place || undefined,
+        event_date: this.newEvent.date,
+        start_time: this.newEvent.startTime,
+        end_time: this.newEvent.endTime || undefined,
+        members: this.newEvent.members,
+        notes: this.newEvent.notes || undefined,
+        color: this.newEvent.color
+      });
 
-    this.displayNotification('Event created successfully!', 'success');
+      if (error) {
+        this.displayNotification('Failed to create event', 'error');
+        return;
+      }
+
+      // Add to local array for immediate display
+      const newCalendarEvent = {
+        id: data.id,
+        day: daysDiff,
+        startHour: startHours,
+        durationHours: durationHours,
+        title: this.newEvent.title,
+        color: this.newEvent.color,
+        badges: badges.length > 0 ? badges : ['MEET'],
+        avatars: this.newEvent.members.length || 1,
+        compact: durationHours <= 1,
+        place: this.newEvent.place || undefined,
+        notes: this.newEvent.notes || undefined,
+        date: this.newEvent.date
+      };
+
+      this.calendarEvents.push(newCalendarEvent);
+
+      // Reset form
+      this.newEvent = {
+        title: '',
+        place: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        members: [],
+        notes: '',
+        color: this.availableColors[0]
+      };
+      this.currentColorIndex = 0;
+
+      this.displayNotification('Event created successfully!', 'success');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      this.displayNotification('Failed to create event', 'error');
+    }
   }
 
   getCalendarHourLinePercent(index: number): number {
@@ -917,7 +1027,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     await Promise.all([
       this.loadUserProfile(),
       this.loadMatchedUsers(),
-      this.loadConnections()
+      this.loadConnections(),
+      this.loadCalendarEvents()
     ]);
     
     // Initialize calendar with current week

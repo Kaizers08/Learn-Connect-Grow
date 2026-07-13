@@ -591,4 +591,97 @@ export class SupabaseService {
       return { success: false, error: errorMessage };
     }
   }
+
+  // ── Calendar Events ────────────────────────────────────────────────────────
+  
+  /**
+   * Create a new calendar event
+   */
+  async createCalendarEvent(eventData: {
+    user_id: string;
+    title: string;
+    place?: string;
+    event_date: string;
+    start_time: string;
+    end_time?: string;
+    members?: string[];
+    notes?: string;
+    color: string;
+  }) {
+    const { data, error } = await this.client
+      .from('calendar_events')
+      .insert(eventData)
+      .select()
+      .single();
+
+    if (error) {
+      this.logError('createCalendarEvent', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
+  /**
+   * Get all calendar events for a user
+   */
+  async getUserCalendarEvents(userId: string) {
+    const { data, error } = await this.client
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('event_date', { ascending: true });
+
+    if (error) {
+      this.logError('getUserCalendarEvents', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
+  /**
+   * Delete a calendar event
+   */
+  async deleteCalendarEvent(eventId: string) {
+    const { error } = await this.client
+      .from('calendar_events')
+      .delete()
+      .eq('id', eventId);
+
+    if (error) {
+      this.logError('deleteCalendarEvent', error);
+      return { success: false, error };
+    }
+
+    return { success: true, error: null };
+  }
+
+  /**
+   * Update a calendar event
+   */
+  async updateCalendarEvent(eventId: string, updates: Partial<{
+    title: string;
+    place?: string;
+    event_date: string;
+    start_time: string;
+    end_time?: string;
+    members?: string[];
+    notes?: string;
+    color: string;
+  }>) {
+    const { data, error } = await this.client
+      .from('calendar_events')
+      .update(updates)
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) {
+      this.logError('updateCalendarEvent', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
 }
