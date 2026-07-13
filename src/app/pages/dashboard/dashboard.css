@@ -4036,8 +4036,8 @@ textarea.form-control {
 
 .cal-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1rem;
   align-items: stretch;
   flex: 1;
   min-height: 0;
@@ -4384,7 +4384,7 @@ textarea.form-control {
   background: #FFFFFF;
   box-shadow: 0 6px 18px rgba(38, 51, 77, 0.06);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  cursor: default;
+  cursor: context-menu;
 }
 
 .cal-event:hover {
@@ -4497,12 +4497,28 @@ textarea.form-control {
   align-self: stretch;
   height: 100%;
   min-height: 0;
-  background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 50%, #FFF8F0 100%);
-  border: 2px solid #043E92;
-  box-shadow: 0 24px 60px rgba(4, 62, 146, 0.15), 0 0 0 4px rgba(4, 62, 146, 0.1);
+  min-width: 0;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border-radius: 16px;
   z-index: 10;
-  padding: 0.85rem 0.9rem 0.2rem;
+  padding: 0;
+  max-height: calc(100vh - 160px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+}
+
+.cal-new-event:hover {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
   max-height: none;
   overflow: hidden;
   display: flex;
@@ -4510,33 +4526,33 @@ textarea.form-control {
 }
 
 .cal-new-event-kicker {
-  margin: 0 0 4px;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 900;
+  margin: 0 0 8px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #043E92;
+  color: #3B82F6;
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
 .cal-new-event-kicker svg {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2); }
+  width: 14px;
+  height: 14px;
+  opacity: 0.9;
 }
 
 .cal-new-event-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.85rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+  border-bottom: 1px solid #E2E8F0;
+  flex-shrink: 0;
 }
 
 .cal-new-event-title {
@@ -4549,15 +4565,16 @@ textarea.form-control {
 
 .cal-color-group {
   display: flex;
-  background: #F7F8FA;
-  border-radius: 30px;
+  background: #F8FAFC;
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #EEF0F4;
+  border: 1.5px solid #E2E8F0;
+  padding: 4px;
 }
 
 .cal-color-btn {
-  width: 42px;
-  height: 36px;
+  width: 40px;
+  height: 32px;
   background: transparent;
   border: none;
   display: flex;
@@ -4565,6 +4582,12 @@ textarea.form-control {
   justify-content: center;
   cursor: pointer;
   padding: 0;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.cal-color-btn:hover {
+  background: #FFFFFF;
 }
 
 .cal-color-btn:first-child,
@@ -4581,7 +4604,40 @@ textarea.form-control {
 }
 
 .cal-new-event-body {
-  border-top: 1px solid #EEF0F4;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Footer for create button */
+.cal-new-event-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+
+/* Custom scrollbar for event form */
+.cal-new-event-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cal-new-event-body::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-radius: 10px;
+}
+
+.cal-new-event-body::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.cal-new-event-body::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 .cal-new-row,
@@ -4613,20 +4669,15 @@ textarea.form-control {
 .cal-new-row-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
-  padding: 0;
-  min-height: 0;
-  border-bottom: none;
-  cursor: default;
+  gap: 0.75rem;
+  margin-bottom: 0;
 }
 
-.cal-new-row-split:hover {
-  background: transparent;
+.cal-new-row-split .cal-new-input-row {
+  margin-bottom: 0.75rem;
 }
 
-.cal-new-row-half:first-child {
-  border-right: 1px solid #F0F2F5;
-}
+
 
 @media (max-width: 1200px) {
   .cal-layout {
@@ -4636,7 +4687,8 @@ textarea.form-control {
   .cal-new-event {
     position: relative;
     top: auto;
-    max-width: 420px;
+    max-width: 450px;
+    border-radius: 16px;
   }
 
   .cal-card {
@@ -4698,6 +4750,29 @@ textarea.form-control {
 
   .cal-new-event {
     max-width: none;
+    border-radius: 16px;
+  }
+
+  .cal-new-event-head {
+    padding: 1.25rem;
+  }
+
+  .cal-new-event-body {
+    padding: 0;
+  }
+
+  .cal-new-input-row-split-simple {
+    grid-template-columns: 1fr;
+  }
+
+  .cal-new-input-half:first-child {
+    border-right: none;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  .cal-new-input-row-simple,
+  .cal-new-input-half {
+    padding: 1rem 1.25rem;
   }
 }
 
@@ -4816,4 +4891,482 @@ textarea.form-control {
 
 .cal-empty-hint svg {
   flex-shrink: 0;
+}
+
+
+/* ─── Event Form Inputs - Simple Style ────────────────────────────────────── */
+.cal-new-input-row-simple {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  transition: background 0.15s ease;
+}
+
+.cal-new-input-row-simple:hover {
+  background: #F9FAFB;
+}
+
+.cal-new-input-row-simple svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.cal-input-field-simple {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  color: #6B7280;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.cal-input-field-simple::placeholder {
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+.cal-input-field-simple:focus {
+  color: #111827;
+}
+
+/* Split row for Date and Time */
+.cal-new-input-row-split-simple {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #E5E7EB;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cal-new-input-half {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  background: #FFFFFF;
+  transition: background 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cal-new-input-half:first-child {
+  border-right: 1px solid #E5E7EB;
+}
+
+.cal-new-input-half:hover {
+  background: #F9FAFB;
+}
+
+.cal-new-input-half svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* Textarea simple */
+.cal-textarea-simple {
+  resize: none;
+  min-height: 24px;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+}
+
+/* Date and time input styling */
+.cal-input-field-simple[type="date"],
+.cal-input-field-simple[type="time"] {
+  cursor: pointer;
+  color: #9CA3AF;
+  font-size: 13px;
+}
+
+.cal-input-field-simple[type="date"]:focus,
+.cal-input-field-simple[type="time"]:focus,
+.cal-input-field-simple[type="date"]:valid,
+.cal-input-field-simple[type="time"]:valid {
+  color: #111827;
+}
+
+.cal-input-field-simple[type="date"]::-webkit-calendar-picker-indicator,
+.cal-input-field-simple[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.cal-input-field-simple[type="date"]::-webkit-calendar-picker-indicator:hover,
+.cal-input-field-simple[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+}
+
+/* Old styles - keeping for compatibility */
+.cal-new-event-title-input {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.4;
+  color: #1E293B;
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.cal-new-event-title-input::placeholder {
+  color: #CBD5E1;
+  font-weight: 500;
+}
+
+.cal-new-event-title-input:focus {
+  color: #0F172A;
+}
+
+.cal-new-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.cal-new-input-row:focus-within {
+  background: #FFFFFF;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cal-new-input-row svg {
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.cal-new-input-row:focus-within svg {
+  opacity: 0.7;
+  color: #3B82F6;
+}
+
+.cal-input-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #334155;
+  min-width: 0;
+  width: 100%;
+}
+
+.cal-input-field::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+/* Style date and time inputs */
+.cal-input-field[type="date"],
+.cal-input-field[type="time"] {
+  cursor: pointer;
+}
+
+.cal-input-field[type="date"]::-webkit-calendar-picker-indicator,
+.cal-input-field[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.cal-input-field[type="date"]::-webkit-calendar-picker-indicator:hover,
+.cal-input-field[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+}
+
+.cal-textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-family: 'Inter', sans-serif;
+  padding: 0;
+  line-height: 1.5;
+}
+
+.cal-create-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border: none;
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cal-create-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.cal-create-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.cal-create-btn:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.cal-create-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cal-create-btn svg {
+  position: relative;
+  z-index: 1;
+}
+
+.cal-color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #29CC39;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.cal-color-btn {
+  transition: all 0.2s ease;
+}
+
+.cal-color-btn:hover .cal-color-dot {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cal-color-btn:active .cal-color-dot {
+  transform: scale(0.95);
+}
+
+/* Pulse animation for color dot */
+@keyframes colorPulse {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(59, 130, 246, 0);
+  }
+}
+
+.cal-color-btn:focus .cal-color-dot {
+  animation: colorPulse 1.5s ease-in-out infinite;
+}
+
+
+/* ─── Event Context Menu ──────────────────────────────────────────────────── */
+.event-context-menu {
+  position: fixed;
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 0.25rem;
+  z-index: 10000;
+  min-width: 180px;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.context-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.context-menu-item:hover {
+  background: #F3F4F6;
+}
+
+.context-menu-item svg {
+  flex-shrink: 0;
+  color: #6B7280;
+}
+
+.context-menu-delete:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.context-menu-delete:hover svg {
+  color: #DC2626;
+}
+
+/* ─── Notification Toast ──────────────────────────────────────────────────── */
+.notification-toast {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  min-width: 320px;
+  max-width: 450px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease-out;
+  font-family: 'Inter', sans-serif;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-message {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #1F2937;
+}
+
+.notification-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #F3F4F6;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  color: #6B7280;
+}
+
+.notification-close:hover {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+/* Success variant */
+.notification-success .notification-icon {
+  color: #10B981;
+}
+
+.notification-success {
+  border-left: 4px solid #10B981;
+}
+
+/* Error variant */
+.notification-error .notification-icon {
+  color: #EF4444;
+}
+
+.notification-error {
+  border-left: 4px solid #EF4444;
+}
+
+/* Warning variant */
+.notification-warning .notification-icon {
+  color: #F59E0B;
+}
+
+.notification-warning {
+  border-left: 4px solid #F59E0B;
+}
+
+/* Info variant */
+.notification-info .notification-icon {
+  color: #3B82F6;
+}
+
+.notification-info {
+  border-left: 4px solid #3B82F6;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .notification-toast {
+    right: 16px;
+    left: 16px;
+    min-width: auto;
+    max-width: none;
+  }
 }

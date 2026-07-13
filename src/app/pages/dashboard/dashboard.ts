@@ -60,6 +60,82 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   private shouldScrollCalendar = false;
   showNewEventPanel = true;
 
+  // Event deletion
+  showEventContextMenu = false;
+  contextMenuX = 0;
+  contextMenuY = 0;
+  selectedEventIndex: number | null = null;
+
+  openEventContextMenu(event: MouseEvent, eventIndex: number) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.contextMenuX = event.clientX;
+    this.contextMenuY = event.clientY;
+    this.selectedEventIndex = eventIndex;
+    this.showEventContextMenu = true;
+
+    // Close context menu when clicking elsewhere
+    setTimeout(() => {
+      document.addEventListener('click', this.closeEventContextMenu.bind(this), { once: true });
+    }, 0);
+  }
+
+  closeEventContextMenu() {
+    this.showEventContextMenu = false;
+    this.selectedEventIndex = null;
+  }
+
+  deleteEvent() {
+    if (this.selectedEventIndex !== null) {
+      this.calendarEvents.splice(this.selectedEventIndex, 1);
+      this.displayNotification('Event deleted successfully', 'success');
+      this.closeEventContextMenu();
+    }
+  }
+
+  // Notification/Toast system
+  showNotification = false;
+  notificationMessage = '';
+  notificationType: 'success' | 'error' | 'warning' | 'info' = 'info';
+  private notificationTimeout: any;
+
+  displayNotification(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+    this.notificationMessage = message;
+    this.notificationType = type;
+    this.showNotification = true;
+
+    // Clear any existing timeout
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
+
+    // Auto-hide after 3 seconds
+    this.notificationTimeout = setTimeout(() => {
+      this.showNotification = false;
+    }, 3000);
+  }
+
+  closeNotification() {
+    this.showNotification = false;
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
+  }
+  newEvent = {
+    title: '',
+    place: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    members: [] as string[],
+    notes: '',
+    color: '#29CC39'
+  };
+  
+  availableColors = ['#29CC39', '#33BFFF', '#FF6633', '#A855F7', '#F59E0B', '#EC4899', '#10B981'];
+  currentColorIndex = 0;
+
   calendarEvents: Array<{
     day: number;
     startHour: number;
@@ -69,18 +145,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     badges: string[];
     avatars: number;
     compact?: boolean;
-  }> = [
-    { day: 0, startHour: 9, durationHours: 2, title: 'Shooting Stars', color: '#29CC39', badges: ['MEET', 'LIVE'], avatars: 2 },
-    { day: 0, startHour: 17, durationHours: 3, title: 'The Amazing Hubble', color: '#33BFFF', badges: ['MEET'], avatars: 2, compact: true },
-    { day: 1, startHour: 11, durationHours: 1, title: 'The Amazing Hubble', color: '#FF6633', badges: ['1H'], avatars: 2, compact: true },
-    { day: 1, startHour: 13, durationHours: 2, title: 'Choosing A Quality Camera', color: '#8833FF', badges: ['MEET', 'Q&A'], avatars: 2 },
-    { day: 2, startHour: 15, durationHours: 3, title: 'Astronomy Binoculars', color: '#E62E7B', badges: ['MEET', 'LAB'], avatars: 2 },
-    { day: 3, startHour: 10, durationHours: 2, title: 'Choosing A Quality Camera', color: '#FF6633', badges: ['MEET', 'LIVE'], avatars: 2 },
-    { day: 3, startHour: 13, durationHours: 1, title: 'The Amazing Hubble', color: '#33BFFF', badges: ['1H'], avatars: 2, compact: true },
-    { day: 4, startHour: 10, durationHours: 3, title: 'Astronomy Binoculars', color: '#FFCB33', badges: ['MEET', 'LAB'], avatars: 2 },
-    { day: 6, startHour: 11, durationHours: 3, title: 'The Universe Through a Telescope', color: '#CC7429', badges: ['MEET', 'TALK'], avatars: 2 },
-    { day: 6, startHour: 17, durationHours: 2, title: 'Choosing A Quality Camera', color: '#2EE6CA', badges: ['MEET', 'Q&A'], avatars: 2 }
-  ];
+    place?: string;
+    notes?: string;
+    date?: string;
+  }> = [];
 
   formatCalendarHour(hour: number): string {
     return `${hour < 10 ? '0' : ''}${hour}`;
@@ -173,7 +241,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getCalendarEventStyle(event: { day: number; startHour: number; durationHours: number; color: string; compact?: boolean }) {
-    const top = ((event.startHour - 9) / this.calendarSlotCount) * 100;
+    const top = ((event.startHour) / this.calendarSlotCount) * 100;
     const height = (event.durationHours / this.calendarSlotCount) * 100;
     const bg = event.compact ? `${event.color}14` : '#FFFFFF';
     return {
@@ -183,6 +251,97 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       background: bg,
       ['--cal-event-accent' as string]: event.color
     };
+  }
+
+  // Event Form Methods
+  cycleEventColor(): void {
+    this.currentColorIndex = (this.currentColorIndex + 1) % this.availableColors.length;
+    this.newEvent.color = this.availableColors[this.currentColorIndex];
+  }
+
+  createEvent(): void {
+    if (!this.newEvent.title || !this.newEvent.date || !this.newEvent.startTime) {
+      this.displayNotification('Please fill in Title, Date, and Start Time', 'warning');
+      return;
+    }
+
+    // Parse date and times
+    const eventDate = new Date(this.newEvent.date);
+    const [startHours, startMinutes] = this.newEvent.startTime.split(':').map(Number);
+    
+    // Calculate duration
+    let durationHours = 1; // Default 1 hour if no end time
+    if (this.newEvent.endTime) {
+      const [endHours, endMinutes] = this.newEvent.endTime.split(':').map(Number);
+      const startTimeInMinutes = startHours * 60 + startMinutes;
+      const endTimeInMinutes = endHours * 60 + endMinutes;
+      
+      if (endTimeInMinutes > startTimeInMinutes) {
+        durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
+      } else {
+        this.displayNotification('End time must be after start time', 'warning');
+        return;
+      }
+    }
+    
+    // Get the Monday of the current calendar week
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + monday);
+    weekStart.setHours(0, 0, 0, 0); // Reset to start of day
+    
+    // Calculate which day column (0-6) this event belongs to
+    // Day 0 = Monday, Day 6 = Sunday
+    const timeDiff = eventDate.getTime() - weekStart.getTime();
+    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    
+    // Check if event is within current week view
+    if (daysDiff < 0 || daysDiff > 6) {
+      this.displayNotification('Event date is outside the current week view. Please switch to the correct week.', 'warning');
+    }
+    
+    // Generate badges
+    const badges: string[] = [];
+    if (this.newEvent.place) {
+      badges.push('LOC');
+    }
+    if (this.newEvent.notes) {
+      badges.push('NOTE');
+    }
+    
+    // Create event
+    const newCalendarEvent = {
+      day: daysDiff,
+      startHour: startHours,
+      durationHours: durationHours,
+      title: this.newEvent.title,
+      color: this.newEvent.color,
+      badges: badges.length > 0 ? badges : ['MEET'],
+      avatars: this.newEvent.members.length || 1,
+      compact: durationHours <= 1,
+      place: this.newEvent.place || undefined,
+      notes: this.newEvent.notes || undefined,
+      date: this.newEvent.date
+    };
+
+    this.calendarEvents.push(newCalendarEvent);
+
+    // Reset form
+    this.newEvent = {
+      title: '',
+      place: '',
+      date: '',
+      startTime: '',
+      endTime: '',
+      members: [],
+      notes: '',
+      color: this.availableColors[0]
+    };
+    this.currentColorIndex = 0;
+
+    this.displayNotification('Event created successfully!', 'success');
   }
 
   getCalendarHourLinePercent(index: number): number {
