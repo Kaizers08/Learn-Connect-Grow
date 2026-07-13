@@ -288,7 +288,10 @@
             <button class="view-all-btn" (click)="onViewAllSessions()">View all</button>
           </div>
 
-          @for (session of upcomingSessions; track session.mentorName) {
+          @if (upcomingSessions.length === 0) {
+            <p class="online-empty">No upcoming sessions scheduled.</p>
+          }
+          @for (session of upcomingSessions; track session.date + session.time) {
             <div class="session-card">
               <div class="session-mentor-row">
                 <div class="session-avatar">
@@ -298,7 +301,7 @@
                   <span class="session-mentor-name">{{ session.mentorName }}</span>
                   <span class="session-status" [class.active]="session.isActive">
                     <span class="status-dot"></span>
-                    Active Now
+                    Scheduled
                   </span>
                 </div>
               </div>
@@ -319,13 +322,11 @@
                 </div>
                 <div class="session-detail-row">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <rect x="2" y="7" width="20" height="14" rx="2" stroke="#888" stroke-width="1.5"/>
-                    <path d="M16 7V5A2 2 0 0012 3H12A2 2 0 008 5V7" stroke="#888" stroke-width="1.5"/>
+                    <path d="M17.5 19H9l-7 3v-3H2a1 1 0 01-1-1V3a1 1 0 011-1h20a1 1 0 011 1v13a1 1 0 01-1 1z" stroke="#888" stroke-width="1.5"/>
                   </svg>
                   <span>{{ session.platform }}</span>
                 </div>
               </div>
-              <button class="btn-view-profile-outline">View Profile</button>
             </div>
           }
         </div>

@@ -42,9 +42,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   showProfileModal = false;
   selectedProfile: any = null;
 
-  upcomingSessions = [
-    { mentorName: 'Manilyn Jones', isActive: true, date: 'December 3, 2025', time: '4:00PM – 10:00PM', platform: 'Google Meet' }
-  ];
+  upcomingSessions: Array<{
+    mentorName: string;
+    isActive: boolean;
+    date: string;
+    time: string;
+    platform: string;
+  }> = [];
 
   searchQuery = '';
 
@@ -103,6 +107,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       // Remove from local array
       this.calendarEvents.splice(this.selectedEventIndex, 1);
+      
+      // Reload upcoming sessions to update the sidebar
+      await this.loadCalendarEvents();
+      
       this.displayNotification('Event deleted successfully', 'success');
       this.closeEventContextMenu();
     }
@@ -164,13 +172,77 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           compact: durationHours <= 1,
           place: dbEvent.place,
           notes: dbEvent.notes,
-          date: dbEvent.event_date
+          date: dbEvent.event_date,
+          startTime: dbEvent.start_time,
+          endTime: dbEvent.end_time
         };
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
+
+      // Load upcoming sessions for the sidebar
+      this.loadUpcomingSessions(data);
 
     } catch (error) {
       console.error('Error loading calendar events:', error);
     }
+  }
+
+  // Load upcoming sessions from calendar events
+  loadUpcomingSessions(events: any[]) {
+    const now = new Date();
+    
+    // Filter events that are in the future
+    const futureEvents = events.filter((event: any) => {
+      const eventDate = new Date(event.event_date);
+      const [hours, minutes] = event.start_time.split(':').map(Number);
+      eventDate.setHours(hours, minutes, 0, 0);
+      return eventDate > now;
+    });
+
+    // Sort by date and time (earliest first)
+    futureEvents.sort((a: any, b: any) => {
+      const dateA = new Date(a.event_date + ' ' + a.start_time);
+      const dateB = new Date(b.event_date + ' ' + b.start_time);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Convert to upcoming sessions format (limit to 3 most recent)
+    this.upcomingSessions = futureEvents.slice(0, 3).map((event: any) => {
+      // Format date
+      const eventDate = new Date(event.event_date);
+      const dateOptions: Intl.DateTimeFormatOptions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      };
+      const formattedDate = eventDate.toLocaleDateString('en-US', dateOptions);
+
+      // Format time
+      let timeString = '';
+      if (event.start_time) {
+        const [startHours, startMinutes] = event.start_time.split(':').map(Number);
+        const startPeriod = startHours >= 12 ? 'PM' : 'AM';
+        const startHours12 = startHours % 12 || 12;
+        timeString = `${startHours12}:${startMinutes.toString().padStart(2, '0')}${startPeriod}`;
+        
+        if (event.end_time) {
+          const [endHours, endMinutes] = event.end_time.split(':').map(Number);
+          const endPeriod = endHours >= 12 ? 'PM' : 'AM';
+          const endHours12 = endHours % 12 || 12;
+          timeString += ` – ${endHours12}:${endMinutes.toString().padStart(2, '0')}${endPeriod}`;
+        }
+      }
+
+      return {
+        mentorName: event.title,
+        isActive: false,
+        date: formattedDate,
+        time: timeString,
+        platform: event.place || 'Virtual Meeting'
+      };
+    });
+
+    // Update upcoming sessions count
+    this.upcomingSessionsCount = futureEvents.length;
   }
 
   // Notification/Toast system
@@ -433,6 +505,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       };
 
       this.calendarEvents.push(newCalendarEvent);
+
+      // Reload upcoming sessions to include the new event
+      await this.loadCalendarEvents();
 
       // Reset form
       this.newEvent = {
