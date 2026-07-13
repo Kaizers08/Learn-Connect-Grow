@@ -585,7 +585,7 @@
               </div>
 
               <!-- Grid body -->
-              <div class="cal-grid-scroll">
+              <div class="cal-grid-scroll" #calendarScrollContainer>
                 <div class="cal-grid-body">
                   <div class="cal-time-col">
                     @for (hour of calendarHours; track hour) {
@@ -1938,3 +1938,4 @@
   (onSubmit)="submitFeedback($event)"
   (onClose)="closeFeedbackModal()"
 ></app-feedback-modal>
+

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,9 +12,11 @@ import { FeedbackModalComponent } from './feedback-modal.component';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // ─── General ───────────────────────────────────────────────────────────────
+  @ViewChild('calendarScrollContainer', { static: false }) calendarScrollContainer?: ElementRef<HTMLDivElement>;
+  
   userName = '';
   userRole = 'Mentee';
   showUserMenu = false;
@@ -63,6 +65,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly calendarSlotCount = 24;
   calendarNowPercent = 0;
   private nowLineInterval: any;
+  private shouldScrollCalendar = false;
   showNewEventPanel = true;
 
   calendarEvents: Array<{
@@ -91,13 +94,42 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `${hour < 10 ? '0' : ''}${hour}`;
   }
 
-  updateCalendarNowLine(): void {
+  updateCalendarNowLine(scrollToPosition: boolean = false): void {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     // Calculate percentage based on 24-hour day (0-24)
     const currentTimeInHours = hours + minutes / 60;
     this.calendarNowPercent = (currentTimeInHours / 24) * 100;
+    
+    // Scroll to current time if requested
+    if (scrollToPosition) {
+      this.scrollCalendarToCurrentTime();
+    }
+  }
+
+  scrollCalendarToCurrentTime(): void {
+    const container = this.calendarScrollContainer?.nativeElement;
+    
+    if (!container) {
+      return;
+    }
+    
+    const scrollHeight = container.scrollHeight;
+    const containerHeight = container.clientHeight;
+    
+    if (scrollHeight <= containerHeight) {
+      return;
+    }
+    
+    // Calculate scroll position: center the current time in view
+    const targetScroll = (scrollHeight * this.calendarNowPercent / 100) - (containerHeight / 2);
+    const finalScroll = Math.max(0, Math.min(targetScroll, scrollHeight - containerHeight));
+    
+    container.scrollTo({
+      top: finalScroll,
+      behavior: 'smooth'
+    });
   }
 
   getCalendarEventTime(event: { startHour: number; durationHours: number }): string {
@@ -597,9 +629,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ]);
     
     // Initialize and update calendar "now" line
-    this.updateCalendarNowLine();
+    this.updateCalendarNowLine(false); // Don't scroll on init, will scroll when tab is opened
     this.nowLineInterval = setInterval(() => {
-      this.updateCalendarNowLine();
+      this.updateCalendarNowLine(); // Don't scroll on periodic updates
     }, 60000); // Update every minute
     
     // Update last_seen every 2 minutes
@@ -678,6 +710,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.nowLineInterval) clearInterval(this.nowLineInterval);
   }
 
+  ngAfterViewChecked() {
+    // Check if we should scroll the calendar and if the element is now available
+    if (this.shouldScrollCalendar && this.calendarScrollContainer?.nativeElement) {
+      this.shouldScrollCalendar = false;
+      // Use setTimeout to ensure Angular has finished all DOM updates
+      setTimeout(() => {
+        this.scrollCalendarToCurrentTime();
+      }, 0);
+    }
+  }
+
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
@@ -699,6 +742,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       } else {
         await this.loadResourceMentors();
       }
+    } else if (id === 'calendar') {
+      // Scroll to current time when calendar tab is opened
+      // Set flag - will scroll in ngAfterViewChecked when DOM is ready
+      this.shouldScrollCalendar = true;
     }
   }
   onViewAllSessions() {}
