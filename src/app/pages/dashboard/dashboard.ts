@@ -13,7 +13,6 @@ import { FeedbackModalComponent } from './feedback-modal.component';
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
-  private readonly allowedEventTypes = ['mentorship', 'personal', 'reminder'] as const;
   private readonly dashboardBodyClass = 'dashboard-messages-open';
 
   // ─── General ───────────────────────────────────────────────────────────────
@@ -30,7 +29,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   get isMentor(): boolean { return this.userService.role() === 'mentor'; }
 
-  upcomingSessionsCount = 2;
   unreadMessages = 0;
   activeNavItem = 'dashboard';
 
@@ -52,12 +50,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     date: string;
     time: string;
     platform: string;
+    notes?: string;
+    mentorProfilePicture?: string;
+    eventType?: string;
   }> = [];
 
   searchQuery = '';
 
   // ─── Activity Calendar (static UI) ──────────────────────────────────────────
-  calendarViewMode: 'day' | 'week' | 'month' | 'year' = 'week';
+  calendarViewMode: 'day' | 'week' = 'week';
   calendarWeekLabel = '';
   calendarHours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
   calendarDays: Array<{ name: string; short: string; date: number }> = [];
@@ -69,35 +70,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   private shouldScrollCalendar = false;
   private shouldScrollMessages = false;
   private messageScrollFrame: number | null = null;
-  showNewEventPanel = true;
-
-  // Event deletion
-  showEventContextMenu = false;
-  contextMenuX = 0;
-  contextMenuY = 0;
-  selectedEventIndex: number | null = null;
   showCalendarEventModal = false;
   selectedCalendarEvent: any = null;
-
-  openEventContextMenu(event: MouseEvent, eventIndex: number) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    this.contextMenuX = event.clientX;
-    this.contextMenuY = event.clientY;
-    this.selectedEventIndex = eventIndex;
-    this.showEventContextMenu = true;
-
-    // Close context menu when clicking elsewhere
-    setTimeout(() => {
-      document.addEventListener('click', this.closeEventContextMenu.bind(this), { once: true });
-    }, 0);
-  }
-
-  closeEventContextMenu() {
-    this.showEventContextMenu = false;
-    this.selectedEventIndex = null;
-  }
 
   openCalendarEventDetails(event: any) {
     this.selectedCalendarEvent = event;
@@ -107,39 +81,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   closeCalendarEventDetails() {
     this.showCalendarEventModal = false;
     this.selectedCalendarEvent = null;
-  }
-
-  async deleteEvent() {
-    if (this.selectedEventIndex !== null) {
-      const event = this.calendarEvents[this.selectedEventIndex];
-      
-      // Check if user owns this event (prevent mentees from deleting mentor events)
-      if (event.ownerId !== this.currentUserId) {
-        this.displayNotification('You can only delete your own events', 'warning');
-        this.closeEventContextMenu();
-        return;
-      }
-      
-      if (event.id) {
-        // Delete from database
-        const { success, error } = await this.supabase.deleteCalendarEvent(event.id);
-        
-        if (!success) {
-          this.displayNotification('Failed to delete event', 'error');
-          this.closeEventContextMenu();
-          return;
-        }
-      }
-      
-      // Remove from local array
-      this.calendarEvents.splice(this.selectedEventIndex, 1);
-      
-      // Reload upcoming sessions to update the sidebar
-      await this.loadCalendarEvents();
-      
-      this.displayNotification('Event deleted successfully', 'success');
-      this.closeEventContextMenu();
-    }
   }
 
   // Calendar event loading
@@ -364,12 +305,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         isActive: false,
         date: formattedDate,
         time: timeString,
-        platform: event.place || 'Virtual Meeting'
+        platform: event.place || 'Virtual Meeting',
+        notes: event.notes || '',
+        mentorProfilePicture: event.mentorProfilePicture || '',
+        eventType: event.event_type || 'mentorship'
       };
     });
 
-    // Update upcoming sessions count
-    this.upcomingSessionsCount = futureEvents.length;
   }
 
   // Notification/Toast system
@@ -400,6 +342,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       clearTimeout(this.notificationTimeout);
     }
   }
+
   newEvent = {
     title: '',
     place: '',
@@ -409,23 +352,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     members: [] as string[],
     notes: '',
     color: '#29CC39',
-    eventType: 'personal' as 'mentorship' | 'personal' | 'reminder'
+    eventType: 'mentorship' as 'mentorship' | 'personal' | 'reminder'
   };
-  
+
   availableColors = ['#29CC39', '#33BFFF', '#FF6633', '#A855F7', '#F59E0B', '#EC4899', '#10B981'];
   currentColorIndex = 0;
-
-  // Event type definitions with colors and permissions
-  eventTypes: Array<{
-    value: 'mentorship' | 'personal' | 'reminder';
-    label: string;
-    color: string;
-    onlyMentors: boolean;
-  }> = [
-    { value: 'mentorship', label: 'Mentorship Session', color: '#29CC39', onlyMentors: true },
-    { value: 'personal', label: 'Personal Study', color: '#33BFFF', onlyMentors: false },
-    { value: 'reminder', label: 'Reminder', color: '#F59E0B', onlyMentors: false }
-  ];
 
   calendarEvents: Array<{
     id?: string;
@@ -578,79 +509,57 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     };
   }
 
-  // Event Form Methods
   cycleEventColor(): void {
     this.currentColorIndex = (this.currentColorIndex + 1) % this.availableColors.length;
     this.newEvent.color = this.availableColors[this.currentColorIndex];
   }
 
   async createEvent(): Promise<void> {
+    if (!this.isMentor) {
+      this.displayNotification('Only mentors can create mentoring sessions', 'warning');
+      return;
+    }
+
     if (!this.newEvent.title || !this.newEvent.date || !this.newEvent.startTime) {
       this.displayNotification('Please fill in Title, Date, and Start Time', 'warning');
       return;
     }
 
-    // Check permissions for mentorship session
-    if (this.newEvent.eventType === 'mentorship' && !this.isMentor) {
-      this.displayNotification('Only mentors can create Mentorship Sessions', 'warning');
-      return;
-    }
-
-    // Parse date and times
     const eventDate = new Date(this.newEvent.date);
     const [startHours, startMinutes] = this.newEvent.startTime.split(':').map(Number);
-    
-    // Calculate duration
-    let durationHours = 1; // Default 1 hour if no end time
+    let durationHours = 1;
+
     if (this.newEvent.endTime) {
       const [endHours, endMinutes] = this.newEvent.endTime.split(':').map(Number);
       const startTimeInMinutes = startHours * 60 + startMinutes;
       const endTimeInMinutes = endHours * 60 + endMinutes;
-      
-      if (endTimeInMinutes > startTimeInMinutes) {
-        durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
-      } else {
+
+      if (endTimeInMinutes <= startTimeInMinutes) {
         this.displayNotification('End time must be after start time', 'warning');
         return;
       }
+
+      durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
     }
-    
-    // Get the Monday of the current calendar week
+
     const now = this.getCalendarReferenceDate();
     const dayOfWeek = now.getDay();
     const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() + monday);
-    weekStart.setHours(0, 0, 0, 0); // Reset to start of day
-    
-    // Calculate which day column (0-6) this event belongs to
-    // Day 0 = Monday, Day 6 = Sunday
+    weekStart.setHours(0, 0, 0, 0);
+
     const timeDiff = eventDate.getTime() - weekStart.getTime();
     const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    
-    // Check if event is within current week view
-    if (daysDiff < 0 || daysDiff > 6) {
-      this.displayNotification('Event date is outside the current week view. Please switch to the correct week.', 'warning');
-    }
-    
-    // Generate badges
-        const badges: string[] = [];
-        if (this.newEvent.place) {
-          badges.push('LOC');
-        }
-        if (this.newEvent.notes) {
-          badges.push('NOTE');
-        }
 
-    // Save to Supabase
     try {
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) {
-        this.displayNotification('Please log in to create events', 'error');
+        this.displayNotification('Please log in to create sessions', 'error');
         return;
       }
 
-      const { data, error } = await this.supabase.createCalendarEvent({
+      const { error } = await this.supabase.createCalendarEvent({
         user_id: userId,
         title: this.newEvent.title,
         place: this.newEvent.place || undefined,
@@ -660,38 +569,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         members: this.newEvent.members,
         notes: this.newEvent.notes || undefined,
         color: this.newEvent.color,
-        event_type: this.newEvent.eventType
+        event_type: 'mentorship'
       });
 
       if (error) {
-        this.displayNotification('Failed to create event', 'error');
+        this.displayNotification('Failed to create session', 'error');
         return;
       }
 
-      // Add to local array for immediate display
-      const newCalendarEvent = {
-        id: data.id,
-        day: daysDiff,
-        startHour: startHours,
-        durationHours: durationHours,
-        title: this.newEvent.title,
-        color: this.newEvent.color,
-        badges: badges,
-        avatars: this.newEvent.members.length || 1,
-        compact: durationHours <= 1,
-        place: this.newEvent.place || undefined,
-        notes: this.newEvent.notes || undefined,
-        date: this.newEvent.date,
-        eventType: this.newEvent.eventType,
-        ownerId: userId
-      };
+      if (daysDiff < 0 || daysDiff > 6) {
+        this.calendarAnchorDate = eventDate;
+      }
 
-      this.calendarEvents.push(newCalendarEvent);
-
-      // Reload upcoming sessions to include the new event
-      await this.loadCalendarEvents();
-
-      // Reset form
       this.newEvent = {
         title: '',
         place: '',
@@ -701,14 +590,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         members: [],
         notes: '',
         color: this.availableColors[0],
-        eventType: 'personal'
+        eventType: 'mentorship'
       };
       this.currentColorIndex = 0;
 
-      this.displayNotification('Event created successfully!', 'success');
+      await this.loadCalendarEvents();
+      this.displayNotification('Session created successfully', 'success');
     } catch (error) {
-      console.error('Error creating event:', error);
-      this.displayNotification('Failed to create event', 'error');
+      console.error('Error creating session:', error);
+      this.displayNotification('Failed to create session', 'error');
     }
   }
 
@@ -716,7 +606,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return (index / this.calendarSlotCount) * 100;
   }
 
-  setCalendarView(mode: 'day' | 'week' | 'month' | 'year') {
+  setCalendarView(mode: 'day' | 'week') {
     this.calendarViewMode = mode;
     this.renderCalendarView();
   }
@@ -740,72 +630,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       short: dayShorts[dayIndex],
       date: date
     }];
-  }
-
-  initializeCurrentMonth(): void {
-    const now = this.getCalendarReferenceDate();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    
-    this.calendarWeekLabel = `${monthNames[month]} ${year}`;
-    
-    // Get first day of month
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    
-    // Get first Monday of the month view (might be from previous month)
-    const firstDayOfWeek = firstDay.getDay();
-    const startDate = new Date(firstDay);
-    startDate.setDate(1 - (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1));
-    
-    // Build 7 days starting from first day of calendar view
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    this.calendarDays = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDay = new Date(startDate);
-      currentDay.setDate(startDate.getDate() + i);
-      const dayIndex = currentDay.getDay();
-      
-      this.calendarDays.push({
-        name: dayNames[dayIndex],
-        short: dayShorts[dayIndex],
-        date: currentDay.getDate()
-      });
-    }
-  }
-
-  initializeCurrentYear(): void {
-    const now = this.getCalendarReferenceDate();
-    const year = now.getFullYear();
-    
-    this.calendarWeekLabel = `${year}`;
-    
-    // For year view, show the current week still
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    const dayOfWeek = now.getDay();
-    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + monday);
-    
-    this.calendarDays = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDay = new Date(weekStart);
-      currentDay.setDate(weekStart.getDate() + i);
-      const dayIndex = currentDay.getDay();
-      
-      this.calendarDays.push({
-        name: dayNames[dayIndex],
-        short: dayShorts[dayIndex],
-        date: currentDay.getDate()
-      });
-    }
   }
 
   calendarRange(n: number): number[] {
@@ -900,12 +724,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   private renderCalendarView(): void {
     if (this.calendarViewMode === 'day') {
       this.initializeCurrentDay();
-    } else if (this.calendarViewMode === 'week') {
-      this.initializeCurrentWeek();
-    } else if (this.calendarViewMode === 'month') {
-      this.initializeCurrentMonth();
     } else {
-      this.initializeCurrentYear();
+      this.initializeCurrentWeek();
     }
     this.loadCalendarEvents();
   }
@@ -914,12 +734,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const anchor = this.getCalendarReferenceDate();
     if (this.calendarViewMode === 'day') {
       anchor.setDate(anchor.getDate() - 1);
-    } else if (this.calendarViewMode === 'week') {
-      anchor.setDate(anchor.getDate() - 7);
-    } else if (this.calendarViewMode === 'month') {
-      anchor.setMonth(anchor.getMonth() - 1);
     } else {
-      anchor.setFullYear(anchor.getFullYear() - 1);
+      anchor.setDate(anchor.getDate() - 7);
     }
     this.calendarAnchorDate = anchor;
     this.renderCalendarView();
@@ -929,12 +745,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const anchor = this.getCalendarReferenceDate();
     if (this.calendarViewMode === 'day') {
       anchor.setDate(anchor.getDate() + 1);
-    } else if (this.calendarViewMode === 'week') {
-      anchor.setDate(anchor.getDate() + 7);
-    } else if (this.calendarViewMode === 'month') {
-      anchor.setMonth(anchor.getMonth() + 1);
     } else {
-      anchor.setFullYear(anchor.getFullYear() + 1);
+      anchor.setDate(anchor.getDate() + 7);
     }
     this.calendarAnchorDate = anchor;
     this.renderCalendarView();
@@ -1573,7 +1385,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.shouldScrollCalendar = true;
     }
   }
-  onViewAllSessions() {}
   onViewAllOnline() {}
   onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }

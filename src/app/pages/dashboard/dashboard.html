@@ -198,22 +198,6 @@
         <!-- Stats Cards -->
         <div class="stats-row">
           <div class="stat-card">
-            <div class="stat-icon stat-icon-blue">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="17" rx="2" stroke="white" stroke-width="2"/>
-                <path d="M3 9H21" stroke="white" stroke-width="2"/>
-                <path d="M8 2V6M16 2V6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                <path d="M8 13H12M8 17H11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Upcoming Session</span>
-              <span class="stat-value">{{ upcomingSessionsCount }}</span>
-              <span class="stat-sub">This week</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
             <div class="stat-icon stat-icon-green">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
@@ -280,56 +264,6 @@
 
       <!-- Right: Sidebar Panel -->
       <aside class="right-panel">
-
-        <!-- Upcoming Sessions -->
-        <div class="panel-section">
-          <div class="panel-header">
-            <h3 class="panel-title">Upcoming Sessions</h3>
-            <button class="view-all-btn" (click)="onViewAllSessions()">View all</button>
-          </div>
-
-          @if (upcomingSessions.length === 0) {
-            <p class="online-empty">No upcoming sessions scheduled.</p>
-          }
-          @for (session of upcomingSessions; track session.date + session.time) {
-            <div class="session-card">
-              <div class="session-mentor-row">
-                <div class="session-avatar">
-                  <span>{{ getInitials(session.mentorName) }}</span>
-                </div>
-                <div class="session-mentor-info">
-                  <span class="session-mentor-name">{{ session.mentorName }}</span>
-                  <span class="session-status" [class.active]="session.isActive">
-                    <span class="status-dot"></span>
-                    Scheduled
-                  </span>
-                </div>
-              </div>
-              <div class="session-details">
-                <div class="session-detail-row">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="4" width="18" height="17" rx="2" stroke="#888" stroke-width="1.5"/>
-                    <path d="M3 9H21" stroke="#888" stroke-width="1.5"/>
-                  </svg>
-                  <span>{{ session.date }}</span>
-                </div>
-                <div class="session-detail-row">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="9" stroke="#888" stroke-width="1.5"/>
-                    <path d="M12 7V12L15 15" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                  <span>{{ session.time }}</span>
-                </div>
-                <div class="session-detail-row">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M17.5 19H9l-7 3v-3H2a1 1 0 01-1-1V3a1 1 0 011-1h20a1 1 0 011 1v13a1 1 0 01-1 1z" stroke="#888" stroke-width="1.5"/>
-                  </svg>
-                  <span>{{ session.platform }}</span>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
 
         <!-- Online Mentors -->
         <div class="panel-section">
@@ -544,9 +478,11 @@
 
       <!-- ── ACTIVITY CALENDAR / SCHEDULES VIEW ──────────────────────────── -->
       @if (activeNavItem === 'calendar') {
-      <div class="cal-wrapper">
+        <div class="cal-wrapper">
         <div class="cal-header">
           <div class="cal-header-text">
+            <h1 class="cal-title">Mentoring Schedule</h1>
+            <p class="cal-subtitle">Review mentor sessions, jump to chat, and keep materials close by.</p>
           </div>
         </div>
 
@@ -573,8 +509,6 @@
               <div class="cal-view-toggle">
                 <button type="button" class="cal-view-btn" [class.active]="calendarViewMode === 'day'" (click)="setCalendarView('day')">Day</button>
                 <button type="button" class="cal-view-btn" [class.active]="calendarViewMode === 'week'" (click)="setCalendarView('week')">Week</button>
-                <button type="button" class="cal-view-btn" [class.active]="calendarViewMode === 'month'" (click)="setCalendarView('month')">Month</button>
-                <button type="button" class="cal-view-btn" [class.active]="calendarViewMode === 'year'" (click)="setCalendarView('year')">Year</button>
               </div>
             </div>
 
@@ -659,8 +593,6 @@
                               [class.cal-event-compact]="event.compact"
                               [ngStyle]="getCalendarEventStyle(event)"
                               (click)="openCalendarEventDetails(event)"
-                              (contextmenu)="openEventContextMenu($event, $index)"
-                              title="Right-click to delete"
                             >
                               <div class="cal-event-accent"></div>
                               <div class="cal-event-body">
@@ -717,27 +649,20 @@
             </div>
           </div>
 
-          <!-- New Event panel (static UI) -->
-          @if (showNewEventPanel) {
+          @if (isMentor) {
             <aside class="cal-new-event">
               <div class="cal-new-event-head">
                 <div>
-                  <p class="cal-new-event-kicker">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                    </svg>
-                    Create
-                  </p>
-                  <input 
-                    type="text" 
-                    class="cal-new-event-title-input" 
-                    placeholder="Event Title"
+                  <p class="cal-new-event-kicker">Create</p>
+                  <input
+                    type="text"
+                    class="cal-new-event-title-input"
+                    placeholder="Session Title"
                     [(ngModel)]="newEvent.title"
                   />
-
                 </div>
                 <div class="cal-color-group">
-                  <button type="button" class="cal-color-btn" aria-label="Event color" (click)="cycleEventColor()">
+                  <button type="button" class="cal-color-btn" aria-label="Session color" (click)="cycleEventColor()">
                     <span class="cal-color-dot" [style.background]="newEvent.color"></span>
                   </button>
                 </div>
@@ -748,9 +673,9 @@
                     <path d="M21 10C21 17 12 23 12 23S3 17 3 10A9 9 0 0112 1A9 9 0 0121 10Z" stroke="#9CA3AF" stroke-width="2"/>
                     <circle cx="12" cy="10" r="3" stroke="#9CA3AF" stroke-width="2"/>
                   </svg>
-                  <input type="text" placeholder="Add Place" [(ngModel)]="newEvent.place" class="cal-input-field-simple" />
+                  <input type="text" placeholder="Meeting Link or Place" [(ngModel)]="newEvent.place" class="cal-input-field-simple" />
                 </div>
-                
+
                 <div class="cal-new-input-row-split-simple">
                   <div class="cal-new-input-half">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -758,50 +683,89 @@
                       <path d="M3 9H21" stroke="#9CA3AF" stroke-width="2"/>
                       <path d="M8 2V6M16 2V6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="date" [(ngModel)]="newEvent.date" class="cal-input-field-simple" placeholder="Add Date" />
+                    <input type="date" [(ngModel)]="newEvent.date" class="cal-input-field-simple" />
                   </div>
                   <div class="cal-new-input-half">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="9" stroke="#9CA3AF" stroke-width="2"/>
                       <path d="M12 7V12L15 14" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="time" [(ngModel)]="newEvent.startTime" class="cal-input-field-simple" placeholder="Start Time" title="Start Time" />
+                    <input type="time" [(ngModel)]="newEvent.startTime" class="cal-input-field-simple" title="Start Time" />
                   </div>
                 </div>
-                
+
                 <div class="cal-new-input-row-simple">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="9" stroke="#9CA3AF" stroke-width="2"/>
                     <path d="M12 7V12L15 14" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
                   </svg>
-                  <input type="time" [(ngModel)]="newEvent.endTime" class="cal-input-field-simple" placeholder="End Time" title="End Time (Optional)" />
+                  <input type="time" [(ngModel)]="newEvent.endTime" class="cal-input-field-simple" title="End Time" />
                 </div>
-                
+
                 <div class="cal-new-input-row-simple">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="9" cy="7" r="4" stroke="#9CA3AF" stroke-width="2"/>
-                    <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <input type="text" placeholder="Add Members" class="cal-input-field-simple" />
-                </div>
-                
-                <div class="cal-new-input-row-simple">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20V13" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  <textarea placeholder="Add Notes" [(ngModel)]="newEvent.notes" class="cal-input-field-simple cal-textarea-simple" rows="1"></textarea>
+                  <textarea placeholder="Session Notes" [(ngModel)]="newEvent.notes" class="cal-input-field-simple cal-textarea-simple" rows="1"></textarea>
                 </div>
               </div>
               <div class="cal-new-event-footer">
                 <button type="button" class="cal-create-btn" (click)="createEvent()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                  </svg>
-                  Create Event
+                  Create Session
                 </button>
+              </div>
+            </aside>
+          } @else {
+            <aside class="cal-new-event cal-schedule-panel">
+              <div class="cal-new-event-head">
+                <div>
+                  <p class="cal-new-event-kicker">Sessions</p>
+                  <h2 class="cal-new-event-title">Upcoming mentoring sessions</h2>
+                </div>
+                <div class="cal-color-group" aria-hidden="true">
+                  <span class="cal-color-dot"></span>
+                </div>
+              </div>
+              <div class="cal-new-event-body">
+                @if (upcomingSessions.length === 0) {
+                  <div class="cal-sidebar-empty">
+                    <p>No upcoming mentoring sessions.</p>
+                    <span>When a mentor adds one, it will show here.</span>
+                  </div>
+                } @else {
+                  <div class="cal-session-list">
+                    @for (session of upcomingSessions; track session.date + session.time) {
+                      <article class="cal-session-item">
+                        <div class="cal-session-head">
+                          <div class="cal-session-avatar">
+                            @if (session.mentorProfilePicture) {
+                              <img [src]="session.mentorProfilePicture" [alt]="session.mentorName + ' profile picture'">
+                            } @else {
+                              <span>{{ getInitials(session.mentorName) }}</span>
+                            }
+                          </div>
+                          <div class="cal-session-info">
+                            <h3>{{ session.mentorName }}</h3>
+                            <p>{{ session.platform }}</p>
+                          </div>
+                        </div>
+                        <div class="cal-session-meta">
+                          <span>{{ session.date }}</span>
+                          <span>{{ session.time }}</span>
+                        </div>
+                        @if (session.notes) {
+                          <p class="cal-session-notes">{{ session.notes }}</p>
+                        }
+                      </article>
+                    }
+                  </div>
+                  <p class="cal-sidebar-note">Use chat and materials before or after each session.</p>
+                }
+              </div>
+              <div class="cal-new-event-footer cal-sidebar-footer">
+                <button type="button" class="cal-sidebar-btn" (click)="setActiveNav('messages')">Open chat</button>
+                <button type="button" class="cal-sidebar-btn secondary" (click)="setActiveNav('library')">View materials</button>
               </div>
             </aside>
           }
@@ -2078,18 +2042,6 @@
         }
       </div>
     </div>
-  </div>
-}
-
-@if (showEventContextMenu) {
-  <div class="event-context-menu" [style.left.px]="contextMenuX" [style.top.px]="contextMenuY">
-    <button class="context-menu-item context-menu-delete" (click)="deleteEvent()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Delete Event
-    </button>
   </div>
 }
 
