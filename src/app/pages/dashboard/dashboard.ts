@@ -305,15 +305,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (dbEvent.notes) badges.push('NOTE');
         if (dbEvent.isFromMentor) {
           badges.push('MENTOR');
-          // For mentor events, only show MENTORSHIP if it's that type, skip PERSONAL/REMINDER
-          if (eventType === 'mentorship') badges.push('MENTORSHIP');
-        } else {
-          // For user's own events, show type badge
-          switch (eventType) {
-            case 'mentorship': badges.push('MENTORSHIP'); break;
-            case 'personal': badges.push('PERSONAL'); break;
-            case 'reminder': badges.push('REMINDER'); break;
-          }
         }
 
         return {
@@ -655,12 +646,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
         if (this.newEvent.notes) {
           badges.push('NOTE');
-        }
-        // Add event type badge (for user's own event)
-        switch (this.newEvent.eventType) {
-          case 'mentorship': badges.push('MENTORSHIP'); break;
-          case 'personal': badges.push('PERSONAL'); break;
-          case 'reminder': badges.push('REMINDER'); break;
         }
 
     // Save to Supabase
