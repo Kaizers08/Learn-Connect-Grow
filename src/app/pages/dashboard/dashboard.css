@@ -4581,6 +4581,35 @@ textarea.form-control {
   transition: background 0.2s ease;
 }
 
+/* Event Type Selector */
+.cal-event-type-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.cal-event-type-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.cal-event-type-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.cal-event-type-btn.active {
+  border-width: 2px;
+}
+
 .cal-color-btn:hover {
   background: #FFFFFF;
 }

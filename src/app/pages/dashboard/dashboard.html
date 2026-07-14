@@ -773,6 +773,23 @@
                     placeholder="Event Title"
                     [(ngModel)]="newEvent.title"
                   />
+                  <!-- Event Type Selector -->
+                  <div class="cal-event-type-selector">
+                    @for (type of eventTypes; track type.value) {
+                      @if (!type.onlyMentors || isMentor) {
+                        <button 
+                          type="button" 
+                          class="cal-event-type-btn"
+                          [class.active]="newEvent.eventType === type.value"
+                          [style.borderColor]="type.color"
+                          [style.background]="newEvent.eventType === type.value ? type.color + '14' : 'transparent'"
+                          (click)="newEvent.eventType = type.value; newEvent.color = type.color"
+                        >
+                          {{ type.label }}
+                        </button>
+                      }
+                    }
+                  </div>
                 </div>
                 <div class="cal-color-group">
                   <button type="button" class="cal-color-btn" aria-label="Event color" (click)="cycleEventColor()">

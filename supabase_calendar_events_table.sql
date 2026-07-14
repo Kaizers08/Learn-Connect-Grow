@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   members TEXT[], -- Array of member names or IDs
   notes TEXT,
   color TEXT NOT NULL DEFAULT '#29CC39',
+  event_type TEXT NOT NULL DEFAULT 'personal', -- 'mentorship' | 'personal' | 'reminder'
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -266,11 +266,28 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const timeDiff = eventDate.getTime() - weekStart.getTime();
         const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
 
+        // Type-safe event type
+        const rawEventType = dbEvent.event_type || 'personal';
+        const eventType = (['mentorship', 'personal', 'reminder'].includes(rawEventType) 
+          ? rawEventType 
+          : 'personal') as 'mentorship' | 'personal' | 'reminder';
+
         // Generate badges
         const badges: string[] = [];
         if (dbEvent.place) badges.push('LOC');
         if (dbEvent.notes) badges.push('NOTE');
-        if (dbEvent.isFromMentor) badges.push('MENTOR');
+        if (dbEvent.isFromMentor) {
+          badges.push('MENTOR');
+          // For mentor events, only show MENTORSHIP if it's that type, skip PERSONAL/REMINDER
+          if (eventType === 'mentorship') badges.push('MENTORSHIP');
+        } else {
+          // For user's own events, show type badge
+          switch (eventType) {
+            case 'mentorship': badges.push('MENTORSHIP'); break;
+            case 'personal': badges.push('PERSONAL'); break;
+            case 'reminder': badges.push('REMINDER'); break;
+          }
+        }
 
         return {
           id: dbEvent.id,
@@ -279,7 +296,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           durationHours: durationHours,
           title: dbEvent.title,
           color: dbEvent.color,
-          badges: badges.length > 0 ? badges : ['MEET'],
+          badges: badges,
           avatars: dbEvent.members?.length || 1,
           compact: durationHours <= 1,
           place: dbEvent.place,
@@ -288,7 +305,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           startTime: dbEvent.start_time,
           endTime: dbEvent.end_time,
           isFromMentor: dbEvent.isFromMentor || false,
-          ownerId: dbEvent.user_id
+          ownerId: dbEvent.user_id,
+          eventType: eventType
         };
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
 
@@ -399,11 +417,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     endTime: '',
     members: [] as string[],
     notes: '',
-    color: '#29CC39'
+    color: '#29CC39',
+    eventType: 'personal' as 'mentorship' | 'personal' | 'reminder'
   };
   
   availableColors = ['#29CC39', '#33BFFF', '#FF6633', '#A855F7', '#F59E0B', '#EC4899', '#10B981'];
   currentColorIndex = 0;
+
+  // Event type definitions with colors and permissions
+  eventTypes = [
+    { value: 'mentorship', label: 'Mentorship Session', color: '#29CC39', onlyMentors: true },
+    { value: 'personal', label: 'Personal Study', color: '#33BFFF', onlyMentors: false },
+    { value: 'reminder', label: 'Reminder', color: '#F59E0B', onlyMentors: false }
+  ];
 
   calendarEvents: Array<{
     id?: string;
@@ -422,6 +448,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     endTime?: string;
     isFromMentor?: boolean;
     ownerId?: string;
+    eventType?: 'mentorship' | 'personal' | 'reminder';
   }> = [];
 
   formatCalendarHour(hour: number): string {
@@ -539,6 +566,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    // Check permissions for mentorship session
+    if (this.newEvent.eventType === 'mentorship' && !this.isMentor) {
+      this.displayNotification('Only mentors can create Mentorship Sessions', 'warning');
+      return;
+    }
+
     // Parse date and times
     const eventDate = new Date(this.newEvent.date);
     const [startHours, startMinutes] = this.newEvent.startTime.split(':').map(Number);
@@ -577,13 +610,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     
     // Generate badges
-    const badges: string[] = [];
-    if (this.newEvent.place) {
-      badges.push('LOC');
-    }
-    if (this.newEvent.notes) {
-      badges.push('NOTE');
-    }
+        const badges: string[] = [];
+        if (this.newEvent.place) {
+          badges.push('LOC');
+        }
+        if (this.newEvent.notes) {
+          badges.push('NOTE');
+        }
+        // Add event type badge (for user's own event)
+        switch (this.newEvent.eventType) {
+          case 'mentorship': badges.push('MENTORSHIP'); break;
+          case 'personal': badges.push('PERSONAL'); break;
+          case 'reminder': badges.push('REMINDER'); break;
+        }
 
     // Save to Supabase
     try {
@@ -602,7 +641,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         end_time: this.newEvent.endTime || undefined,
         members: this.newEvent.members,
         notes: this.newEvent.notes || undefined,
-        color: this.newEvent.color
+        color: this.newEvent.color,
+        event_type: this.newEvent.eventType
       });
 
       if (error) {
@@ -618,12 +658,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         durationHours: durationHours,
         title: this.newEvent.title,
         color: this.newEvent.color,
-        badges: badges.length > 0 ? badges : ['MEET'],
+        badges: badges,
         avatars: this.newEvent.members.length || 1,
         compact: durationHours <= 1,
         place: this.newEvent.place || undefined,
         notes: this.newEvent.notes || undefined,
-        date: this.newEvent.date
+        date: this.newEvent.date,
+        eventType: this.newEvent.eventType,
+        ownerId: userId
       };
 
       this.calendarEvents.push(newCalendarEvent);
@@ -640,7 +682,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         endTime: '',
         members: [],
         notes: '',
-        color: this.availableColors[0]
+        color: this.availableColors[0],
+        eventType: 'personal'
       };
       this.currentColorIndex = 0;
 

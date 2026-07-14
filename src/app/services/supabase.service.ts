@@ -626,6 +626,7 @@ export class SupabaseService {
     members?: string[];
     notes?: string;
     color: string;
+    event_type?: string;
   }) {
     const { data, error } = await this.client
       .from('calendar_events')
@@ -738,6 +739,7 @@ export class SupabaseService {
     members?: string[];
     notes?: string;
     color: string;
+    event_type?: string;
   }>) {
     const { data, error } = await this.client
       .from('calendar_events')
