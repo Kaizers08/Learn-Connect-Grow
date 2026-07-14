@@ -14,6 +14,7 @@ import { FeedbackModalComponent } from './feedback-modal.component';
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   private readonly allowedEventTypes = ['mentorship', 'personal', 'reminder'] as const;
+  private readonly dashboardBodyClass = 'dashboard-messages-open';
 
   // ─── General ───────────────────────────────────────────────────────────────
   @ViewChild('calendarScrollContainer', { static: false }) calendarScrollContainer?: ElementRef<HTMLDivElement>;
@@ -1251,6 +1252,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  private setDashboardScrollLock(enabled: boolean): void {
+    document.body.classList.toggle(this.dashboardBodyClass, enabled);
+  }
+
   async ngOnInit() {
     this.isLoading = true;
     try {
@@ -1347,6 +1352,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngOnDestroy() {
     if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
     if (this.nowLineInterval) clearInterval(this.nowLineInterval);
+    this.setDashboardScrollLock(false);
   }
 
   ngAfterViewChecked() {
@@ -1363,6 +1369,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
+    this.setDashboardScrollLock(id === 'messages');
     
     // Close any open modals when switching tabs
     this.closeMaterialsModal();
