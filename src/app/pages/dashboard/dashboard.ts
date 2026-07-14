@@ -44,25 +44,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   selectedProfile: any = null;
 
   // ─── Debug UI ──────────────────────────────────────────────────────────────
-  showDebugPanel = false;
-  debugInfo = {
-    currentUserId: '',
-    isMentor: false,
-    userOwnEvents: [] as any[],
-    connections: [] as any[],
-    mentorIds: [] as string[],
-    allCalendarEventsInDB: [] as any[],
-    mentorEvents: [] as any[],
-    combinedEvents: [] as any[],
-    finalCalendarEvents: [] as any[],
-    error: '',
-    timestamp: ''
-  };
-
-  toggleDebugPanel() {
-    this.showDebugPanel = !this.showDebugPanel;
-  }
-
   upcomingSessions: Array<{
     mentorName: string;
     isActive: boolean;
@@ -150,21 +131,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) return;
 
-      // Reset debug info
-      this.debugInfo = {
-        currentUserId: userId,
-        isMentor: this.isMentor,
-        userOwnEvents: [],
-        connections: [],
-        mentorIds: [],
-        allCalendarEventsInDB: [],
-        mentorEvents: [],
-        combinedEvents: [],
-        finalCalendarEvents: [],
-        error: '',
-        timestamp: new Date().toLocaleTimeString()
-      };
-
       console.log('=== Loading Calendar Events ===');
       console.log('Current User ID:', userId);
       console.log('Is Mentor:', this.isMentor);
@@ -174,12 +140,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       if (error) {
         console.error('Error loading calendar events:', error);
-        this.debugInfo.error = `Error loading user events: ${error.message}`;
         return;
       }
 
       console.log('User Own Events:', data);
-      this.debugInfo.userOwnEvents = data || [];
 
       let allEvents = data || [];
 
@@ -194,7 +158,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           .eq('mentee_user_id', userId);
         
         console.log('Direct Connections Query:', connections);
-        this.debugInfo.connections = connections || [];
         
         // Extract mentor IDs and fetch mentor profiles
         let mentorProfiles: any[] = [];
@@ -203,7 +166,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         
         if (connections && connections.length > 0) {
           const mentorIds = connections.map((c: any) => c.mentor_user_id);
-          this.debugInfo.mentorIds = mentorIds;
           console.log('Extracted Mentor IDs:', mentorIds);
           
           // Get mentor profiles for names and profile pictures
@@ -219,7 +181,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
             .from('calendar_events')
             .select('*');
           
-          this.debugInfo.allCalendarEventsInDB = allEventsCheck || [];
           console.log('ALL Calendar Events in DB:', allEventsCheck);
         }
         
@@ -227,12 +188,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         
         console.log('Mentor Events Result:', mentorEvents);
         console.log('Mentor Events Error:', mentorError);
-        
-        if (mentorError) {
-          this.debugInfo.error = `Error loading mentor events: ${mentorError.message}`;
-        }
-        
-        this.debugInfo.mentorEvents = mentorEvents || [];
         
         if (!mentorError && mentorEvents && mentorEvents.length > 0) {
           // Create a map for mentor ID -> name, color, and profile picture
@@ -266,8 +221,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           console.log('No mentor events found or error occurred');
         }
       }
-
-      this.debugInfo.combinedEvents = allEvents;
 
       // Convert database events to calendar display format
       this.calendarEvents = allEvents.map((dbEvent: any) => {
@@ -332,7 +285,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
 
       console.log('Final Calendar Events for Display:', this.calendarEvents);
-      this.debugInfo.finalCalendarEvents = this.calendarEvents;
 
       // Load upcoming sessions for the sidebar
       this.loadUpcomingSessions(allEvents);
@@ -340,7 +292,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     } catch (error: any) {
       console.error('Error loading calendar events:', error);
-      this.debugInfo.error = `Exception: ${error.message}`;
       this.refreshView();
     }
   }
