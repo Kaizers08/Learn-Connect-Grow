@@ -724,8 +724,28 @@
                               <div class="cal-event-accent"></div>
                               <div class="cal-event-body">
                                 <div class="cal-event-top">
-                                  @for (badge of event.badges; track badge) {
-                                    <span class="cal-badge" [style.background]="event.color">{{ badge }}</span>
+                                  <div class="cal-event-badges">
+                                    @for (badge of event.badges; track badge) {
+                                      <span class="cal-badge" [style.background]="event.color">{{ badge }}</span>
+                                    }
+                                  </div>
+                                  @if (event.isFromMentor) {
+                                    <div class="cal-event-mentor-marker" [attr.title]="event.mentorName || 'Mentor event'">
+                                      @if (event.mentorProfilePicture) {
+                                        <img
+                                          [src]="event.mentorProfilePicture"
+                                          [alt]="(event.mentorName || 'Mentor') + ' profile picture'"
+                                          class="cal-event-mentor-img"
+                                        />
+                                      } @else {
+                                        <span class="cal-event-mentor-fallback" aria-label="Mentor event">
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                                            <path d="M5 20C5 16.8 8.13 14 12 14C15.87 14 19 16.8 19 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                          </svg>
+                                        </span>
+                                      }
+                                    </div>
                                   }
                                   @if (event.compact) {
                                     <div class="cal-event-avatars cal-event-avatars-inline">

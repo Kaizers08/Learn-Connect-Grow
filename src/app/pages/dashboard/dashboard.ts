@@ -206,10 +206,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.debugInfo.mentorIds = mentorIds;
           console.log('Extracted Mentor IDs:', mentorIds);
           
-          // Get mentor profiles for names
+          // Get mentor profiles for names and profile pictures
           const { data: profiles } = await this.supabase.getClient()
             .from('mentor_profiles')
-            .select('user_id, full_name')
+            .select('user_id, full_name, profile_picture')
             .in('user_id', mentorIds);
           
           mentorProfiles = profiles || [];
@@ -235,23 +235,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.debugInfo.mentorEvents = mentorEvents || [];
         
         if (!mentorError && mentorEvents && mentorEvents.length > 0) {
-          // Create a map for mentor ID -> name and color
-          const mentorMap = new Map<string, { name: string; color: string }>();
+          // Create a map for mentor ID -> name, color, and profile picture
+          const mentorMap = new Map<string, { name: string; color: string; profilePicture?: string }>();
           mentorProfiles.forEach((mentor, index) => {
             mentorMap.set(mentor.user_id, {
               name: mentor.full_name || 'Mentor',
-              color: mentorColors[index % mentorColors.length]
+              color: mentorColors[index % mentorColors.length],
+              profilePicture: mentor.profile_picture
             });
           });
 
           // Mark mentor events so we can style them differently or show who created them
           const markedMentorEvents = mentorEvents.map((event: any) => {
-            const mentorInfo = mentorMap.get(event.user_id) || { name: 'Mentor', color: '#29CC39' };
+            const mentorInfo = mentorMap.get(event.user_id) || { name: 'Mentor', color: '#29CC39', profilePicture: undefined };
             return {
               ...event,
               isFromMentor: true,
               mentorName: mentorInfo.name,
-              mentorColor: mentorInfo.color
+              mentorColor: mentorInfo.color,
+              mentorProfilePicture: mentorInfo.profilePicture
             };
           });
           
@@ -303,18 +305,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const badges: string[] = [];
         if (dbEvent.place) badges.push('LOC');
         if (dbEvent.notes) badges.push('NOTE');
-        if (dbEvent.isFromMentor) {
-          badges.push('MENTOR');
-        }
 
         return {
           id: dbEvent.id,
           day: daysDiff,
           startHour: startHours,
           durationHours: durationHours,
-          title: dbEvent.isFromMentor && dbEvent.mentorName 
-            ? `${dbEvent.title} (${dbEvent.mentorName})` 
-            : dbEvent.title,
+          title: dbEvent.title,
           color: dbEvent.isFromMentor && dbEvent.mentorColor 
             ? dbEvent.mentorColor 
             : dbEvent.color,
@@ -329,7 +326,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           isFromMentor: dbEvent.isFromMentor || false,
           ownerId: dbEvent.user_id,
           eventType: eventType,
-          mentorName: dbEvent.mentorName
+          mentorName: dbEvent.mentorName,
+          mentorProfilePicture: dbEvent.mentorProfilePicture
         };
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
 
@@ -479,6 +477,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     isFromMentor?: boolean;
     ownerId?: string;
     eventType?: 'mentorship' | 'personal' | 'reminder';
+    mentorName?: string;
+    mentorProfilePicture?: string;
   }> = [];
 
   formatCalendarHour(hour: number): string {
