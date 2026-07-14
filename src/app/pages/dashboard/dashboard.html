@@ -554,16 +554,16 @@
           <div class="cal-card">
             <!-- Toolbar -->
             <div class="cal-toolbar">
-              <button type="button" class="cal-today-btn">Today</button>
+              <button type="button" class="cal-today-btn" (click)="goToToday()">Today</button>
 
               <div class="cal-week-nav">
-                <button type="button" class="cal-nav-btn" aria-label="Previous week">
+                <button type="button" class="cal-nav-btn" aria-label="Previous period" (click)="goToPreviousCalendarPeriod()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M15 18L9 12L15 6" stroke="#C3CAD9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
                 <span class="cal-week-label">{{ calendarWeekLabel }}</span>
-                <button type="button" class="cal-nav-btn" aria-label="Next week">
+                <button type="button" class="cal-nav-btn" aria-label="Next period" (click)="goToNextCalendarPeriod()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M9 18L15 12L9 6" stroke="#C3CAD9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>

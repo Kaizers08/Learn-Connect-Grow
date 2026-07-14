@@ -61,12 +61,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   calendarWeekLabel = '';
   calendarHours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
   calendarDays: Array<{ name: string; short: string; date: number }> = [];
+  calendarAnchorDate = new Date();
   /** Demo “now” line around 15:15 as % of 09–21 day span */
   readonly calendarSlotCount = 24;
   calendarNowPercent = 0;
   private nowLineInterval: any;
   private shouldScrollCalendar = false;
   private shouldScrollMessages = false;
+  private messageScrollFrame: number | null = null;
   showNewEventPanel = true;
 
   // Event deletion
@@ -241,7 +243,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
 
         // Calculate which day of current week this event belongs to
-        const now = new Date();
+        const now = this.getCalendarReferenceDate();
         const dayOfWeek = now.getDay();
         const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         const weekStart = new Date(now);
@@ -301,7 +303,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // Load upcoming sessions from calendar events
   loadUpcomingSessions(events: any[]) {
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     
     // Filter events that are in the future
     const futureEvents = events.filter((event: any) => {
@@ -439,8 +441,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return `${hour < 10 ? '0' : ''}${hour}`;
   }
 
+  private getCalendarReferenceDate(): Date {
+    return new Date(this.calendarAnchorDate);
+  }
+
+  private setCalendarAnchorToToday(): void {
+    this.calendarAnchorDate = new Date();
+  }
+
   initializeCurrentWeek(): void {
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Get Monday of current week
     
@@ -576,7 +586,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     
     // Get the Monday of the current calendar week
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     const dayOfWeek = now.getDay();
     const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const weekStart = new Date(now);
@@ -678,21 +688,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   setCalendarView(mode: 'day' | 'week' | 'month' | 'year') {
     this.calendarViewMode = mode;
-    
-    // Update calendar display based on view mode
-    if (mode === 'day') {
-      this.initializeCurrentDay();
-    } else if (mode === 'week') {
-      this.initializeCurrentWeek();
-    } else if (mode === 'month') {
-      this.initializeCurrentMonth();
-    } else if (mode === 'year') {
-      this.initializeCurrentYear();
-    }
+    this.renderCalendarView();
   }
 
   initializeCurrentDay(): void {
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -713,7 +713,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   initializeCurrentMonth(): void {
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const year = now.getFullYear();
     const month = now.getMonth();
@@ -749,7 +749,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   initializeCurrentYear(): void {
-    const now = new Date();
+    const now = this.getCalendarReferenceDate();
     const year = now.getFullYear();
     
     this.calendarWeekLabel = `${year}`;
@@ -867,6 +867,54 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       });
   }
 
+  private renderCalendarView(): void {
+    if (this.calendarViewMode === 'day') {
+      this.initializeCurrentDay();
+    } else if (this.calendarViewMode === 'week') {
+      this.initializeCurrentWeek();
+    } else if (this.calendarViewMode === 'month') {
+      this.initializeCurrentMonth();
+    } else {
+      this.initializeCurrentYear();
+    }
+    this.loadCalendarEvents();
+  }
+
+  goToPreviousCalendarPeriod(): void {
+    const anchor = this.getCalendarReferenceDate();
+    if (this.calendarViewMode === 'day') {
+      anchor.setDate(anchor.getDate() - 1);
+    } else if (this.calendarViewMode === 'week') {
+      anchor.setDate(anchor.getDate() - 7);
+    } else if (this.calendarViewMode === 'month') {
+      anchor.setMonth(anchor.getMonth() - 1);
+    } else {
+      anchor.setFullYear(anchor.getFullYear() - 1);
+    }
+    this.calendarAnchorDate = anchor;
+    this.renderCalendarView();
+  }
+
+  goToNextCalendarPeriod(): void {
+    const anchor = this.getCalendarReferenceDate();
+    if (this.calendarViewMode === 'day') {
+      anchor.setDate(anchor.getDate() + 1);
+    } else if (this.calendarViewMode === 'week') {
+      anchor.setDate(anchor.getDate() + 7);
+    } else if (this.calendarViewMode === 'month') {
+      anchor.setMonth(anchor.getMonth() + 1);
+    } else {
+      anchor.setFullYear(anchor.getFullYear() + 1);
+    }
+    this.calendarAnchorDate = anchor;
+    this.renderCalendarView();
+  }
+
+  goToToday(): void {
+    this.setCalendarAnchorToToday();
+    this.renderCalendarView();
+  }
+
   get pagedMentors() {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredMentors.slice(start, start + this.pageSize);
@@ -976,8 +1024,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       timestamp: msg.created_at,
       status: msg.status
     }));
-    this.shouldScrollMessages = true;
-    this.refreshView();
+    this.scheduleMessagesScroll();
   }
 
   async sendMessage() {
@@ -1013,13 +1060,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           };
         }
       }
-      this.shouldScrollMessages = true;
-      this.refreshView();
+      this.scheduleMessagesScroll();
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove temp message on error
       this.messages = this.messages.filter(m => m.id !== tempId);
-      this.refreshView();
+      this.scheduleMessagesScroll();
     }
   }
 
@@ -1399,8 +1445,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       // Mark as seen
       await this.supabase.markMessagesAsSeen(this.activeConversation.id, myId);
-      this.shouldScrollMessages = true;
-      this.refreshView();
+      this.scheduleMessagesScroll();
     }
   }
 
@@ -1426,9 +1471,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngAfterViewChecked() {
     if (this.shouldScrollMessages && this.messagesScrollContainer?.nativeElement) {
       this.shouldScrollMessages = false;
-      setTimeout(() => {
-        this.scrollMessagesToBottom();
-      }, 0);
+      if (this.messageScrollFrame !== null) {
+        cancelAnimationFrame(this.messageScrollFrame);
+      }
+      this.messageScrollFrame = requestAnimationFrame(() => {
+        this.messageScrollFrame = requestAnimationFrame(() => {
+          this.scrollMessagesToBottom();
+        });
+      });
     }
 
     // Check if we should scroll the calendar and if the element is now available
@@ -1447,10 +1497,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     container.scrollTop = container.scrollHeight;
   }
 
+  private scheduleMessagesScroll(): void {
+    this.shouldScrollMessages = true;
+    this.refreshView();
+  }
+
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
     this.setDashboardScrollLock(id === 'messages');
+    if (id === 'messages' && this.messages.length > 0) {
+      this.scheduleMessagesScroll();
+    }
     
     // Close any open modals when switching tabs
     this.closeMaterialsModal();
