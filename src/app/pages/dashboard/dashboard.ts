@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,6 +13,7 @@ import { FeedbackModalComponent } from './feedback-modal.component';
   styleUrl: './dashboard.css'
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
+  private readonly allowedEventTypes = ['mentorship', 'personal', 'reminder'] as const;
 
   // ─── General ───────────────────────────────────────────────────────────────
   @ViewChild('calendarScrollContainer', { static: false }) calendarScrollContainer?: ElementRef<HTMLDivElement>;
@@ -195,11 +196,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         console.log('Direct Connections Query:', connections);
         this.debugInfo.connections = connections || [];
         
-        // Extract mentor IDs
+        // Extract mentor IDs and fetch mentor profiles
+        let mentorProfiles: any[] = [];
+        // Distinct colors for mentors
+        const mentorColors = ['#29CC39', '#33BFFF', '#FF6633', '#A855F7', '#F59E0B', '#EC4899', '#10B981', '#06B6D4', '#8B5CF6'];
+        
         if (connections && connections.length > 0) {
           const mentorIds = connections.map((c: any) => c.mentor_user_id);
           this.debugInfo.mentorIds = mentorIds;
           console.log('Extracted Mentor IDs:', mentorIds);
+          
+          // Get mentor profiles for names
+          const { data: profiles } = await this.supabase.getClient()
+            .from('mentor_profiles')
+            .select('user_id, full_name')
+            .in('user_id', mentorIds);
+          
+          mentorProfiles = profiles || [];
           
           // Check ALL events in calendar_events table
           const { data: allEventsCheck } = await this.supabase.getClient()
@@ -222,11 +235,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.debugInfo.mentorEvents = mentorEvents || [];
         
         if (!mentorError && mentorEvents && mentorEvents.length > 0) {
+          // Create a map for mentor ID -> name and color
+          const mentorMap = new Map<string, { name: string; color: string }>();
+          mentorProfiles.forEach((mentor, index) => {
+            mentorMap.set(mentor.user_id, {
+              name: mentor.full_name || 'Mentor',
+              color: mentorColors[index % mentorColors.length]
+            });
+          });
+
           // Mark mentor events so we can style them differently or show who created them
-          const markedMentorEvents = mentorEvents.map((event: any) => ({
-            ...event,
-            isFromMentor: true
-          }));
+          const markedMentorEvents = mentorEvents.map((event: any) => {
+            const mentorInfo = mentorMap.get(event.user_id) || { name: 'Mentor', color: '#29CC39' };
+            return {
+              ...event,
+              isFromMentor: true,
+              mentorName: mentorInfo.name,
+              mentorColor: mentorInfo.color
+            };
+          });
           
           console.log('Marked Mentor Events:', markedMentorEvents);
           
@@ -294,8 +321,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           day: daysDiff,
           startHour: startHours,
           durationHours: durationHours,
-          title: dbEvent.title,
-          color: dbEvent.color,
+          title: dbEvent.isFromMentor && dbEvent.mentorName 
+            ? `${dbEvent.title} (${dbEvent.mentorName})` 
+            : dbEvent.title,
+          color: dbEvent.isFromMentor && dbEvent.mentorColor 
+            ? dbEvent.mentorColor 
+            : dbEvent.color,
           badges: badges,
           avatars: dbEvent.members?.length || 1,
           compact: durationHours <= 1,
@@ -306,7 +337,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           endTime: dbEvent.end_time,
           isFromMentor: dbEvent.isFromMentor || false,
           ownerId: dbEvent.user_id,
-          eventType: eventType
+          eventType: eventType,
+          mentorName: dbEvent.mentorName
         };
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
 
@@ -315,10 +347,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       // Load upcoming sessions for the sidebar
       this.loadUpcomingSessions(allEvents);
+      this.refreshView();
 
     } catch (error: any) {
       console.error('Error loading calendar events:', error);
       this.debugInfo.error = `Exception: ${error.message}`;
+      this.refreshView();
     }
   }
 
@@ -425,7 +459,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   currentColorIndex = 0;
 
   // Event type definitions with colors and permissions
-  eventTypes = [
+  eventTypes: Array<{
+    value: 'mentorship' | 'personal' | 'reminder';
+    label: string;
+    color: string;
+    onlyMentors: boolean;
+  }> = [
     { value: 'mentorship', label: 'Mentorship Session', color: '#29CC39', onlyMentors: true },
     { value: 'personal', label: 'Personal Study', color: '#33BFFF', onlyMentors: false },
     { value: 'reminder', label: 'Reminder', color: '#F59E0B', onlyMentors: false }
@@ -1259,54 +1298,72 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   constructor(
     private router: Router,
     private userService: UserService,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone
   ) {}
+
+  private refreshView(): void {
+    this.zone.run(() => {
+      queueMicrotask(() => {
+        try {
+          this.cdr.detectChanges();
+        } catch {
+          // Ignore late refresh attempts during teardown.
+        }
+      });
+    });
+  }
 
   async ngOnInit() {
     this.isLoading = true;
-    await Promise.all([
-      this.loadUserProfile(),
-      this.loadMatchedUsers(),
-      this.loadConnections(),
-      this.loadCalendarEvents()
-    ]);
-    
-    // Initialize calendar with current week
-    this.initializeCurrentWeek();
-    
-    // Initialize and update calendar "now" line
-    this.updateCalendarNowLine(false); // Don't scroll on init, will scroll when tab is opened
-    this.nowLineInterval = setInterval(() => {
-      this.updateCalendarNowLine(); // Don't scroll on periodic updates
-    }, 60000); // Update every minute
-    
-    // Update last_seen every 2 minutes
-    await this.supabase.updateLastSeen();
-    this.lastSeenInterval = setInterval(() => {
-      this.supabase.updateLastSeen();
-      // Also refresh connections every 2 minutes to update online status
-      if (this.activeNavItem === 'messages') {
-        this.loadConnections();
-        // Check for new messages
-        if (this.activeConversation) {
-          this.loadMessages(this.activeConversation.id);
+    try {
+      await this.loadUserProfile();
+
+      await Promise.all([
+        this.loadMatchedUsers(),
+        this.loadConnections(),
+        this.loadCalendarEvents()
+      ]);
+
+      // Initialize calendar with current week
+      this.initializeCurrentWeek();
+
+      // Initialize and update calendar "now" line
+      this.updateCalendarNowLine(false); // Don't scroll on init, will scroll when tab is opened
+      this.nowLineInterval = setInterval(() => {
+        this.updateCalendarNowLine(); // Don't scroll on periodic updates
+      }, 60000); // Update every minute
+
+      // Update last_seen every 2 minutes
+      await this.supabase.updateLastSeen();
+      this.lastSeenInterval = setInterval(() => {
+        this.supabase.updateLastSeen();
+        // Also refresh connections every 2 minutes to update online status
+        if (this.activeNavItem === 'messages') {
+          this.loadConnections();
+          // Check for new messages
+          if (this.activeConversation) {
+            this.loadMessages(this.activeConversation.id);
+          }
         }
-      }
-    }, 120000);
-    
-    // Frequent polling for messages tab (every 5 seconds when active)
-    setInterval(() => {
-      if (this.activeNavItem === 'messages' && this.activeConversation) {
-        this.checkForNewMessages();
-      }
-    }, 5000);
-    
-    // Update unread counts every 30 seconds
-    setInterval(() => {
-      this.updateAllUnreadCounts();
-    }, 30000);
-    
-    this.isLoading = false;
+      }, 120000);
+
+      // Frequent polling for messages tab (every 5 seconds when active)
+      setInterval(() => {
+        if (this.activeNavItem === 'messages' && this.activeConversation) {
+          this.checkForNewMessages();
+        }
+      }, 5000);
+
+      // Update unread counts every 30 seconds
+      setInterval(() => {
+        this.updateAllUnreadCounts();
+      }, 30000);
+    } finally {
+      this.isLoading = false;
+      this.refreshView();
+    }
   }
 
   async checkForNewMessages() {
@@ -1427,6 +1484,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         rating: 0,
         reviews: 0
       }));
+      this.refreshView();
     } else {
       const { data } = await this.supabase.getClient()
         .from('mentee_profiles')
@@ -1443,6 +1501,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       if (approvedMentors.length === 0) {
         this.recommendedMentors = [];
+        this.refreshView();
         return;
       }
 
@@ -1464,6 +1523,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
             rating: 0,
             reviews: 0
           }));
+          this.refreshView();
           return;
         }
 
@@ -1490,6 +1550,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
             reviews
           };
         });
+        this.refreshView();
       } catch (error) {
         console.error('Error loading ratings:', error);
         // If error, just show mentors without ratings
@@ -1498,6 +1559,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           rating: 0,
           reviews: 0
         }));
+        this.refreshView();
       }
     }
   }
@@ -1516,6 +1578,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!ids.length) { 
       this.connectedUsers = []; 
       this.conversations = [];
+      this.refreshView();
       return; 
     }
 
@@ -1560,6 +1623,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.activeConversation = this.conversations[0];
       this.loadMessages(this.activeConversation.id);
     }
+    this.refreshView();
   }
 
   isOnline(lastSeen: string): boolean {
@@ -2260,6 +2324,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const nameParts = this.userName.split(' ');
     this.settingsFirstName = nameParts[0] || '';
     this.settingsLastName  = nameParts.slice(-1)[0] || '';
+    this.refreshView();
   }
 
   async saveSettings() {
