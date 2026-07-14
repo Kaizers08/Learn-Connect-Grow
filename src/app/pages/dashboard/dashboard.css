@@ -3240,6 +3240,79 @@ select.st-input {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.cal-event-modal {
+  max-width: 560px;
+}
+
+.cal-event-modal-header {
+  background: linear-gradient(135deg, #043E92 0%, #04A2D7 100%);
+}
+
+.cal-event-close {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.cal-event-close svg {
+  display: block;
+}
+
+.cal-event-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cal-event-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.cal-event-detail-item,
+.cal-event-note-box,
+.cal-event-mentor-card {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fbfd;
+  padding: 0.9rem;
+}
+
+.cal-event-detail-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #04A2D7;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.cal-event-detail-value,
+.cal-event-note-box p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.cal-event-note-box p {
+  white-space: pre-wrap;
+}
+
+.cal-event-mentor-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cal-event-mentor-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .modal-header {
   display: flex;
   align-items: center;

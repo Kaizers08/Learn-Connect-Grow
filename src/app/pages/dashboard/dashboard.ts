@@ -76,6 +76,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   contextMenuX = 0;
   contextMenuY = 0;
   selectedEventIndex: number | null = null;
+  showCalendarEventModal = false;
+  selectedCalendarEvent: any = null;
 
   openEventContextMenu(event: MouseEvent, eventIndex: number) {
     event.preventDefault();
@@ -95,6 +97,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   closeEventContextMenu() {
     this.showEventContextMenu = false;
     this.selectedEventIndex = null;
+  }
+
+  openCalendarEventDetails(event: any) {
+    this.selectedCalendarEvent = event;
+    this.showCalendarEventModal = true;
+  }
+
+  closeCalendarEventDetails() {
+    this.showCalendarEventModal = false;
+    this.selectedCalendarEvent = null;
   }
 
   async deleteEvent() {
@@ -533,6 +545,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   getCalendarEventTime(event: { startHour: number; durationHours: number }): string {
     const end = event.startHour + event.durationHours;
     return `${this.formatCalendarHour(event.startHour)}:00 – ${this.formatCalendarHour(end)}:00`;
+  }
+
+  getCalendarEventDateLabel(event: { date?: string }): string {
+    if (!event.date) return 'Unknown date';
+    const parsedDate = new Date(event.date);
+    return parsedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }
+
+  getCalendarEventSourceLabel(event: { isFromMentor?: boolean; mentorName?: string }): string {
+    if (event.isFromMentor) {
+      return event.mentorName ? `Created by ${event.mentorName}` : 'Created by mentor';
+    }
+    return 'Created by you';
   }
 
   getCalendarEventStyle(event: { day: number; startHour: number; durationHours: number; color: string; compact?: boolean }) {
@@ -995,6 +1025,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   activeConversation: any = null;
 
   messages: { id: number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
+  private lastMessageCursor: { createdAt: number; id: number } | null = null;
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
@@ -1024,6 +1055,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       timestamp: msg.created_at,
       status: msg.status
     }));
+    const latestMessage = this.messages[this.messages.length - 1];
+    this.lastMessageCursor = latestMessage?.timestamp
+      ? { createdAt: new Date(latestMessage.timestamp).getTime(), id: latestMessage.id }
+      : null;
     this.scheduleMessagesScroll();
   }
 
@@ -1422,13 +1457,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   async checkForNewMessages() {
     if (!this.activeConversation || this.messages.length === 0) return;
     
-    const lastMessageId = this.messages[this.messages.length - 1]?.id;
+    const lastMessage = this.messages[this.messages.length - 1];
+    const lastCreatedAt = lastMessage?.timestamp ? new Date(lastMessage.timestamp).getTime() : 0;
     const myId = this.currentUserId;
     
     const { data } = await this.supabase.getMessages(myId, this.activeConversation.id);
     const newMessages = (data || []).filter((msg: any) => {
-      // Only get messages newer than the last one we have
-      return msg.id > lastMessageId;
+      const messageCreatedAt = new Date(msg.created_at).getTime();
+      return messageCreatedAt > lastCreatedAt;
     });
     
     if (newMessages.length > 0) {
@@ -1445,6 +1481,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       // Mark as seen
       await this.supabase.markMessagesAsSeen(this.activeConversation.id, myId);
+      const newestMessage = this.messages[this.messages.length - 1];
+      this.lastMessageCursor = newestMessage?.timestamp
+        ? { createdAt: new Date(newestMessage.timestamp).getTime(), id: newestMessage.id }
+        : this.lastMessageCursor;
       this.scheduleMessagesScroll();
     }
   }
