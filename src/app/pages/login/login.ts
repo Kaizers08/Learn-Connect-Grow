@@ -54,6 +54,15 @@ export class LoginComponent {
     this.router.navigate(['/dashboard']);
   }
 
+  async onGoogleSignIn() {
+    const { error } = await this.supabase.signInWithGoogle();
+    if (error) {
+      console.error('Google sign in failed:', error.message);
+      alert(error.message);
+    }
+    // Google will redirect to the callback URL after authentication
+  }
+
   goToRegister() {
     this.router.navigate(['/register']);
   }

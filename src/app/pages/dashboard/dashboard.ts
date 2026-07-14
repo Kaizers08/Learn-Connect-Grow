@@ -42,6 +42,26 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   showProfileModal = false;
   selectedProfile: any = null;
 
+  // ─── Debug UI ──────────────────────────────────────────────────────────────
+  showDebugPanel = false;
+  debugInfo = {
+    currentUserId: '',
+    isMentor: false,
+    userOwnEvents: [] as any[],
+    connections: [] as any[],
+    mentorIds: [] as string[],
+    allCalendarEventsInDB: [] as any[],
+    mentorEvents: [] as any[],
+    combinedEvents: [] as any[],
+    finalCalendarEvents: [] as any[],
+    error: '',
+    timestamp: ''
+  };
+
+  toggleDebugPanel() {
+    this.showDebugPanel = !this.showDebugPanel;
+  }
+
   upcomingSessions: Array<{
     mentorName: string;
     isActive: boolean;
@@ -94,6 +114,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.selectedEventIndex !== null) {
       const event = this.calendarEvents[this.selectedEventIndex];
       
+      // Check if user owns this event (prevent mentees from deleting mentor events)
+      if (event.ownerId !== this.currentUserId) {
+        this.displayNotification('You can only delete your own events', 'warning');
+        this.closeEventContextMenu();
+        return;
+      }
+      
       if (event.id) {
         // Delete from database
         const { success, error } = await this.supabase.deleteCalendarEvent(event.id);
@@ -122,15 +149,99 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) return;
 
+      // Reset debug info
+      this.debugInfo = {
+        currentUserId: userId,
+        isMentor: this.isMentor,
+        userOwnEvents: [],
+        connections: [],
+        mentorIds: [],
+        allCalendarEventsInDB: [],
+        mentorEvents: [],
+        combinedEvents: [],
+        finalCalendarEvents: [],
+        error: '',
+        timestamp: new Date().toLocaleTimeString()
+      };
+
+      console.log('=== Loading Calendar Events ===');
+      console.log('Current User ID:', userId);
+      console.log('Is Mentor:', this.isMentor);
+
+      // Get user's own events
       const { data, error } = await this.supabase.getUserCalendarEvents(userId);
       
-      if (error || !data) {
+      if (error) {
         console.error('Error loading calendar events:', error);
+        this.debugInfo.error = `Error loading user events: ${error.message}`;
         return;
       }
 
+      console.log('User Own Events:', data);
+      this.debugInfo.userOwnEvents = data || [];
+
+      let allEvents = data || [];
+
+      // If user is a mentee, also load events from connected mentors
+      if (!this.isMentor) {
+        console.log('User is MENTEE - fetching connected mentors events...');
+        
+        // First, let's get the connections manually to debug
+        const { data: connections, error: connError } = await this.supabase.getClient()
+          .from('connections')
+          .select('*')
+          .eq('mentee_user_id', userId);
+        
+        console.log('Direct Connections Query:', connections);
+        this.debugInfo.connections = connections || [];
+        
+        // Extract mentor IDs
+        if (connections && connections.length > 0) {
+          const mentorIds = connections.map((c: any) => c.mentor_user_id);
+          this.debugInfo.mentorIds = mentorIds;
+          console.log('Extracted Mentor IDs:', mentorIds);
+          
+          // Check ALL events in calendar_events table
+          const { data: allEventsCheck } = await this.supabase.getClient()
+            .from('calendar_events')
+            .select('*');
+          
+          this.debugInfo.allCalendarEventsInDB = allEventsCheck || [];
+          console.log('ALL Calendar Events in DB:', allEventsCheck);
+        }
+        
+        const { data: mentorEvents, error: mentorError } = await this.supabase.getConnectedMentorsCalendarEvents(userId);
+        
+        console.log('Mentor Events Result:', mentorEvents);
+        console.log('Mentor Events Error:', mentorError);
+        
+        if (mentorError) {
+          this.debugInfo.error = `Error loading mentor events: ${mentorError.message}`;
+        }
+        
+        this.debugInfo.mentorEvents = mentorEvents || [];
+        
+        if (!mentorError && mentorEvents && mentorEvents.length > 0) {
+          // Mark mentor events so we can style them differently or show who created them
+          const markedMentorEvents = mentorEvents.map((event: any) => ({
+            ...event,
+            isFromMentor: true
+          }));
+          
+          console.log('Marked Mentor Events:', markedMentorEvents);
+          
+          // Combine user's events with mentor events
+          allEvents = [...allEvents, ...markedMentorEvents];
+          console.log('Combined All Events:', allEvents);
+        } else {
+          console.log('No mentor events found or error occurred');
+        }
+      }
+
+      this.debugInfo.combinedEvents = allEvents;
+
       // Convert database events to calendar display format
-      this.calendarEvents = data.map((dbEvent: any) => {
+      this.calendarEvents = allEvents.map((dbEvent: any) => {
         // Parse the event date and times
         const eventDate = new Date(dbEvent.event_date);
         const [startHours, startMinutes] = dbEvent.start_time.split(':').map(Number);
@@ -159,6 +270,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const badges: string[] = [];
         if (dbEvent.place) badges.push('LOC');
         if (dbEvent.notes) badges.push('NOTE');
+        if (dbEvent.isFromMentor) badges.push('MENTOR');
 
         return {
           id: dbEvent.id,
@@ -174,15 +286,21 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           notes: dbEvent.notes,
           date: dbEvent.event_date,
           startTime: dbEvent.start_time,
-          endTime: dbEvent.end_time
+          endTime: dbEvent.end_time,
+          isFromMentor: dbEvent.isFromMentor || false,
+          ownerId: dbEvent.user_id
         };
       }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
 
-      // Load upcoming sessions for the sidebar
-      this.loadUpcomingSessions(data);
+      console.log('Final Calendar Events for Display:', this.calendarEvents);
+      this.debugInfo.finalCalendarEvents = this.calendarEvents;
 
-    } catch (error) {
+      // Load upcoming sessions for the sidebar
+      this.loadUpcomingSessions(allEvents);
+
+    } catch (error: any) {
       console.error('Error loading calendar events:', error);
+      this.debugInfo.error = `Exception: ${error.message}`;
     }
   }
 
@@ -300,6 +418,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     place?: string;
     notes?: string;
     date?: string;
+    startTime?: string;
+    endTime?: string;
+    isFromMentor?: boolean;
+    ownerId?: string;
   }> = [];
 
   formatCalendarHour(hour: number): string {

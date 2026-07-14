@@ -144,6 +144,25 @@ export class SupabaseService {
     return this.client.auth.signInWithPassword({ email, password });
   }
 
+  /**
+   * Sign in with Google OAuth provider
+   * Redirects to Google for authentication
+   */
+  async signInWithGoogle() {
+    const { data, error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    
+    if (error) {
+      this.logError('signInWithGoogle', error);
+    }
+    
+    return { data, error };
+  }
+
   signOut() {
     return this.client.auth.signOut();
   }
@@ -634,6 +653,56 @@ export class SupabaseService {
 
     if (error) {
       this.logError('getUserCalendarEvents', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
+  /**
+   * Get calendar events for connected mentors (for mentee view)
+   */
+  async getConnectedMentorsCalendarEvents(menteeUserId: string) {
+    console.log('=== Getting Connected Mentors Calendar Events ===');
+    console.log('Mentee User ID:', menteeUserId);
+    
+    // First, get all mentor connections for this mentee
+    const { data: connections, error: connError } = await this.client
+      .from('connections')
+      .select('mentor_user_id')
+      .eq('mentee_user_id', menteeUserId);
+
+    console.log('Connections Query Result:', connections);
+    console.log('Connections Query Error:', connError);
+
+    if (connError || !connections || connections.length === 0) {
+      console.log('No connections found or error occurred');
+      return { data: [], error: connError };
+    }
+
+    // Extract mentor user IDs
+    const mentorIds = connections.map((c: any) => c.mentor_user_id);
+    console.log('Mentor IDs:', mentorIds);
+
+    // DEBUG: Let's check ALL calendar events first
+    const { data: allEvents, error: allError } = await this.client
+      .from('calendar_events')
+      .select('*');
+    
+    console.log('ALL Calendar Events in Database:', allEvents);
+
+    // Get all calendar events from these mentors
+    const { data, error } = await this.client
+      .from('calendar_events')
+      .select('*')
+      .in('user_id', mentorIds)
+      .order('event_date', { ascending: true });
+
+    console.log('Calendar Events from Mentors (filtered):', data);
+    console.log('Calendar Events Query Error:', error);
+
+    if (error) {
+      this.logError('getConnectedMentorsCalendarEvents', error);
       return { data: null, error };
     }
 
