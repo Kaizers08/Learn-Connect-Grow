@@ -29,6 +29,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   get isMentor(): boolean { return this.userService.role() === 'mentor'; }
 
+  upcomingSessionsCount = 0;
   unreadMessages = 0;
   activeNavItem = 'dashboard';
 
@@ -312,6 +313,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       };
     });
 
+    this.upcomingSessionsCount = futureEvents.length;
   }
 
   // Notification/Toast system
@@ -964,6 +966,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   resourceUploadFileSize = 0;
   resourceUploadDuration: number | null = null;
   isResourceUploading = false;
+  private resourceSetupWarningShown = false;
   
   // Edit modal
   showResourcesEditModal = false;
@@ -1385,6 +1388,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.shouldScrollCalendar = true;
     }
   }
+  onViewAllSessions() { this.setActiveNav('calendar'); }
   onViewAllOnline() {}
   onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }
@@ -1669,6 +1673,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   // ─── Resources / Learning Materials Methods ────────────────────────────────
+
+  private handleResourceSetupError(error: any): boolean {
+    const message = `${error?.message || ''} ${error?.code || ''}`.toLowerCase();
+    const isMissingSetup =
+      error?.status === 404 ||
+      message.includes('learning_materials') ||
+      message.includes('material_progress') ||
+      message.includes('bucket not found');
+
+    if (!isMissingSetup) return false;
+
+    if (!this.resourceSetupWarningShown) {
+      this.resourceSetupWarningShown = true;
+      this.displayNotification('Learning Materials setup is missing in Supabase.', 'error');
+    }
+
+    return true;
+  }
   
   async loadResourceMentors() {
     if (this.isMentor) return;
@@ -1734,11 +1756,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async loadResourceMaterials() {
-    const { data } = await this.supabase.getClient()
+    const { data, error } = await this.supabase.getClient()
       .from('learning_materials')
       .select('*')
       .eq('mentor_user_id', this.currentUserId)
       .order('order_number', { ascending: true });
+
+    if (error) {
+      if (this.handleResourceSetupError(error)) {
+        this.resourceMaterials = [];
+        return;
+      }
+      console.error('Error loading resource materials:', error);
+      return;
+    }
 
     this.resourceMaterials = data || [];
   }
@@ -1746,16 +1777,34 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   async loadResourceMaterialsForMentee() {
     if (!this.selectedResourceMentorId) return;
 
-    const { data: materialsData } = await this.supabase.getClient()
+    const { data: materialsData, error: materialsError } = await this.supabase.getClient()
       .from('learning_materials')
       .select('*')
       .eq('mentor_user_id', this.selectedResourceMentorId)
       .order('order_number', { ascending: true });
 
-    const { data: progressData } = await this.supabase.getClient()
+    if (materialsError) {
+      if (this.handleResourceSetupError(materialsError)) {
+        this.resourceMaterials = [];
+        return;
+      }
+      console.error('Error loading mentor materials:', materialsError);
+      return;
+    }
+
+    const { data: progressData, error: progressError } = await this.supabase.getClient()
       .from('material_progress')
       .select('material_id, completed')
       .eq('mentee_user_id', this.currentUserId);
+
+    if (progressError) {
+      if (this.handleResourceSetupError(progressError)) {
+        this.resourceMaterials = [];
+        return;
+      }
+      console.error('Error loading material progress:', progressError);
+      return;
+    }
 
     const progressMap = new Map(
       (progressData || []).map((p: any) => [p.material_id, p.completed])
@@ -1855,16 +1904,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async uploadResourceMaterial() {
     if (!this.resourceUploadTitle || !this.resourceUploadFile || !this.resourceUploadOrderNumber) {
-      alert('Please fill in all required fields');
+      this.displayNotification('Please fill in all required fields', 'warning');
       return;
     }
 
     this.isResourceUploading = true;
 
     try {
+      const userId = this.currentUserId || await this.supabase.getCurrentUserId();
+      if (!userId) {
+        this.displayNotification('Please log in to upload materials', 'error');
+        return;
+      }
+
       const fileExt = this.resourceUploadFile.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `learning-materials/${this.currentUserId}/${fileName}`;
+      const filePath = `${userId}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await this.supabase.getClient()
         .storage
@@ -1883,7 +1938,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const { error: insertError } = await this.supabase.getClient()
         .from('learning_materials')
         .insert({
-          mentor_user_id: this.currentUserId,
+          mentor_user_id: userId,
           title: this.resourceUploadTitle,
           description: this.resourceUploadDescription,
           order_number: this.resourceUploadOrderNumber,
@@ -1895,13 +1950,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       if (insertError) throw insertError;
 
-      alert('✅ Material uploaded successfully!');
+      this.displayNotification('Material uploaded successfully', 'success');
       this.closeResourcesUploadModal();
       await this.loadResourceMaterials();
       await this.loadResourceMenteesProgress();
     } catch (error) {
       console.error('Error uploading material:', error);
-      alert('❌ Failed to upload material. Please try again.');
+      if (!this.handleResourceSetupError(error)) {
+        this.displayNotification('Failed to upload material. Please try again.', 'error');
+      }
     } finally {
       this.isResourceUploading = false;
     }
