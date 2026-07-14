@@ -18,6 +18,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // ─── General ───────────────────────────────────────────────────────────────
   @ViewChild('calendarScrollContainer', { static: false }) calendarScrollContainer?: ElementRef<HTMLDivElement>;
+  @ViewChild('messagesScrollContainer', { static: false }) messagesScrollContainer?: ElementRef<HTMLDivElement>;
   
   userName = '';
   userRole = 'Mentee';
@@ -65,6 +66,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   calendarNowPercent = 0;
   private nowLineInterval: any;
   private shouldScrollCalendar = false;
+  private shouldScrollMessages = false;
   showNewEventPanel = true;
 
   // Event deletion
@@ -828,7 +830,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   selectedSkills: string[] = [];
   expertiseLevels: string[] = [];
   currentPage = 1;
-  totalPages = 4;
+  pageSize = 4;
 
   expertiseOptions = [
     'UI/UX Design', 'Fullstack Developer', 'Frontend Developer', 'Backend Developer',
@@ -851,28 +853,86 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   levelOptions = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 
-  allMentors = [
-    { name: 'Julian Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Janine Hernandez', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] },
-    { name: 'Michael Jackson', role: 'UI/UX Designer', rating: 0, reviews: 0, bio: '5yrs of experience building ui friendly application', skills: ['Figma', 'Webflow', 'Photoshop', 'Wordpress'] }
-  ];
-
   get filteredMentors() {
-    return this.allMentors.filter(m => {
-      const matchName = !this.mentorSearchQuery || m.name.toLowerCase().includes(this.mentorSearchQuery.toLowerCase());
-      const matchExpertise = !this.selectedExpertise || m.role.toLowerCase().includes(this.selectedExpertise.toLowerCase());
-      return matchName && matchExpertise;
-    });
+    return this.recommendedMentors
+      .map((mentor: any) => this.normalizeMentorCard(mentor))
+      .filter((mentor: any) => {
+        const query = this.mentorSearchQuery.toLowerCase();
+        const selectedExpertise = this.selectedExpertise.toLowerCase();
+        const matchName = !query || mentor.name.toLowerCase().includes(query);
+        const matchExpertise = !selectedExpertise || mentor.role.toLowerCase().includes(selectedExpertise) || (mentor.expertise || '').toLowerCase().includes(selectedExpertise);
+        const matchSkills = this.selectedSkills.length === 0 || this.selectedSkills.every(skill => mentor.skills.includes(skill));
+        const matchLevel = this.expertiseLevels.length === 0 || this.expertiseLevels.includes('All Levels') || this.expertiseLevels.includes(mentor.level);
+        return matchName && matchExpertise && matchSkills && matchLevel;
+      });
+  }
+
+  get pagedMentors() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredMentors.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredMentors.length / this.pageSize));
+  }
+
+  private normalizeMentorCard(mentor: any) {
+    const rawName = mentor.full_name || mentor.mentee_name || mentor.name || mentor.title || 'User';
+    const expertise = mentor.expertise || mentor.desired_expertise || mentor.role || 'Mentor';
+    const skills = Array.isArray(mentor.skills)
+      ? mentor.skills
+      : Array.isArray(mentor.desired_skills)
+        ? mentor.desired_skills
+        : [];
+    const years = typeof mentor.years_experience === 'number' ? mentor.years_experience : null;
+    const level = years === null
+      ? 'All Levels'
+      : years < 2
+        ? 'Beginner'
+        : years < 5
+          ? 'Intermediate'
+          : 'Advanced';
+
+    return {
+      ...mentor,
+      user_id: mentor.user_id,
+      name: this.stripMiddleName(rawName),
+      role: expertise,
+      expertise,
+      bio: mentor.bio || mentor.description || `Matched ${this.isMentor ? 'mentee' : 'mentor'} profile`,
+      skills,
+      level,
+      rating: mentor.rating ?? 0,
+      reviews: mentor.reviews ?? 0
+    };
   }
 
   removeSkill(skill: string) { this.selectedSkills = this.selectedSkills.filter(s => s !== skill); }
 
+  addSkillFromSelect(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const skill = select.value.trim();
+    if (!skill || this.selectedSkills.includes(skill)) return;
+    this.selectedSkills = [...this.selectedSkills, skill];
+    select.value = '';
+    this.currentPage = 1;
+  }
+
+  onMentorSearchChange() {
+    this.currentPage = 1;
+  }
+
+  onExpertiseChange() {
+    this.currentPage = 1;
+  }
+
   toggleLevel(level: string) {
     if (this.expertiseLevels.includes(level)) this.expertiseLevels = this.expertiseLevels.filter(l => l !== level);
     else this.expertiseLevels.push(level);
+    this.currentPage = 1;
   }
 
-  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.expertiseLevels = []; }
+  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.expertiseLevels = []; this.currentPage = 1; }
   goToPage(page: number) { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
@@ -893,14 +953,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.conversations.filter(c => c.name.toLowerCase().includes(this.chatSearchQuery.toLowerCase()));
   }
 
-  selectConversation(conv: any) { 
+  async selectConversation(conv: any) { 
     this.activeConversation = conv;
-    this.loadMessages(conv.id);
+    await this.loadMessages(conv.id);
     // Mark messages as seen when opening conversation
-    this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
+    await this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
     // Update unread count for this conversation
     conv.unreadCount = 0;
     this.updateTotalUnreadCount();
+    this.refreshView();
   }
 
   async loadMessages(userId: string) {
@@ -915,6 +976,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       timestamp: msg.created_at,
       status: msg.status
     }));
+    this.shouldScrollMessages = true;
+    this.refreshView();
   }
 
   async sendMessage() {
@@ -950,10 +1013,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           };
         }
       }
+      this.shouldScrollMessages = true;
+      this.refreshView();
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove temp message on error
       this.messages = this.messages.filter(m => m.id !== tempId);
+      this.refreshView();
     }
   }
 
@@ -1333,6 +1399,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       
       // Mark as seen
       await this.supabase.markMessagesAsSeen(this.activeConversation.id, myId);
+      this.shouldScrollMessages = true;
+      this.refreshView();
     }
   }
 
@@ -1356,6 +1424,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ngAfterViewChecked() {
+    if (this.shouldScrollMessages && this.messagesScrollContainer?.nativeElement) {
+      this.shouldScrollMessages = false;
+      setTimeout(() => {
+        this.scrollMessagesToBottom();
+      }, 0);
+    }
+
     // Check if we should scroll the calendar and if the element is now available
     if (this.shouldScrollCalendar && this.calendarScrollContainer?.nativeElement) {
       this.shouldScrollCalendar = false;
@@ -1364,6 +1439,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.scrollCalendarToCurrentTime();
       }, 0);
     }
+  }
+
+  private scrollMessagesToBottom(): void {
+    const container = this.messagesScrollContainer?.nativeElement;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
   }
 
   // ─── Navigation ────────────────────────────────────────────────────────────
@@ -1411,6 +1492,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const userId = await this.supabase.getCurrentUserId();
     if (!userId) return;
     this.currentUserId = userId;
+    this.currentPage = 1;
 
     if (this.isMentor) {
       const { data } = await this.supabase.getClient()
@@ -1564,7 +1646,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Set first conversation as active if none selected
     if (!this.activeConversation && this.conversations.length > 0) {
       this.activeConversation = this.conversations[0];
-      this.loadMessages(this.activeConversation.id);
+      await this.loadMessages(this.activeConversation.id);
     }
     this.refreshView();
   }
