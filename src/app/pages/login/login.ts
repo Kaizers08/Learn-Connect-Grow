@@ -17,6 +17,13 @@ export class LoginComponent {
   password = '';
   showPassword = false;
 
+  // Forgot password modal state
+  showForgotModal = false;
+  forgotEmail = '';
+  forgotLoading = false;
+  forgotSent = false;
+  forgotError = '';
+
   constructor(
     private router: Router,
     private supabase: SupabaseService,
@@ -25,6 +32,39 @@ export class LoginComponent {
 
   togglePassword() {
     this.showPassword = !this.showPassword;
+  }
+
+  openForgotModal() {
+    this.forgotEmail = this.email;
+    this.forgotError = '';
+    this.forgotSent = false;
+    this.forgotLoading = false;
+    this.showForgotModal = true;
+  }
+
+  closeForgotModal() {
+    this.showForgotModal = false;
+  }
+
+  async sendResetLink() {
+    const email = this.forgotEmail.trim();
+    if (!email) {
+      this.forgotError = 'Please enter your email address.';
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotError = '';
+
+    const { error } = await this.supabase.sendPasswordReset(email);
+
+    this.forgotLoading = false;
+    if (error) {
+      this.forgotError = error.message || 'Could not send reset email. Please try again.';
+      return;
+    }
+
+    this.forgotSent = true;
   }
 
   async onSignIn() {

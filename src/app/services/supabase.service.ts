@@ -167,6 +167,22 @@ export class SupabaseService {
     return this.client.auth.signOut();
   }
 
+  /** Sends a password reset email that links back to the reset-password page. */
+  async sendPasswordReset(email: string) {
+    const { data, error } = await this.client.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) this.logError('sendPasswordReset', error);
+    return { data, error };
+  }
+
+  /** Updates the signed-in user's password (used after clicking the reset link). */
+  async updatePassword(newPassword: string) {
+    const { data, error } = await this.client.auth.updateUser({ password: newPassword });
+    if (error) this.logError('updatePassword', error);
+    return { data, error };
+  }
+
   async getCurrentUserId(): Promise<string | undefined> {
     const { data, error } = await this.client.auth.getUser();
     if (error) this.logError('getCurrentUserId', error);
