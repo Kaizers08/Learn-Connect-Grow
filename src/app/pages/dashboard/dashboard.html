@@ -652,6 +652,7 @@
                               [class.cal-event-compact]="event.compact"
                               [ngStyle]="getCalendarEventStyle(event)"
                               (click)="openCalendarEventDetails(event)"
+                              (contextmenu)="onCalendarEventContextMenu(event, $event)"
                             >
                               <div class="cal-event-accent"></div>
                               <div class="cal-event-body">
@@ -2266,6 +2267,37 @@
             </div>
           </div>
         }
+      </div>
+
+      @if (canDeleteCalendarEvent(selectedCalendarEvent)) {
+        <div class="modal-footer">
+          <button class="btn-danger" (click)="askDeleteCalendarEvent(selectedCalendarEvent)">
+            <app-icon name="trash" [size]="16"></app-icon> Delete Event
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── DELETE EVENT CONFIRMATION MODAL ─────────────────────────────────────── -->
+@if (showDeleteEventModal && eventPendingDelete) {
+  <div class="modal-overlay" (click)="cancelDeleteCalendarEvent()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon danger"><app-icon name="alert" [size]="26"></app-icon></div>
+      <h3 class="confirm-title">Delete this event?</h3>
+      <p class="confirm-text">
+        “{{ eventPendingDelete.title }}” will be permanently removed from your schedule. This can’t be undone.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="cancelDeleteCalendarEvent()" [disabled]="isDeletingEvent">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteCalendarEvent()" [disabled]="isDeletingEvent">
+          @if (isDeletingEvent) {
+            <span class="btn-spinner"></span> Deleting…
+          } @else {
+            <app-icon name="trash" [size]="16"></app-icon> Delete
+          }
+        </button>
       </div>
     </div>
   </div>

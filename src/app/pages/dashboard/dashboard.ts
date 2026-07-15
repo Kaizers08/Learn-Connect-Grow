@@ -75,14 +75,82 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   showCalendarEventModal = false;
   selectedCalendarEvent: any = null;
 
+  // Delete calendar event confirmation
+  showDeleteEventModal = false;
+  eventPendingDelete: any = null;
+  isDeletingEvent = false;
+
   openCalendarEventDetails(event: any) {
     this.selectedCalendarEvent = event;
     this.showCalendarEventModal = true;
   }
 
+  onCalendarEventContextMenu(event: any, mouseEvent: MouseEvent) {
+    mouseEvent.preventDefault();
+    this.openCalendarEventDetails(event);
+  }
+
   closeCalendarEventDetails() {
     this.showCalendarEventModal = false;
     this.selectedCalendarEvent = null;
+  }
+
+  /** Only events the current user owns can be deleted (not a mentor's shared events). */
+  canDeleteCalendarEvent(event: any): boolean {
+    if (!event) return false;
+    return !event.isFromMentor;
+  }
+
+  askDeleteCalendarEvent(event: any) {
+    this.eventPendingDelete = event;
+    this.showDeleteEventModal = true;
+    this.refreshView();
+  }
+
+  cancelDeleteCalendarEvent() {
+    this.showDeleteEventModal = false;
+    this.eventPendingDelete = null;
+    this.refreshView();
+  }
+
+  async confirmDeleteCalendarEvent() {
+    const event = this.eventPendingDelete;
+    if (!event || this.isDeletingEvent) return;
+
+    this.isDeletingEvent = true;
+    this.refreshView();
+
+    try {
+      const { success, error } = await this.withTimeout(
+        this.supabase.deleteCalendarEvent(event.id),
+        30000,
+        'Delete event'
+      );
+
+      if (!success || error) throw error || new Error('Delete failed');
+
+      // Optimistic UI update.
+      this.calendarEvents = this.calendarEvents.filter((e: any) => e.id !== event.id);
+      this.isDeletingEvent = false;
+      this.showDeleteEventModal = false;
+      this.eventPendingDelete = null;
+      this.showCalendarEventModal = false;
+      this.selectedCalendarEvent = null;
+      this.displayNotification('Event deleted successfully', 'success');
+      this.refreshView();
+
+      // Refresh upcoming sessions sidebar in the background.
+      void this.loadCalendarEvents();
+    } catch (error) {
+      console.error('Error deleting calendar event:', error);
+      const message = (error as any)?.message?.includes('timed out')
+        ? (error as any).message
+        : 'Failed to delete event. Please try again.';
+      this.displayNotification(message, 'error');
+    } finally {
+      this.isDeletingEvent = false;
+      this.refreshView();
+    }
   }
 
   // Calendar event loading
