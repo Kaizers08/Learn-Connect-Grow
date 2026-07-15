@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, ChangeDetectorRef, NgZone, ApplicationRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -1208,18 +1208,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     private userService: UserService,
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone
+    private zone: NgZone,
+    private appRef: ApplicationRef
   ) {}
 
+  /** Force the UI to update after async work (Supabase, timeouts, etc.). */
   private refreshView(): void {
     this.zone.run(() => {
-      queueMicrotask(() => {
-        try {
-          this.cdr.detectChanges();
-        } catch {
-          // Ignore late refresh attempts during teardown.
-        }
-      });
+      try {
+        this.cdr.detectChanges();
+      } catch {
+        // Component may be mid-destroy.
+      }
+      try {
+        this.appRef.tick();
+      } catch {
+        // Ignore if a tick is already in progress.
+      }
     });
   }
 
@@ -1915,13 +1920,31 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return `${major}.${minor + 1}`;
   }
 
+  private withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`${label} timed out. Please check your connection and try again.`)),
+        ms
+      );
+      Promise.resolve(promise).then(
+        (value) => { clearTimeout(timer); resolve(value); },
+        (err) => { clearTimeout(timer); reject(err); }
+      );
+    });
+  }
+
   async uploadResourceMaterial() {
+    if (this.isResourceUploading) return;
+
     if (!this.resourceUploadTitle || !this.resourceUploadFile || !this.resourceUploadOrderNumber) {
       this.displayNotification('Please fill in all required fields', 'warning');
       return;
     }
 
     this.isResourceUploading = true;
+    this.refreshView();
+
+    const fileToUpload = this.resourceUploadFile;
 
     try {
       const userId = this.currentUserId || await this.supabase.getCurrentUserId();
@@ -1930,17 +1953,21 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         return;
       }
 
-      const fileExt = this.resourceUploadFile.name.split('.').pop();
+      const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await this.supabase.getClient()
-        .storage
-        .from('learning-materials')
-        .upload(filePath, this.resourceUploadFile, {
-          upsert: false,
-          contentType: this.resourceUploadFile.type || undefined
-        });
+      const { error: uploadError } = await this.withTimeout(
+        this.supabase.getClient()
+          .storage
+          .from('learning-materials')
+          .upload(filePath, fileToUpload, {
+            upsert: false,
+            contentType: fileToUpload.type || undefined
+          }),
+        120000,
+        'Upload'
+      );
 
       if (uploadError) throw uploadError;
 
@@ -1951,29 +1978,46 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       const fileType = this.getResourceFileType(fileExt || '');
 
-      const { error: insertError } = await this.supabase.getClient()
-        .from('learning_materials')
-        .insert({
-          mentor_user_id: userId,
-          title: this.resourceUploadTitle,
-          description: this.resourceUploadDescription,
-          order_number: this.resourceUploadOrderNumber,
-          file_url: urlData.publicUrl,
-          file_type: fileType,
-          file_name: this.resourceUploadFile.name,
-          duration_minutes: this.resourceUploadDuration
-        });
+      const { data: inserted, error: insertError } = await this.withTimeout(
+        this.supabase.getClient()
+          .from('learning_materials')
+          .insert({
+            mentor_user_id: userId,
+            title: this.resourceUploadTitle,
+            description: this.resourceUploadDescription,
+            order_number: this.resourceUploadOrderNumber,
+            file_url: urlData.publicUrl,
+            file_type: fileType,
+            file_name: fileToUpload.name,
+            duration_minutes: this.resourceUploadDuration
+          })
+          .select('*')
+          .single(),
+        30000,
+        'Saving material'
+      );
 
       if (insertError) throw insertError;
 
-      this.displayNotification('Material uploaded successfully', 'success');
+      // Optimistic UI — close panel + toast before any background reloads.
+      if (inserted) {
+        this.resourceMaterials = [...this.resourceMaterials, inserted].sort((a, b) =>
+          String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true })
+        );
+      }
+      this.isResourceUploading = false;
       this.closeResourcesUploadModal();
-      await this.loadResourceMaterials();
-      await this.loadResourceMenteesProgress();
+      this.displayNotification('Material uploaded successfully', 'success');
+      this.refreshView();
+
+      void this.loadResourceMenteesProgress();
     } catch (error) {
       console.error('Error uploading material:', error);
       if (!this.handleResourceSetupError(error)) {
-        this.displayNotification('Failed to upload material. Please try again.', 'error');
+        const message = (error as any)?.message?.includes('timed out')
+          ? (error as any).message
+          : 'Failed to upload material. Please try again.';
+        this.displayNotification(message, 'error');
       }
     } finally {
       this.isResourceUploading = false;
@@ -2058,39 +2102,51 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async confirmDeleteResourceMaterial() {
     const material = this.materialPendingDelete;
-    if (!material) return;
+    if (!material || this.isDeletingMaterial) return;
 
     this.isDeletingMaterial = true;
+    this.refreshView();
 
     try {
-      const filePath = material.file_url.split('/learning-materials/')[1];
+      const { error } = await this.withTimeout(
+        this.supabase.getClient()
+          .from('learning_materials')
+          .delete()
+          .eq('id', material.id),
+        30000,
+        'Delete'
+      );
+
+      if (error) throw error;
+
+      // Optimistic UI update — don't wait on list reloads to clear the modal.
+      const deletedId = material.id;
+      this.resourceMaterials = this.resourceMaterials.filter(m => m.id !== deletedId);
+      this.modalMaterials = this.modalMaterials.filter(m => m.id !== deletedId);
+      this.updateModalProgress();
+      this.isDeletingMaterial = false;
+      this.showDeleteMaterialModal = false;
+      this.materialPendingDelete = null;
+      this.displayNotification('Material deleted successfully', 'success');
+      this.refreshView();
+
+      // Best-effort file cleanup (must not block UI).
+      const filePath = material.file_url?.split('/learning-materials/')[1];
       if (filePath) {
-        await this.supabase.getClient()
+        void this.supabase.getClient()
           .storage
           .from('learning-materials')
           .remove([filePath]);
       }
 
-      const { error } = await this.supabase.getClient()
-        .from('learning_materials')
-        .delete()
-        .eq('id', material.id);
-
-      if (error) throw error;
-
-      this.showDeleteMaterialModal = false;
-      this.materialPendingDelete = null;
-      this.displayNotification('Material deleted successfully', 'success');
-      await this.loadResourceMaterials();
-      await this.loadResourceMenteesProgress();
-      
-      // If mentee progress modal is open, refresh it
-      if (this.showMenteeProgressModal && this.selectedMenteeForProgress) {
-        await this.openMenteeProgressModal(this.selectedMenteeForProgress);
-      }
+      // Background refresh (UI already updated).
+      void this.loadResourceMenteesProgress();
     } catch (error) {
       console.error('Error deleting material:', error);
-      this.displayNotification('Failed to delete material. Please try again.', 'error');
+      const message = (error as any)?.message?.includes('timed out')
+        ? (error as any).message
+        : 'Failed to delete material. Please try again.';
+      this.displayNotification(message, 'error');
     } finally {
       this.isDeletingMaterial = false;
       this.refreshView();
