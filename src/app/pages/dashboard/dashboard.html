@@ -172,7 +172,7 @@
     </header>
 
     <!-- Page Body -->
-    <div class="page-body" [class.find-mentors-layout]="activeNavItem === 'search'" [class.messages-layout]="activeNavItem === 'messages'" [class.calendar-layout]="activeNavItem === 'calendar'">
+    <div class="page-body" [class.find-mentors-layout]="activeNavItem === 'search'" [class.messages-layout]="activeNavItem === 'messages'" [class.calendar-layout]="activeNavItem === 'calendar'" [class.library-layout]="activeNavItem === 'library'">
 
       <!-- ── DASHBOARD VIEW ─────────────────────────────────────────────── -->
       @if (activeNavItem === 'dashboard') {
@@ -985,27 +985,118 @@
               <p class="res-subtitle">Manage your learning materials and track mentee progress</p>
             </div>
             <button class="res-btn-upload-main" (click)="openResourcesUploadModal()">
-              <span>➕</span> Upload Material
+              <app-icon name="upload" [size]="18"></app-icon>
+              <span>Upload Material</span>
             </button>
           </div>
 
-          <!-- My Materials Summary -->
-          @if (resourceMaterials.length > 0) {
-            <div class="res-summary-card">
-              <div class="res-summary-icon">📚</div>
-              <div class="res-summary-info">
-                <h3>{{ resourceMaterials.length }} Materials</h3>
-                <p>You have uploaded {{ resourceMaterials.length }} learning materials</p>
+          <!-- Quick Stats -->
+          <div class="res-stats-row">
+            <div class="res-stat-card">
+              <div class="res-stat-icon blue"><app-icon name="book" [size]="22"></app-icon></div>
+              <div class="res-stat-body">
+                <span class="res-stat-value">{{ resourceMaterials.length }}</span>
+                <span class="res-stat-label">Materials</span>
               </div>
             </div>
-          }
+            <div class="res-stat-card">
+              <div class="res-stat-icon green"><app-icon name="users" [size]="22"></app-icon></div>
+              <div class="res-stat-body">
+                <span class="res-stat-value">{{ resourceMenteesProgress.length }}</span>
+                <span class="res-stat-label">Mentees</span>
+              </div>
+            </div>
+            <div class="res-stat-card">
+              <div class="res-stat-icon orange"><app-icon name="clock" [size]="22"></app-icon></div>
+              <div class="res-stat-body">
+                <span class="res-stat-value">{{ getTotalMaterialMinutes() }}</span>
+                <span class="res-stat-label">Total Minutes</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="res-content-grid">
+          <!-- My Uploaded Materials -->
+          <div class="res-section res-col-main">
+            <div class="res-section-head">
+              <h2 class="res-section-title no-border">
+                <app-icon name="book" [size]="20"></app-icon>
+                My Learning Materials
+              </h2>
+              @if (resourceMaterials.length > 0) {
+                <button class="res-btn-upload-sm" (click)="openResourcesUploadModal()">
+                  <app-icon name="plus" [size]="16"></app-icon>
+                  <span>Add Material</span>
+                </button>
+              }
+            </div>
+
+            @if (resourceMaterials.length === 0) {
+              <div class="res-empty-state highlight">
+                <div class="res-empty-icon"><app-icon name="folder" [size]="44"></app-icon></div>
+                <h3 class="res-empty-title">No materials yet</h3>
+                <p>Upload your first learning material so your mentees can start learning.</p>
+                <button class="res-btn-upload-main dark" (click)="openResourcesUploadModal()">
+                  <app-icon name="upload" [size]="18"></app-icon>
+                  <span>Upload Material</span>
+                </button>
+              </div>
+            } @else {
+              <div class="materials-list">
+                @for (material of resourceMaterials; track material.id) {
+                  <div class="material-item">
+                    <div class="material-type-icon" [attr.data-type]="material.file_type">
+                      <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="20"></app-icon>
+                    </div>
+                    <div class="material-order-badge">{{ material.order_number }}</div>
+
+                    <div class="material-details">
+                      <h4>{{ material.title }}</h4>
+                      @if (material.description) {
+                        <p class="material-desc">{{ material.description }}</p>
+                      }
+                      <div class="material-meta-row">
+                        <span class="material-meta-item">
+                          <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
+                          {{ material.file_name }}
+                        </span>
+                        @if (material.duration_minutes) {
+                          <span class="material-meta-item">
+                            <app-icon name="clock" [size]="13"></app-icon>
+                            {{ material.duration_minutes }} min
+                          </span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="material-actions-modal">
+                      <a [href]="material.file_url" target="_blank" class="material-view-btn">
+                        <app-icon name="eye" [size]="16"></app-icon>
+                        <span>View</span>
+                      </a>
+                      <button class="material-icon-btn edit" title="Edit" (click)="openResourcesEditModal(material)">
+                        <app-icon name="edit" [size]="16"></app-icon>
+                      </button>
+                      <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
+                        <app-icon name="trash" [size]="16"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
 
           <!-- Mentees Progress Cards -->
-          <div class="res-section">
-            <h2 class="res-section-title">📊 Mentee Progress</h2>
+          <div class="res-section res-col-side">
+            <h2 class="res-section-title">
+              <app-icon name="chart" [size]="20"></app-icon>
+              Mentee Progress
+            </h2>
             
             @if (resourceMenteesProgress.length === 0) {
               <div class="res-empty-state">
+                <div class="res-empty-icon subtle"><app-icon name="users" [size]="40"></app-icon></div>
                 <p>No mentees connected yet. When mentees connect with you, their progress will appear here.</p>
               </div>
             }
@@ -1043,11 +1134,15 @@
                   </div>
 
                   @if (mentee.progress_percentage === 100) {
-                    <div class="res-card-badge">✅ Completed</div>
+                    <div class="res-card-badge">
+                      <app-icon name="check-circle" [size]="14"></app-icon>
+                      Completed
+                    </div>
                   }
                 </div>
               }
             </div>
+          </div>
           </div>
         }
 
@@ -1063,10 +1158,14 @@
 
           <!-- Mentor Cards -->
           <div class="res-section">
-            <h2 class="res-section-title">📚 Your Mentors</h2>
+            <h2 class="res-section-title">
+              <app-icon name="graduation" [size]="20"></app-icon>
+              Your Mentors
+            </h2>
             
             @if (availableResourceMentors.length === 0) {
               <div class="res-empty-state">
+                <div class="res-empty-icon subtle"><app-icon name="graduation" [size]="40"></app-icon></div>
                 <p>No mentors connected yet. Connect with mentors to access their learning materials.</p>
               </div>
             }
@@ -1106,7 +1205,10 @@
                   @if (mentor.total_materials === 0) {
                     <div class="res-card-badge empty">No materials yet</div>
                   } @else if (mentor.progress_percentage === 100) {
-                    <div class="res-card-badge">✅ Completed</div>
+                    <div class="res-card-badge">
+                      <app-icon name="check-circle" [size]="14"></app-icon>
+                      Completed
+                    </div>
                   }
                 </div>
               }
@@ -1739,19 +1841,22 @@
 }
 
 
-<!-- ── RESOURCES UPLOAD MODAL ─────────────────────────────────────────────────── -->
+<!-- ── RESOURCES UPLOAD DRAWER ─────────────────────────────────────────────────── -->
 @if (showResourcesUploadModal) {
-  <div class="modal-overlay" (click)="closeResourcesUploadModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div class="modal-header-info">
-          <h3>📤 Upload Learning Material</h3>
-          <p class="modal-subtitle">Add a new material for your mentees</p>
+  <div class="drawer-overlay" (click)="closeResourcesUploadModal()">
+    <div class="drawer-panel" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-header-icon"><app-icon name="upload" [size]="20"></app-icon></div>
+        <div class="drawer-header-info">
+          <h3>Upload Learning Material</h3>
+          <p class="drawer-subtitle">Add a new material for your mentees</p>
         </div>
-        <button class="btn-close" (click)="closeResourcesUploadModal()">✕</button>
+        <button class="drawer-close" (click)="closeResourcesUploadModal()" aria-label="Close">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
       </div>
 
-      <div class="modal-body">
+      <div class="drawer-body">
         <div class="upload-form-grid">
           <div class="form-group">
             <label>Order Number *</label>
@@ -1783,7 +1888,7 @@
         </div>
 
         <div class="form-group">
-          <label>Description <span style="font-weight:400;color:#9ca3af">(optional)</span></label>
+          <label>Description <span class="label-optional">(optional)</span></label>
           <textarea 
             [(ngModel)]="resourceUploadDescription" 
             placeholder="Brief description of what this material covers..."
@@ -1793,51 +1898,77 @@
 
         <div class="form-group">
           <label>File *</label>
-          <input 
-            type="file" 
-            (change)="onResourceFileSelected($event)"
-            class="form-control file-input"
-            accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
-          <small>Supports: Video, PDF, Word, PowerPoint, Text — max 50 MB</small>
+          <label class="file-dropzone">
+            <input 
+              type="file" 
+              (change)="onResourceFileSelected($event)"
+              class="file-dropzone-input"
+              accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
+            <app-icon name="upload" [size]="26"></app-icon>
+            <span class="file-dropzone-title">Click to choose a file</span>
+            <span class="file-dropzone-hint">Video, PDF, Word, PowerPoint, Text — max 50 MB</span>
+          </label>
           @if (resourceUploadFileName) {
             <div class="file-preview">
-              📎 {{ resourceUploadFileName }}
+              <app-icon name="file" [size]="16"></app-icon>
+              <span class="file-preview-name">{{ resourceUploadFileName }}</span>
               <span class="file-size">{{ getResourceFileSizeLabel(resourceUploadFileSize) }}</span>
             </div>
           }
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="drawer-footer">
         <button class="btn-cancel" (click)="closeResourcesUploadModal()">Cancel</button>
         <button 
           class="btn-submit" 
           (click)="uploadResourceMaterial()"
           [disabled]="isResourceUploading || !resourceUploadTitle || !resourceUploadFile || !resourceUploadOrderNumber">
-          {{ isResourceUploading ? '⏳ Uploading...' : '📤 Upload Material' }}
+          @if (isResourceUploading) {
+            <span class="btn-spinner"></span> Uploading…
+          } @else {
+            <app-icon name="upload" [size]="16"></app-icon> Upload Material
+          }
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- ── RESOURCES EDIT MODAL ────────────────────────────────────────────────── -->
+<!-- ── RESOURCES EDIT DRAWER ────────────────────────────────────────────────── -->
 @if (showResourcesEditModal && editingResourceMaterial) {
-  <div class="modal-overlay" (click)="closeResourcesEditModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>✏️ Edit Learning Material</h3>
-        <button class="btn-close" (click)="closeResourcesEditModal()">✕</button>
+  <div class="drawer-overlay" (click)="closeResourcesEditModal()">
+    <div class="drawer-panel" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-header-icon"><app-icon name="edit" [size]="20"></app-icon></div>
+        <div class="drawer-header-info">
+          <h3>Edit Learning Material</h3>
+          <p class="drawer-subtitle">Update the details of this material</p>
+        </div>
+        <button class="drawer-close" (click)="closeResourcesEditModal()" aria-label="Close">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
       </div>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Order Number *</label>
-          <input 
-            type="text" 
-            [(ngModel)]="resourceEditOrderNumber" 
-            placeholder="e.g., 1.1, 1.2, 2.1"
-            class="form-control">
+      <div class="drawer-body">
+        <div class="upload-form-grid">
+          <div class="form-group">
+            <label>Order Number *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="resourceEditOrderNumber" 
+              placeholder="e.g., 1.1, 1.2, 2.1"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="resourceEditDuration" 
+              placeholder="Estimated duration"
+              class="form-control">
+          </div>
         </div>
 
         <div class="form-group">
@@ -1850,7 +1981,7 @@
         </div>
 
         <div class="form-group">
-          <label>Description</label>
+          <label>Description <span class="label-optional">(optional)</span></label>
           <textarea 
             [(ngModel)]="resourceEditDescription" 
             placeholder="Enter description (optional)"
@@ -1858,28 +1989,45 @@
             rows="3"></textarea>
         </div>
 
-        <div class="form-group">
-          <label>Duration (minutes)</label>
-          <input 
-            type="number" 
-            [(ngModel)]="resourceEditDuration" 
-            placeholder="Estimated duration"
-            class="form-control">
-        </div>
-
         <div class="info-box">
-          <p>📎 Current file: {{ editingResourceMaterial.file_name }}</p>
-          <small>To change the file, delete this material and upload a new one.</small>
+          <app-icon name="file" [size]="16"></app-icon>
+          <div class="info-box-text">
+            <p>Current file: {{ editingResourceMaterial.file_name }}</p>
+            <small>To change the file, delete this material and upload a new one.</small>
+          </div>
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="drawer-footer">
         <button class="btn-cancel" (click)="closeResourcesEditModal()">Cancel</button>
         <button 
           class="btn-submit" 
           (click)="updateResourceMaterial()"
           [disabled]="!resourceEditTitle || !resourceEditOrderNumber">
-          Update
+          <app-icon name="check-circle" [size]="16"></app-icon> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── DELETE MATERIAL CONFIRMATION MODAL ──────────────────────────────────── -->
+@if (showDeleteMaterialModal && materialPendingDelete) {
+  <div class="modal-overlay" (click)="cancelDeleteResourceMaterial()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon danger"><app-icon name="alert" [size]="26"></app-icon></div>
+      <h3 class="confirm-title">Delete this material?</h3>
+      <p class="confirm-text">
+        “{{ materialPendingDelete.title }}” will be permanently removed for you and your mentees. This can’t be undone.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="cancelDeleteResourceMaterial()" [disabled]="isDeletingMaterial">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteResourceMaterial()" [disabled]="isDeletingMaterial">
+          @if (isDeletingMaterial) {
+            <span class="btn-spinner"></span> Deleting…
+          } @else {
+            <app-icon name="trash" [size]="16"></app-icon> Delete
+          }
         </button>
       </div>
     </div>
@@ -1892,15 +2040,18 @@
     <div class="modal-content large" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-info">
-          <h3>📚 {{ selectedMentorForMaterials.full_name }}'s Learning Materials</h3>
+          <h3>{{ selectedMentorForMaterials.full_name }}'s Learning Materials</h3>
           <p class="modal-subtitle">{{ selectedMentorForMaterials.expertise || 'Mentor' }}</p>
         </div>
-        <button class="btn-close" (click)="closeMaterialsModal()">✕</button>
+        <button class="btn-close" (click)="closeMaterialsModal()" aria-label="Close">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
       </div>
 
       <div class="modal-body scrollable">
         @if (modalMaterials.length === 0) {
           <div class="empty-state-modal">
+            <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
             <p>No materials uploaded yet by this mentor.</p>
           </div>
         }
@@ -1924,15 +2075,22 @@
                   <p class="material-desc">{{ material.description }}</p>
                 }
                 <div class="material-meta-row">
-                  <span>{{ getResourceFileIcon(material.file_type) }} {{ material.file_name }}</span>
+                  <span class="material-meta-item">
+                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
+                    {{ material.file_name }}
+                  </span>
                   @if (material.duration_minutes) {
-                    <span>⏱️ {{ material.duration_minutes }} min</span>
+                    <span class="material-meta-item">
+                      <app-icon name="clock" [size]="13"></app-icon>
+                      {{ material.duration_minutes }} min
+                    </span>
                   }
                 </div>
               </div>
 
               <a [href]="material.file_url" target="_blank" class="material-view-btn">
-                👁️ View
+                <app-icon name="eye" [size]="16"></app-icon>
+                <span>View</span>
               </a>
             </div>
           }
@@ -1962,15 +2120,18 @@
     <div class="modal-content large" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-info">
-          <h3>📊 {{ selectedMenteeForProgress.mentee_name }}'s Progress</h3>
+          <h3>{{ selectedMenteeForProgress.mentee_name }}'s Progress</h3>
           <p class="modal-subtitle">Mentee Progress Report</p>
         </div>
-        <button class="btn-close" (click)="closeMenteeProgressModal()">✕</button>
+        <button class="btn-close" (click)="closeMenteeProgressModal()" aria-label="Close">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
       </div>
 
       <div class="modal-body scrollable">
         @if (modalMaterials.length === 0) {
           <div class="empty-state-modal">
+            <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
             <p>No materials uploaded yet. Upload materials to track progress.</p>
           </div>
         }
@@ -1980,9 +2141,9 @@
             <div class="material-item" [class.completed]="material.completed">
               <div class="material-status-icon">
                 @if (material.completed) {
-                  <span class="status-complete">✅</span>
+                  <span class="status-complete"><app-icon name="check-circle" [size]="20"></app-icon></span>
                 } @else {
-                  <span class="status-pending">⏳</span>
+                  <span class="status-pending"><app-icon name="circle" [size]="20"></app-icon></span>
                 }
               </div>
               
@@ -1994,22 +2155,29 @@
                   <p class="material-desc">{{ material.description }}</p>
                 }
                 <div class="material-meta-row">
-                  <span>{{ getResourceFileIcon(material.file_type) }} {{ material.file_name }}</span>
+                  <span class="material-meta-item">
+                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
+                    {{ material.file_name }}
+                  </span>
                   @if (material.duration_minutes) {
-                    <span>⏱️ {{ material.duration_minutes }} min</span>
+                    <span class="material-meta-item">
+                      <app-icon name="clock" [size]="13"></app-icon>
+                      {{ material.duration_minutes }} min
+                    </span>
                   }
                 </div>
               </div>
 
               <div class="material-actions-modal">
                 <a [href]="material.file_url" target="_blank" class="material-view-btn">
-                  👁️ View
+                  <app-icon name="eye" [size]="16"></app-icon>
+                  <span>View</span>
                 </a>
-                <button class="material-edit-btn" (click)="openResourcesEditModal(material)">
-                  ✏️ Edit
+                <button class="material-icon-btn edit" title="Edit" (click)="openResourcesEditModal(material)">
+                  <app-icon name="edit" [size]="16"></app-icon>
                 </button>
-                <button class="material-delete-btn" (click)="deleteResourceMaterial(material)">
-                  🗑️
+                <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
+                  <app-icon name="trash" [size]="16"></app-icon>
                 </button>
               </div>
             </div>

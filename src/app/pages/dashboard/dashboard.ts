@@ -5,10 +5,11 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { FeedbackModalComponent } from './feedback-modal.component';
+import { IconComponent } from './icon.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, FeedbackModalComponent],
+  imports: [CommonModule, FormsModule, FeedbackModalComponent, IconComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -335,7 +336,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Auto-hide after 3 seconds
     this.notificationTimeout = setTimeout(() => {
       this.showNotification = false;
+      this.refreshView();
     }, 3000);
+
+    this.refreshView();
   }
 
   closeNotification() {
@@ -975,6 +979,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   resourceEditDescription = '';
   resourceEditOrderNumber = '';
   resourceEditDuration: number | null = null;
+
+  // Delete confirmation modal
+  showDeleteMaterialModal = false;
+  materialPendingDelete: any = null;
+  isDeletingMaterial = false;
 
   // Materials modal (for mentee viewing mentor's materials)
   showMaterialsModal = false;
@@ -1748,6 +1757,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }));
 
     this.availableResourceMentors = mentorsWithProgress;
+    this.refreshView();
   }
 
   async selectResourceMentor(mentorId: string) {
@@ -1772,6 +1782,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.resourceMaterials = data || [];
+    this.refreshView();
   }
 
   async loadResourceMaterialsForMentee() {
@@ -1814,6 +1825,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       ...m,
       completed: progressMap.get(m.id) || false
     }));
+    this.refreshView();
   }
 
   async loadResourceMenteesProgress() {
@@ -1857,6 +1869,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
 
     this.resourceMenteesProgress = await Promise.all(progressPromises);
+    this.refreshView();
   }
 
   openResourcesUploadModal() {
@@ -1924,7 +1937,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const { data: uploadData, error: uploadError } = await this.supabase.getClient()
         .storage
         .from('learning-materials')
-        .upload(filePath, this.resourceUploadFile);
+        .upload(filePath, this.resourceUploadFile, {
+          upsert: false,
+          contentType: this.resourceUploadFile.type || undefined
+        });
 
       if (uploadError) throw uploadError;
 
@@ -1961,6 +1977,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     } finally {
       this.isResourceUploading = false;
+      this.refreshView();
     }
   }
 
@@ -1989,7 +2006,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async updateResourceMaterial() {
     if (!this.editingResourceMaterial || !this.resourceEditTitle || !this.resourceEditOrderNumber) {
-      alert('Please fill in all required fields');
+      this.displayNotification('Please fill in all required fields', 'warning');
       return;
     }
 
@@ -2007,7 +2024,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       if (error) throw error;
 
-      alert('✅ Material updated successfully!');
+      this.displayNotification('Material updated successfully', 'success');
       this.closeResourcesEditModal();
       
       // Reload based on context
@@ -2021,12 +2038,29 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     } catch (error) {
       console.error('Error updating material:', error);
-      alert('❌ Failed to update material. Please try again.');
+      this.displayNotification('Failed to update material. Please try again.', 'error');
+    } finally {
+      this.refreshView();
     }
   }
 
-  async deleteResourceMaterial(material: any) {
-    if (!confirm(`Are you sure you want to delete "${material.title}"?`)) return;
+  askDeleteResourceMaterial(material: any) {
+    this.materialPendingDelete = material;
+    this.showDeleteMaterialModal = true;
+    this.refreshView();
+  }
+
+  cancelDeleteResourceMaterial() {
+    this.showDeleteMaterialModal = false;
+    this.materialPendingDelete = null;
+    this.refreshView();
+  }
+
+  async confirmDeleteResourceMaterial() {
+    const material = this.materialPendingDelete;
+    if (!material) return;
+
+    this.isDeletingMaterial = true;
 
     try {
       const filePath = material.file_url.split('/learning-materials/')[1];
@@ -2044,7 +2078,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       if (error) throw error;
 
-      alert('✅ Material deleted successfully!');
+      this.showDeleteMaterialModal = false;
+      this.materialPendingDelete = null;
+      this.displayNotification('Material deleted successfully', 'success');
       await this.loadResourceMaterials();
       await this.loadResourceMenteesProgress();
       
@@ -2054,7 +2090,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     } catch (error) {
       console.error('Error deleting material:', error);
-      alert('❌ Failed to delete material. Please try again.');
+      this.displayNotification('Failed to delete material. Please try again.', 'error');
+    } finally {
+      this.isDeletingMaterial = false;
+      this.refreshView();
     }
   }
 
@@ -2091,10 +2130,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
 
       material.completed = newCompletedState;
+      this.refreshView();
     } catch (error) {
       console.error('Error toggling completion:', error);
-      alert('❌ Failed to update progress. Please try again.');
+      this.displayNotification('Failed to update progress. Please try again.', 'error');
     }
+  }
+
+  getTotalMaterialMinutes(): number {
+    return this.resourceMaterials.reduce(
+      (sum, m) => sum + (Number(m.duration_minutes) || 0),
+      0
+    );
   }
 
   getResourceFileIcon(fileType: string): string {
@@ -2104,6 +2151,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       case 'document': return '📝';
       case 'image': return '🖼️';
       default: return '📎';
+    }
+  }
+
+  getResourceFileIconName(fileType: string): string {
+    switch (fileType) {
+      case 'video': return 'video';
+      case 'pdf': return 'pdf';
+      case 'document': return 'document';
+      case 'image': return 'image';
+      default: return 'file';
     }
   }
 
@@ -2150,6 +2207,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }));
 
     this.updateModalProgress();
+    this.refreshView();
   }
 
   closeMaterialsModal() {
@@ -2185,6 +2243,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }));
 
     this.updateModalProgress();
+    this.refreshView();
   }
 
   closeMenteeProgressModal() {
@@ -2227,12 +2286,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       material.completed = newCompletedState;
       this.updateModalProgress();
+      this.refreshView();
       
       // Reload mentor list to update progress
       await this.loadResourceMentors();
     } catch (error) {
       console.error('Error toggling completion:', error);
-      alert('❌ Failed to update progress. Please try again.');
+      this.displayNotification('Failed to update progress. Please try again.', 'error');
     }
   }
 
