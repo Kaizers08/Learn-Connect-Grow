@@ -5812,6 +5812,43 @@ textarea.form-control {
   opacity: 0.6;
 }
 
+/* Labeled field wrapper (Date / Start time / End time) */
+.cal-new-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1.5rem 1rem;
+  border-bottom: 1px solid #E5E7EB;
+  background: #FFFFFF;
+}
+
+.cal-field-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cal-new-field .cal-new-input-row-simple {
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+.cal-new-field .cal-new-input-row-simple:hover {
+  background: transparent;
+}
+
+/* Start/End time halves as labeled columns */
+.cal-new-input-row-split-simple .cal-new-field.cal-new-input-half {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem 1rem;
+}
+
 /* Textarea simple */
 .cal-textarea-simple {
   resize: none;
