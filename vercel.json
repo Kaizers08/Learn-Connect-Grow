@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist/Edtech-Mentoring/browser",
-  "framework": "angular",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
