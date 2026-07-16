@@ -17,9 +17,13 @@ export class App implements OnInit {
   async ngOnInit() {
     if (typeof window === 'undefined') return;
 
+    const hadOAuthCallback = this.supabase.hasOAuthCallbackInUrl();
     await this.supabase.ensureAuthReady();
 
-    if (!this.supabase.hasOAuthCallbackInUrl()) return;
+    if (!hadOAuthCallback) return;
+
+    const { data } = await this.supabase.getClient().auth.getSession();
+    if (!data.session) return;
 
     const target = await this.supabase.resolvePostAuthPath();
     const meta = await this.supabase.getCurrentUserMeta();
@@ -28,7 +32,7 @@ export class App implements OnInit {
     }
 
     if (this.router.url !== target) {
-      await this.router.navigateByUrl(target);
+      await this.router.navigateByUrl(target, { replaceUrl: true });
     }
   }
 }

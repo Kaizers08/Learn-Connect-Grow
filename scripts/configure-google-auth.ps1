@@ -27,12 +27,19 @@ $headers = @{
   "Content-Type" = "application/json"
 }
 
+$siteUrl = if ($env:APP_SITE_URL) { $env:APP_SITE_URL } else { "http://localhost:4200" }
+$redirectUrls = if ($env:APP_REDIRECT_URLS) {
+  $env:APP_REDIRECT_URLS
+} else {
+  "http://localhost:4200/**,http://localhost:4200/auth/callback"
+}
+
 $body = @{
   external_google_enabled = $true
   external_google_client_id = $ClientId
   external_google_secret = $ClientSecret
-  site_url = "http://localhost:4200"
-  uri_allow_list = "http://localhost:4200/**,http://localhost:4200"
+  site_url = $siteUrl
+  uri_allow_list = $redirectUrls
 } | ConvertTo-Json
 
 Invoke-RestMethod -Method Patch `

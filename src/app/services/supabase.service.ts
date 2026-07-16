@@ -159,7 +159,10 @@ export class SupabaseService {
     try {
       if (code) {
         const { error } = await this.client.auth.exchangeCodeForSession(code);
-        if (error) this.logError('exchangeCodeForSession', error);
+        if (error) {
+          this.logError('exchangeCodeForSession', error);
+          this.authReadyPromise = null;
+        }
       } else if (hasImplicitTokens) {
         await this.client.auth.getSession();
       }
@@ -237,10 +240,12 @@ export class SupabaseService {
    * Redirects to Google for authentication
    */
   async signInWithGoogle() {
+    const redirectTo = `${window.location.origin}/auth/callback`;
     const { data, error } = await this.client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo,
+        skipBrowserRedirect: false,
       }
     });
     

@@ -12,6 +12,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then(m => m.LoginComponent)
   },
   {
+    path: 'auth/callback',
+    loadComponent: () => import('./pages/auth-callback/auth-callback').then(m => m.AuthCallbackComponent)
+  },
+  {
     path: 'register',
     loadComponent: () => import('./pages/register/register').then(m => m.RegisterComponent)
   },
