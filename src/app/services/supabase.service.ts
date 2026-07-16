@@ -58,7 +58,14 @@ export class SupabaseService {
 
   constructor() {
     const { url, anonKey } = this.config.getSupabaseConfig();
-    this.client = createClient(url, anonKey);
+    this.client = createClient(url, anonKey, {
+      auth: {
+        detectSessionInUrl: typeof window !== 'undefined',
+        persistSession: typeof window !== 'undefined',
+        autoRefreshToken: typeof window !== 'undefined',
+        flowType: 'pkce',
+      },
+    });
     this.supabaseUrl = url;
   }
 
@@ -132,6 +139,87 @@ export class SupabaseService {
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
+  private authReadyPromise: Promise<void> | null = null;
+
+  /** Wait for OAuth callback tokens/code to become an active session. */
+  ensureAuthReady(): Promise<void> {
+    if (typeof window === 'undefined') return Promise.resolve();
+    if (!this.authReadyPromise) {
+      this.authReadyPromise = this.initializeAuthFromUrl();
+    }
+    return this.authReadyPromise;
+  }
+
+  private async initializeAuthFromUrl(): Promise<void> {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+    const hasImplicitTokens =
+      url.hash.includes('access_token=') || url.hash.includes('refresh_token=');
+
+    try {
+      if (code) {
+        const { error } = await this.client.auth.exchangeCodeForSession(code);
+        if (error) this.logError('exchangeCodeForSession', error);
+      } else if (hasImplicitTokens) {
+        await this.client.auth.getSession();
+      }
+    } finally {
+      await this.client.auth.getSession();
+      this.cleanAuthParamsFromUrl(url);
+    }
+  }
+
+  private cleanAuthParamsFromUrl(url: URL) {
+    const hadCode = url.searchParams.has('code');
+    const hadAuthHash =
+      url.hash.includes('access_token=') ||
+      url.hash.includes('refresh_token=') ||
+      url.hash.includes('type=');
+
+    if (!hadCode && !hadAuthHash) return;
+
+    url.searchParams.delete('code');
+    const cleanUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  hasOAuthCallbackInUrl(): boolean {
+    if (typeof window === 'undefined') return false;
+    const url = new URL(window.location.href);
+    return (
+      url.searchParams.has('code') ||
+      url.hash.includes('access_token=') ||
+      url.hash.includes('refresh_token=')
+    );
+  }
+
+  /** Route path after a successful sign-in (email, Google, etc.). */
+  async resolvePostAuthPath(): Promise<string> {
+    await this.ensureAuthReady();
+
+    if (await this.isAdmin()) return '/admin';
+
+    const status = await this.getRegistrationStatus();
+    switch (status) {
+      case 'none':
+        return '/login';
+      case 'role-pending':
+        return '/complete-profile';
+      case 'profile-pending': {
+        const meta = await this.getCurrentUserMeta();
+        return meta.role === 'mentor' ? '/mentor-profile' : '/mentee-profile';
+      }
+      case 'documents-pending':
+        return '/mentor-documents';
+      case 'pending-approval':
+        return '/pending-approval';
+      case 'complete':
+        return '/dashboard';
+      default:
+        return '/login';
+    }
+  }
+
   signUp(email: string, password: string, fullName: string) {
     return this.client.auth.signUp({
       email,

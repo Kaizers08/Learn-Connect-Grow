@@ -12,6 +12,8 @@ export const authGuard = async () => {
   const userService = inject(UserService);
   const router = inject(Router);
 
+  await supabase.ensureAuthReady();
+
   const status = await supabase.getRegistrationStatus();
 
   switch (status) {

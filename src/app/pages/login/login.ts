@@ -80,18 +80,12 @@ export class LoginComponent {
       return;
     }
 
-    // Check admin first using the active session
-    const isAdmin = await this.supabase.isAdmin();
-    if (isAdmin) {
-      this.router.navigate(['/admin']);
-      return;
-    }
-
-    // Not admin — check role from metadata
+    const target = await this.supabase.resolvePostAuthPath();
     const meta = await this.supabase.getCurrentUserMeta();
-    const role = (meta.role as 'mentor' | 'mentee') ?? 'mentee';
-    this.userService.role.set(role);
-    this.router.navigate(['/dashboard']);
+    if (meta.role) {
+      this.userService.role.set(meta.role as 'mentor' | 'mentee');
+    }
+    this.router.navigateByUrl(target);
   }
 
   async onGoogleSignIn() {
