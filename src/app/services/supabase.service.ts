@@ -427,30 +427,29 @@ export class SupabaseService {
     return { data: filtered, error };
   }
 
-  // Mentor browses mentees whose desired expertise / skills match the mentor's.
-  // Match if: desired expertise matches OR any skill overlaps (at least 1 skill in common)
+  // Mentor browses mentees. Returns all mentees, with better matches sorted first.
   async findMenteesForMentor(expertise?: string, skills: string[] = []) {
     const { data, error } = await this.client.from('mentee_profiles').select('*');
-    
+
     if (error) {
       this.logError('findMenteesForMentor', error);
       return { data: [], error };
     }
 
-    // Filter client-side for skill overlap
-    const filtered = (data || []).filter((mentee: any) => {
-      // Match if desired expertise matches
-      if (expertise && mentee.desired_expertise === expertise) return true;
-      
-      // Match if any skill overlaps
+    const list = data || [];
+    const score = (mentee: any) => {
+      let s = 0;
+      if (expertise && mentee.desired_expertise === expertise) s += 2;
       if (skills.length && mentee.desired_skills?.length) {
-        return skills.some(skill => mentee.desired_skills.includes(skill));
+        if (skills.some(skill => mentee.desired_skills.includes(skill))) s += 1;
       }
-      
-      return false;
-    });
+      return s;
+    };
 
-    return { data: filtered, error };
+    return {
+      data: [...list].sort((a, b) => score(b) - score(a)),
+      error: null
+    };
   }
 
   // ── Messages ────────────────────────────────────────────────────────────────
@@ -780,7 +779,8 @@ export class SupabaseService {
     const { data: connections, error: connError } = await this.client
       .from('connections')
       .select('mentor_user_id')
-      .eq('mentee_user_id', menteeUserId);
+      .eq('mentee_user_id', menteeUserId)
+      .eq('status', 'connected');
 
     console.log('Connections Query Result:', connections);
     console.log('Connections Query Error:', connError);

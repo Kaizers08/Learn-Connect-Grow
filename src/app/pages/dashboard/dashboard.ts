@@ -183,7 +183,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const { data: connections, error: connError } = await this.supabase.getClient()
           .from('connections')
           .select('*')
-          .eq('mentee_user_id', userId);
+          .eq('mentee_user_id', userId)
+          .eq('status', 'connected');
         
         console.log('Direct Connections Query:', connections);
         
@@ -251,30 +252,29 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
 
       // Convert database events to calendar display format
+      const weekStart = this.getWeekStart(this.getCalendarReferenceDate());
+
       this.calendarEvents = allEvents.map((dbEvent: any) => {
-        // Parse the event date and times
-        const eventDate = new Date(dbEvent.event_date);
-        const [startHours, startMinutes] = dbEvent.start_time.split(':').map(Number);
-        
+        const eventDateTime = this.parseEventDateTime(dbEvent.event_date, dbEvent.start_time);
+        const startHours = eventDateTime.getHours();
+
         // Calculate duration
         let durationHours = 1;
         if (dbEvent.end_time) {
-          const [endHours, endMinutes] = dbEvent.end_time.split(':').map(Number);
-          const startTimeInMinutes = startHours * 60 + startMinutes;
+          const [endHours, endMinutes] = String(dbEvent.end_time).split(':').map(Number);
+          const startTimeInMinutes = startHours * 60 + eventDateTime.getMinutes();
           const endTimeInMinutes = endHours * 60 + endMinutes;
           durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
         }
 
-        // Calculate which day of current week this event belongs to
-        const now = this.getCalendarReferenceDate();
-        const dayOfWeek = now.getDay();
-        const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() + monday);
-        weekStart.setHours(0, 0, 0, 0);
-        
-        const timeDiff = eventDate.getTime() - weekStart.getTime();
-        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const eventDayStart = new Date(
+          eventDateTime.getFullYear(),
+          eventDateTime.getMonth(),
+          eventDateTime.getDate()
+        );
+        const daysDiff = Math.round(
+          (eventDayStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)
+        );
 
         // Type-safe event type
         const rawEventType = dbEvent.event_type || 'personal';
@@ -324,29 +324,49 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  // Load upcoming sessions from calendar events
+  /** Parse YYYY-MM-DD + HH:MM as a local Date (avoids UTC date-only shift). */
+  private parseEventDateTime(eventDate: string | Date, startTime?: string): Date {
+    const datePart = String(eventDate).slice(0, 10);
+    const [year, month, day] = datePart.split('-').map(Number);
+    let hours = 0;
+    let minutes = 0;
+    if (startTime) {
+      const parts = String(startTime).split(':').map(Number);
+      hours = parts[0] || 0;
+      minutes = parts[1] || 0;
+    }
+    return new Date(year, (month || 1) - 1, day || 1, hours, minutes, 0, 0);
+  }
+
+  /** Monday 00:00 local for the week containing `from`. */
+  private getWeekStart(from: Date): Date {
+    const dayOfWeek = from.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    weekStart.setDate(weekStart.getDate() + mondayOffset);
+    weekStart.setHours(0, 0, 0, 0);
+    return weekStart;
+  }
+
+  // Load upcoming sessions from calendar events (real now + this week)
   loadUpcomingSessions(events: any[]) {
-    const now = this.getCalendarReferenceDate();
-    
-    // Filter events that are in the future
-    const futureEvents = events.filter((event: any) => {
-      const eventDate = new Date(event.event_date);
-      const [hours, minutes] = event.start_time.split(':').map(Number);
-      eventDate.setHours(hours, minutes, 0, 0);
-      return eventDate > now;
-    });
+    const now = new Date();
+    const weekStart = this.getWeekStart(now);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
 
-    // Sort by date and time (earliest first)
-    futureEvents.sort((a: any, b: any) => {
-      const dateA = new Date(a.event_date + ' ' + a.start_time);
-      const dateB = new Date(b.event_date + ' ' + b.start_time);
-      return dateA.getTime() - dateB.getTime();
-    });
+    const thisWeekUpcoming = events
+      .map((event: any) => ({
+        event,
+        at: this.parseEventDateTime(event.event_date, event.start_time)
+      }))
+      .filter(({ at }) => at > now && at < weekEnd)
+      .sort((a, b) => a.at.getTime() - b.at.getTime())
+      .map(({ event }) => event);
 
-    // Convert to upcoming sessions format (limit to 3 most recent)
-    this.upcomingSessions = futureEvents.slice(0, 3).map((event: any) => {
-      // Format date
-      const eventDate = new Date(event.event_date);
+    // Convert to upcoming sessions format (limit to 3 soonest this week)
+    this.upcomingSessions = thisWeekUpcoming.slice(0, 3).map((event: any) => {
+      const eventDate = this.parseEventDateTime(event.event_date);
       const dateOptions: Intl.DateTimeFormatOptions = { 
         year: 'numeric', 
         month: 'long', 
@@ -357,13 +377,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       // Format time
       let timeString = '';
       if (event.start_time) {
-        const [startHours, startMinutes] = event.start_time.split(':').map(Number);
+        const [startHours, startMinutes] = String(event.start_time).split(':').map(Number);
         const startPeriod = startHours >= 12 ? 'PM' : 'AM';
         const startHours12 = startHours % 12 || 12;
         timeString = `${startHours12}:${startMinutes.toString().padStart(2, '0')}${startPeriod}`;
         
         if (event.end_time) {
-          const [endHours, endMinutes] = event.end_time.split(':').map(Number);
+          const [endHours, endMinutes] = String(event.end_time).split(':').map(Number);
           const endPeriod = endHours >= 12 ? 'PM' : 'AM';
           const endHours12 = endHours % 12 || 12;
           timeString += ` – ${endHours12}:${endMinutes.toString().padStart(2, '0')}${endPeriod}`;
@@ -371,7 +391,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
 
       return {
-        mentorName: event.title,
+        mentorName: event.isFromMentor
+          ? (event.mentorName || event.title)
+          : event.title,
         isActive: false,
         date: formattedDate,
         time: timeString,
@@ -382,7 +404,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       };
     });
 
-    this.upcomingSessionsCount = futureEvents.length;
+    this.upcomingSessionsCount = thisWeekUpcoming.length;
   }
 
   // Notification/Toast system
@@ -467,12 +489,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   initializeCurrentWeek(): void {
-    const now = this.getCalendarReferenceDate();
-    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Get Monday of current week
-    
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + monday);
+    const weekStart = this.getWeekStart(this.getCalendarReferenceDate());
     
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
@@ -599,7 +616,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
-    const eventDate = new Date(this.newEvent.date);
+    const eventDate = this.parseEventDateTime(this.newEvent.date, this.newEvent.startTime);
     const [startHours, startMinutes] = this.newEvent.startTime.split(':').map(Number);
     let durationHours = 1;
 
@@ -616,15 +633,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
     }
 
-    const now = this.getCalendarReferenceDate();
-    const dayOfWeek = now.getDay();
-    const monday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + monday);
-    weekStart.setHours(0, 0, 0, 0);
-
-    const timeDiff = eventDate.getTime() - weekStart.getTime();
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const weekStart = this.getWeekStart(this.getCalendarReferenceDate());
+    const eventDayStart = new Date(
+      eventDate.getFullYear(),
+      eventDate.getMonth(),
+      eventDate.getDate()
+    );
+    const daysDiff = Math.round(
+      (eventDayStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     try {
       const userId = await this.supabase.getCurrentUserId();
@@ -652,7 +669,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
 
       if (daysDiff < 0 || daysDiff > 6) {
-        this.calendarAnchorDate = eventDate;
+        this.calendarAnchorDate = new Date(
+          eventDate.getFullYear(),
+          eventDate.getMonth(),
+          eventDate.getDate()
+        );
       }
 
       this.newEvent = {
@@ -756,7 +777,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   mentorSearchQuery = '';
   selectedExpertise = '';
   selectedSkills: string[] = [];
-  expertiseLevels: string[] = [];
   currentPage = 1;
   pageSize = 4;
 
@@ -779,20 +799,31 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     'Git', 'GitHub', 'Jira', 'Notion', 'Trello', 'WordPress', 'Shopify'
   ];
 
-  levelOptions = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
-
   get filteredMentors() {
     return this.recommendedMentors
       .map((mentor: any) => this.normalizeMentorCard(mentor))
       .filter((mentor: any) => {
-        const query = this.mentorSearchQuery.toLowerCase();
-        const selectedExpertise = this.selectedExpertise.toLowerCase();
-        const matchName = !query || mentor.name.toLowerCase().includes(query);
-        const matchExpertise = !selectedExpertise || mentor.role.toLowerCase().includes(selectedExpertise) || (mentor.expertise || '').toLowerCase().includes(selectedExpertise);
-        const matchSkills = this.selectedSkills.length === 0 || this.selectedSkills.every(skill => mentor.skills.includes(skill));
-        const matchLevel = this.expertiseLevels.length === 0 || this.expertiseLevels.includes('All Levels') || this.expertiseLevels.includes(mentor.level);
-        return matchName && matchExpertise && matchSkills && matchLevel;
+        const matchName = this.matchesNameSearch(
+          mentor.searchName || mentor.name,
+          mentor.name,
+          this.mentorSearchQuery
+        );
+        const matchSkills = this.selectedSkills.length === 0
+          || this.selectedSkills.every(skill => mentor.skills.includes(skill));
+        return matchName && matchSkills;
       });
+  }
+
+  /** Flexible name match: tokens can appear in any order; middle names optional. */
+  private matchesNameSearch(fullName: string, displayName: string, query: string): boolean {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return true;
+
+    const haystack = `${fullName || ''} ${displayName || ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (haystack.includes(q)) return true;
+
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return tokens.every(token => haystack.includes(token));
   }
 
   private renderCalendarView(): void {
@@ -848,24 +879,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       : Array.isArray(mentor.desired_skills)
         ? mentor.desired_skills
         : [];
-    const years = typeof mentor.years_experience === 'number' ? mentor.years_experience : null;
-    const level = years === null
-      ? 'All Levels'
-      : years < 2
-        ? 'Beginner'
-        : years < 5
-          ? 'Intermediate'
-          : 'Advanced';
 
     return {
       ...mentor,
       user_id: mentor.user_id,
+      searchName: rawName,
       name: this.stripMiddleName(rawName),
       role: expertise,
       expertise,
       bio: mentor.bio || mentor.description || `Matched ${this.isMentor ? 'mentee' : 'mentor'} profile`,
       skills,
-      level,
       rating: mentor.rating ?? 0,
       reviews: mentor.reviews ?? 0
     };
@@ -886,17 +909,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.currentPage = 1;
   }
 
-  onExpertiseChange() {
-    this.currentPage = 1;
-  }
-
-  toggleLevel(level: string) {
-    if (this.expertiseLevels.includes(level)) this.expertiseLevels = this.expertiseLevels.filter(l => l !== level);
-    else this.expertiseLevels.push(level);
-    this.currentPage = 1;
-  }
-
-  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.expertiseLevels = []; this.currentPage = 1; }
+  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.currentPage = 1; }
   goToPage(page: number) { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
@@ -910,8 +923,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   
   activeConversation: any = null;
 
-  messages: { id: number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
-  private lastMessageCursor: { createdAt: number; id: number } | null = null;
+  messages: { id: string | number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
+  private lastMessageCursor: { createdAt: number; id: string | number } | null = null;
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
@@ -920,9 +933,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async selectConversation(conv: any) { 
     this.activeConversation = conv;
+    if (!this.currentUserId) {
+      this.currentUserId = await this.supabase.getCurrentUserId() || '';
+    }
     await this.loadMessages(conv.id);
     // Mark messages as seen when opening conversation
-    await this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
+    if (this.currentUserId) {
+      await this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
+    }
     // Update unread count for this conversation
     conv.unreadCount = 0;
     this.updateTotalUnreadCount();
@@ -930,10 +948,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async loadMessages(userId: string) {
-    const myId = this.currentUserId;
+    const myId = this.currentUserId || await this.supabase.getCurrentUserId();
     if (!myId) return;
+    this.currentUserId = myId;
 
-    const { data } = await this.supabase.getMessages(myId, userId);
+    const { data, error } = await this.supabase.getMessages(myId, userId);
+    if (error) {
+      console.error('Error loading messages:', error);
+      this.displayNotification('Failed to load messages', 'error');
+      return;
+    }
     this.messages = (data || []).map((msg: any) => ({
       id: msg.id,
       text: msg.message,
@@ -963,35 +987,48 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       timestamp: new Date().toISOString(),
       status: 'sent'
     });
+    this.scheduleMessagesScroll();
+    this.refreshView();
 
     try {
-      // Send to database
       const result = await this.supabase.sendMessage(this.activeConversation.id, message);
-      
-      if (result.data) {
-        // Replace temp message with real one
-        const index = this.messages.findIndex(m => m.id === tempId);
-        if (index !== -1) {
-          this.messages[index] = {
-            id: result.data.id,
-            text: message,
-            fromMe: true,
-            timestamp: result.data.created_at,
-            status: result.data.status
-          };
-        }
+
+      if (result.error || !result.data) {
+        this.messages = this.messages.filter(m => m.id !== tempId);
+        this.displayNotification('Failed to send message', 'error');
+        this.refreshView();
+        return;
       }
+
+      const index = this.messages.findIndex(m => m.id === tempId);
+      if (index !== -1) {
+        this.messages[index] = {
+          id: result.data.id,
+          text: message,
+          fromMe: true,
+          timestamp: result.data.created_at,
+          status: result.data.status
+        };
+      }
+
+      // Update conversation preview
+      this.activeConversation.lastMessage = message;
+      const conv = this.conversations.find(c => c.id === this.activeConversation.id);
+      if (conv) conv.lastMessage = message;
+
       this.scheduleMessagesScroll();
+      this.refreshView();
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove temp message on error
       this.messages = this.messages.filter(m => m.id !== tempId);
-      this.scheduleMessagesScroll();
+      this.displayNotification('Failed to send message', 'error');
+      this.refreshView();
     }
   }
 
   updateTotalUnreadCount() {
     this.totalUnreadMessages = this.conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+    this.unreadMessages = this.totalUnreadMessages;
   }
 
   getMessageStatusIcon(status: string): string {
@@ -1324,11 +1361,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       await this.supabase.updateLastSeen();
       this.lastSeenInterval = setInterval(() => {
         this.supabase.updateLastSeen();
-        // Also refresh connections every 2 minutes to update online status
-        if (this.activeNavItem === 'messages') {
+        // Refresh connections so online status stays current on dashboard + messages
+        if (this.activeNavItem === 'messages' || this.activeNavItem === 'dashboard') {
           this.loadConnections();
-          // Check for new messages
-          if (this.activeConversation) {
+          if (this.activeNavItem === 'messages' && this.activeConversation) {
             this.loadMessages(this.activeConversation.id);
           }
         }
@@ -1352,20 +1388,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async checkForNewMessages() {
-    if (!this.activeConversation || this.messages.length === 0) return;
-    
+    if (!this.activeConversation) return;
+
     const lastMessage = this.messages[this.messages.length - 1];
-    const lastCreatedAt = lastMessage?.timestamp ? new Date(lastMessage.timestamp).getTime() : 0;
-    const myId = this.currentUserId;
-    
+    const lastCreatedAt = lastMessage?.timestamp
+      ? new Date(lastMessage.timestamp).getTime()
+      : (this.lastMessageCursor?.createdAt || 0);
+    const myId = this.currentUserId || await this.supabase.getCurrentUserId();
+    if (!myId) return;
+
     const { data } = await this.supabase.getMessages(myId, this.activeConversation.id);
+    const existingIds = new Set(this.messages.map(m => String(m.id)));
     const newMessages = (data || []).filter((msg: any) => {
-      const messageCreatedAt = new Date(msg.created_at).getTime();
-      return messageCreatedAt > lastCreatedAt;
+      if (existingIds.has(String(msg.id))) return false;
+      return new Date(msg.created_at).getTime() > lastCreatedAt;
     });
-    
+
     if (newMessages.length > 0) {
-      // Add new messages
       newMessages.forEach((msg: any) => {
         this.messages.push({
           id: msg.id,
@@ -1375,28 +1414,32 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           status: msg.status
         });
       });
-      
-      // Mark as seen
+
+      const latest = newMessages[newMessages.length - 1];
+      this.activeConversation.lastMessage = latest.message;
+      const conv = this.conversations.find(c => c.id === this.activeConversation.id);
+      if (conv) conv.lastMessage = latest.message;
+
       await this.supabase.markMessagesAsSeen(this.activeConversation.id, myId);
       const newestMessage = this.messages[this.messages.length - 1];
       this.lastMessageCursor = newestMessage?.timestamp
         ? { createdAt: new Date(newestMessage.timestamp).getTime(), id: newestMessage.id }
         : this.lastMessageCursor;
       this.scheduleMessagesScroll();
+      this.refreshView();
     }
   }
 
   async updateAllUnreadCounts() {
     const userId = await this.supabase.getCurrentUserId();
     if (!userId) return;
-    
-    // Update unread counts for all conversations
+
     for (const conv of this.conversations) {
-      const unreadCount = await this.supabase.getUnreadCount(userId, conv.id);
-      conv.unreadCount = unreadCount;
+      conv.unreadCount = await this.supabase.getUnreadCount(userId, conv.id);
     }
-    
+
     this.updateTotalUnreadCount();
+    this.refreshView();
   }
 
   ngOnDestroy() {
@@ -1443,8 +1486,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
     this.setDashboardScrollLock(id === 'messages');
-    if (id === 'messages' && this.messages.length > 0) {
-      this.scheduleMessagesScroll();
+    if (id === 'messages') {
+      await this.loadConnections();
+      if (this.messages.length > 0) {
+        this.scheduleMessagesScroll();
+      }
+    }
+
+    // Keep upcoming sessions / calendar in sync with real time
+    if (id === 'dashboard' || id === 'calendar') {
+      void this.loadCalendarEvents();
     }
     
     // Close any open modals when switching tabs
@@ -1471,7 +1522,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
   onViewAllSessions() { this.setActiveNav('calendar'); }
-  onViewAllOnline() {}
+  onViewAllOnline() { this.setActiveNav('messages'); }
   onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }
   closeUserMenu() { this.showUserMenu = false; }
@@ -1587,6 +1638,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   async loadConnections() {
     const userId = await this.supabase.getCurrentUserId();
     if (!userId) return;
+    this.currentUserId = userId;
 
     const connections = await this.supabase.getMyConnections();
     this.myConnectionIds = new Set(
@@ -1598,25 +1650,66 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!ids.length) { 
       this.connectedUsers = []; 
       this.conversations = [];
+      this.activeConversation = null;
+      this.messages = [];
+      this.updateTotalUnreadCount();
       this.refreshView();
       return; 
     }
 
-    const role = this.userService.role();
+    let role = this.userService.role();
+    if (!role) {
+      const meta = await this.supabase.getCurrentUserMeta();
+      role = (meta.role as any) || '';
+    }
     // If I'm a mentee, my connections are mentors, and vice versa
-    const table = role === 'mentor' ? 'mentee_profiles' : 'mentor_profiles';
-    
-    const { data } = await this.supabase.getClient()
-      .from(table)
+    const primaryTable = role === 'mentor' ? 'mentee_profiles' : 'mentor_profiles';
+    const fallbackTable = role === 'mentor' ? 'mentor_profiles' : 'mentee_profiles';
+
+    const { data, error } = await this.supabase.getClient()
+      .from(primaryTable)
       .select('user_id,full_name,profile_picture,last_seen')
       .in('user_id', ids);
 
-    const users = (data || []).map((u: any) => ({
+    if (error) {
+      console.error('Error loading connection profiles:', error);
+    }
+
+    let profiles = data || [];
+
+    // If some connected users are missing from the opposite-role table, try the other
+    const foundIds = new Set(profiles.map((p: any) => p.user_id));
+    const missingIds = ids.filter(id => !foundIds.has(id));
+    if (missingIds.length > 0) {
+      const { data: fallbackData } = await this.supabase.getClient()
+        .from(fallbackTable)
+        .select('user_id,full_name,profile_picture,last_seen')
+        .in('user_id', missingIds);
+      if (fallbackData?.length) {
+        profiles = [...profiles, ...fallbackData];
+      }
+    }
+
+    const users = profiles.map((u: any) => ({
       ...u,
       name: u.full_name?.trim() || `User ${u.user_id.slice(0, 8)}`,
       isOnline: this.isOnline(u.last_seen),
       lastSeenLabel: this.getLastSeenLabel(u.last_seen),
     }));
+
+    // Keep any connected IDs that still have no profile row visible in the list
+    const profileIds = new Set(users.map((u: any) => u.user_id));
+    for (const id of ids) {
+      if (!profileIds.has(id)) {
+        users.push({
+          user_id: id,
+          name: `User ${id.slice(0, 8)}`,
+          isOnline: false,
+          lastSeenLabel: 'Unknown',
+          profile_picture: null
+        });
+      }
+    }
 
     this.connectedUsers = users;
 
@@ -1638,10 +1731,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.conversations = conversations;
     this.updateTotalUnreadCount();
 
-    // Set first conversation as active if none selected
-    if (!this.activeConversation && this.conversations.length > 0) {
-      this.activeConversation = this.conversations[0];
-      await this.loadMessages(this.activeConversation.id);
+    // Keep active conversation in sync after refresh
+    if (this.activeConversation) {
+      const stillConnected = this.conversations.find(c => c.id === this.activeConversation.id);
+      if (stillConnected) {
+        this.activeConversation = stillConnected;
+      } else {
+        this.activeConversation = null;
+        this.messages = [];
+      }
+    }
+
+    if (!this.activeConversation && this.conversations.length > 0 && this.activeNavItem === 'messages') {
+      await this.selectConversation(this.conversations[0]);
     }
     this.refreshView();
   }
@@ -1746,12 +1848,27 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.router.navigate([`/${viewType}`, user.user_id]);
     }
   }
-  onMessage(user: any) { 
-    this.setActiveNav('messages');
-    const conversation = this.conversations.find(c => c.id === user.user_id);
-    if (conversation) {
-      this.selectConversation(conversation);
+  async onMessage(user: any) {
+    const otherId = user.user_id;
+    if (!otherId) return;
+
+    await this.setActiveNav('messages');
+
+    let conversation = this.conversations.find(c => c.id === otherId);
+    if (!conversation) {
+      conversation = {
+        id: otherId,
+        name: user.name || user.full_name || 'User',
+        status: user.isOnline ? 'Active Now' : (user.lastSeenLabel || 'Offline'),
+        isOnline: !!user.isOnline,
+        lastMessage: 'No messages yet',
+        profile_picture: user.profile_picture,
+        unreadCount: 0
+      };
+      this.conversations = [conversation, ...this.conversations];
     }
+
+    await this.selectConversation(conversation);
   }
 
   // ─── Resources / Learning Materials Methods ────────────────────────────────

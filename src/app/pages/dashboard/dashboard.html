@@ -120,17 +120,10 @@
           <circle cx="11" cy="11" r="7" stroke="#999" stroke-width="2"/>
           <path d="M20 20L16.5 16.5" stroke="#999" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <input type="text" placeholder="Search mentors" class="search-input" [(ngModel)]="searchQuery">
+        <input type="text" [placeholder]="isMentor ? 'Search mentees' : 'Search mentors'" class="search-input" [(ngModel)]="searchQuery">
       </div>
 
       <div class="topbar-right">
-        <button class="notif-btn" title="Notifications">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M13.73 21a2 2 0 01-3.46 0" stroke="#555" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-
         <div class="user-badge" (click)="toggleUserMenu()">
           <div class="user-avatar-sm">
             @if (profilePicture) {
@@ -409,23 +402,12 @@
                   <circle cx="11" cy="11" r="7" stroke="#aaa" stroke-width="2"/>
                   <path d="M20 20L16.5 16.5" stroke="#aaa" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-                <input type="text" placeholder="Search by name" class="fm-search-input" [(ngModel)]="mentorSearchQuery" (ngModelChange)="onMentorSearchChange()">
-              </div>
-            </div>
-
-            <!-- Expertise -->
-            <div class="fm-filter-group">
-              <label class="fm-filter-label">Expertise</label>
-              <div class="fm-select-wrap">
-                <select class="fm-select" [(ngModel)]="selectedExpertise" (ngModelChange)="onExpertiseChange()">
-                  <option value="">Select Expertise</option>
-                  @for (opt of expertiseOptions; track opt) {
-                    <option [value]="opt">{{ opt }}</option>
-                  }
-                </select>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M6 9L12 15L18 9" stroke="#666" stroke-width="2" stroke-linecap="round"/>
-                </svg>
+                <input
+                  type="text"
+                  [placeholder]="isMentor ? 'Search mentees by name' : 'Search mentors by name'"
+                  class="fm-search-input"
+                  [(ngModel)]="mentorSearchQuery"
+                  (ngModelChange)="onMentorSearchChange()">
               </div>
             </div>
 
@@ -455,23 +437,6 @@
                   }
                 </div>
               }
-            </div>
-
-            <!-- Expertise Level -->
-            <div class="fm-filter-group">
-              <label class="fm-filter-label">Expertise Level</label>
-              <div class="fm-checkbox-list">
-                @for (level of levelOptions; track level) {
-                  <label class="fm-checkbox-label">
-                    <input type="checkbox"
-                      class="fm-checkbox"
-                      [checked]="expertiseLevels.includes(level)"
-                      (change)="toggleLevel(level)">
-                    <span class="fm-checkbox-custom"></span>
-                    <span>{{ level }}</span>
-                  </label>
-                }
-              </div>
             </div>
           </aside>
 
@@ -864,8 +829,11 @@
             </div>
 
             <div class="msg-chat-list">
+              @if (filteredConversations.length === 0) {
+                <p class="online-empty">No connections yet. Connect with someone to start chatting.</p>
+              }
               @for (conv of filteredConversations; track conv.id) {
-                <div class="msg-chat-item" [class.active]="activeConversation.id === conv.id" (click)="selectConversation(conv)">
+                <div class="msg-chat-item" [class.active]="activeConversation?.id === conv.id" (click)="selectConversation(conv)">
                   <div class="msg-chat-avatar">
                     @if (conv.profile_picture) {
                       <img [src]="conv.profile_picture" alt="Profile" class="msg-avatar-img">
@@ -893,12 +861,15 @@
               }
             </div>
 
-            <button class="msg-new-btn">New Message</button>
           </aside>
 
           <!-- Chat Window -->
           <div class="msg-chat-window">
-
+            @if (!activeConversation) {
+              <div class="msg-empty-chat">
+                <p>Select a conversation to start messaging.</p>
+              </div>
+            } @else {
             <!-- Chat Header -->
             <div class="msg-chat-header">
               <div class="msg-chat-header-avatar">
@@ -920,6 +891,9 @@
 
             <!-- Messages -->
             <div class="msg-messages-area" #messagesScrollContainer>
+              @if (messages.length === 0) {
+                <p class="online-empty">No messages yet. Say hello!</p>
+              }
               @for (msg of messages; track msg.id) {
                 <div class="msg-row" [class.from-me]="msg.fromMe">
                   @if (!msg.fromMe) {
@@ -976,7 +950,7 @@
                 </button>
               </div>
             </div>
-
+            }
           </div>
         </div>
       </div>
