@@ -206,8 +206,12 @@ export class SupabaseService {
     switch (status) {
       case 'none':
         return '/login';
-      case 'role-pending':
+      case 'role-pending': {
+        const meta = await this.getCurrentUserMeta();
+        // Name step is only entered via auth-callback after Google signup
+        if (!meta.nameCollected) return '/register';
         return '/complete-profile';
+      }
       case 'profile-pending': {
         const meta = await this.getCurrentUserMeta();
         return meta.role === 'mentor' ? '/mentor-profile' : '/mentee-profile';
@@ -227,7 +231,7 @@ export class SupabaseService {
     return this.client.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } }
+      options: { data: { full_name: fullName, name_collected: true } }
     });
   }
 
@@ -235,10 +239,7 @@ export class SupabaseService {
     return this.client.auth.signInWithPassword({ email, password });
   }
 
-  /**
-   * Sign in with Google OAuth provider
-   * Redirects to Google for authentication
-   */
+  /** Sign in / sign up with Google OAuth. */
   async signInWithGoogle() {
     const redirectTo = `${window.location.origin}/auth/callback`;
     const { data, error } = await this.client.auth.signInWithOAuth({
@@ -248,11 +249,11 @@ export class SupabaseService {
         skipBrowserRedirect: false,
       }
     });
-    
+
     if (error) {
       this.logError('signInWithGoogle', error);
     }
-    
+
     return { data, error };
   }
 
@@ -282,7 +283,7 @@ export class SupabaseService {
     return data.user?.id;
   }
 
-  async getCurrentUserMeta(): Promise<{ id?: string; fullName?: string; role?: string }> {
+  async getCurrentUserMeta(): Promise<{ id?: string; fullName?: string; role?: string; nameCollected?: boolean }> {
     const { data, error } = await this.client.auth.getUser();
     if (error) this.logError('getCurrentUserMeta', error);
     const u = data.user;
@@ -290,11 +291,12 @@ export class SupabaseService {
     return {
       id: u?.id,
       fullName: meta['full_name'],
-      role: meta['role']
+      role: meta['role'],
+      nameCollected: meta['name_collected'] === true
     };
   }
 
-  updateUserMeta(data: { full_name?: string; role?: string }) {
+  updateUserMeta(data: { full_name?: string; role?: string; name_collected?: boolean }) {
     return this.client.auth.updateUser({ data });
   }
 

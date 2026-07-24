@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { SupabaseService } from '../../services/supabase.service';
@@ -10,16 +10,32 @@ import { SupabaseService } from '../../services/supabase.service';
   templateUrl: './complete-profile.html',
   styleUrls: ['./complete-profile.css']
 })
-export class CompleteProfileComponent {
+export class CompleteProfileComponent implements OnInit {
   selectedRole: 'mentee' | 'mentor' | null = null;
   isLoading = false;
   errorMsg = '';
+
+  private platformId = inject(PLATFORM_ID);
 
   constructor(
     private router: Router,
     private userService: UserService,
     private supabase: SupabaseService
   ) {}
+
+  async ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    await this.supabase.ensureAuthReady();
+    const meta = await this.supabase.getCurrentUserMeta();
+    if (!meta.nameCollected) {
+      // Incomplete Google signup — send back to name step only if they were mid-flow
+      await this.router.navigate(['/register'], {
+        queryParams: { step: 'name' },
+        replaceUrl: true
+      });
+    }
+  }
 
   selectRole(role: 'mentee' | 'mentor') {
     this.selectedRole = role;
@@ -36,11 +52,8 @@ export class CompleteProfileComponent {
     this.errorMsg = '';
 
     try {
-      console.log('Selected role:', this.selectedRole);
-      
-      // Update user metadata in Supabase
       const { error } = await this.supabase.updateUserMeta({ role: this.selectedRole });
-      
+
       if (error) {
         console.error('Failed to update user metadata:', error);
         this.errorMsg = 'Failed to save your role. Please try again.';
@@ -48,12 +61,8 @@ export class CompleteProfileComponent {
         return;
       }
 
-      // Update local user service
       this.userService.role.set(this.selectedRole);
-      
-      console.log('Role saved successfully, navigating to profile page...');
 
-      // Navigate to appropriate profile page
       if (this.selectedRole === 'mentee') {
         await this.router.navigate(['/mentee-profile']);
       } else if (this.selectedRole === 'mentor') {
