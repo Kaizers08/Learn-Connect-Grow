@@ -18,9 +18,13 @@ export class MenteeProfileComponent implements OnInit {
   company: string = '';
   lookingForJob: string = 'no';
 
+  profilePhoto: string | null = null;  // preview URL
+  profileFile: File | null = null;     // actual file for upload
+
   desiredExpertise: string = '';
   desiredSkills: string[] = [];
   skillInput = '';
+  showErrors = false;
   
   types = [
     { value: 'student', label: 'Student' },
@@ -106,12 +110,31 @@ export class MenteeProfileComponent implements OnInit {
     }
   }
 
+  onPhotoChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.profileFile = file;
+    this.profilePhoto = URL.createObjectURL(file);
+  }
+
+  removePhoto() {
+    if (this.profilePhoto) URL.revokeObjectURL(this.profilePhoto);
+    this.profilePhoto = null;
+    this.profileFile = null;
+  }
+
   async onPrevious() {
     this.router.navigate(['/complete-profile']);
   }
 
   async onNext() {
+    this.showErrors = true;
+
     // Required fields
+    if (!this.profilePhoto) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (!this.desiredExpertise) {
       alert('Please select an area of expertise you want to learn.');
       return;
@@ -123,6 +146,13 @@ export class MenteeProfileComponent implements OnInit {
 
     const userId = await this.supabase.getCurrentUserId();
 
+    // Upload profile picture to Storage
+    let pictureUrl: string | undefined = undefined;
+    if (this.profileFile) {
+      const url = await this.supabase.uploadProfilePicture(userId!, this.profileFile);
+      if (url) pictureUrl = url;
+    }
+
     const { error } = await this.supabase.saveMenteeProfile({
       user_id: userId,
       full_name: this.fullName || undefined,
@@ -132,7 +162,8 @@ export class MenteeProfileComponent implements OnInit {
       company: this.company || undefined,
       looking_for_job: this.lookingForJob,
       desired_expertise: this.desiredExpertise || undefined,
-      desired_skills: this.desiredSkills.length ? this.desiredSkills : undefined
+      desired_skills: this.desiredSkills.length ? this.desiredSkills : undefined,
+      profile_picture: pictureUrl
     });
 
     if (error) {

@@ -476,7 +476,11 @@
                     </div>
                     <div class="fm-mentor-actions">
                       <button class="fm-btn-view" (click)="onViewProfile(mentor)">View Profile</button>
-                      <button class="fm-btn-connect" (click)="onConnect(mentor)">Connect</button>
+                      @if (!isConnectedTo(mentor.user_id)) {
+                        <button class="fm-btn-connect" (click)="onConnect(mentor)">Connect</button>
+                      } @else {
+                        <button class="fm-btn-message-sm" (click)="onMessage(mentor)">Message</button>
+                      }
                     </div>
                   </div>
                 </div>

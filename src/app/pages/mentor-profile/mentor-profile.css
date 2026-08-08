@@ -420,6 +420,11 @@ select.form-input {
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
 }
 
+.input-error-border {
+  border: 2px solid #e74c3c !important;
+  border-radius: 10px;
+}
+
 .field-error {
   color: #e74c3c;
   font-size: 0.8rem;

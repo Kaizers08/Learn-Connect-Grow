@@ -89,6 +89,11 @@ export class MentorProfileComponent implements OnInit {
     this.showErrors = true;
 
     // Required field validation
+    if (!this.profilePhoto) {
+      this.errorMsg = 'Please upload a profile picture.';
+      this.scrollToTop();
+      return;
+    }
     if (!this.expertise) { 
       this.errorMsg = 'Area of Expertise is required.'; 
       this.scrollToTop();

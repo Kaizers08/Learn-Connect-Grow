@@ -1255,6 +1255,25 @@
   background: #0390c0;
 }
 
+.fm-btn-message-sm {
+  padding: 0.42rem 0;
+  width: 140px;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.fm-btn-message-sm:hover {
+  background: #0088cc;
+}
+
 /* ── Pagination ── */
 .fm-pagination {
   display: flex;

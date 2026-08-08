@@ -16,6 +16,32 @@
     <!-- Card -->
     <div class="mentee-card">
 
+      <!-- Profile Picture -->
+      <div class="form-section profile-photo-section">
+        <label class="field-label">Profile Picture <span class="required">*</span></label>
+        <div class="profile-photo-row" [class.input-error-border]="showErrors && !profilePhoto">
+          <div class="profile-photo-preview">
+            @if (profilePhoto) {
+              <img [src]="profilePhoto" alt="Profile preview" class="profile-photo-img">
+            } @else {
+              <span class="profile-photo-placeholder">No photo</span>
+            }
+          </div>
+          <div class="profile-photo-actions">
+            <label class="btn-upload">
+              {{ profilePhoto ? 'Change Photo' : 'Upload Photo' }}
+              <input type="file" accept="image/*" hidden (change)="onPhotoChange($event)">
+            </label>
+            @if (profilePhoto) {
+              <button type="button" class="btn-remove-photo" (click)="removePhoto()">Remove</button>
+            }
+          </div>
+        </div>
+        @if (showErrors && !profilePhoto) {
+          <div class="field-error">Please upload a profile picture.</div>
+        }
+      </div>
+
       <!-- I am a -->
       <div class="form-section">
         <label class="section-label">I am a ...</label>

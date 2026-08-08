@@ -18,8 +18,8 @@
 
       <!-- Profile Picture -->
       <div class="form-section profile-photo-section">
-        <label class="field-label">Profile Picture</label>
-        <div class="profile-photo-row">
+        <label class="field-label">Profile Picture <span class="required">*</span></label>
+        <div class="profile-photo-row" [class.input-error-border]="showErrors && !profilePhoto">
           <div class="profile-photo-preview">
             @if (profilePhoto) {
               <img [src]="profilePhoto" alt="Profile preview" class="profile-photo-img">
@@ -37,6 +37,9 @@
             }
           </div>
         </div>
+        @if (showErrors && !profilePhoto) {
+          <div class="field-error">Please upload a profile picture.</div>
+        }
       </div>
 
       <!-- Job Position -->

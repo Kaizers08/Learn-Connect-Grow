@@ -12,7 +12,7 @@ import { SupabaseService } from '../../services/supabase.service';
 })
 export class AdminComponent implements OnInit {
 
-  activeNav: 'dashboard' | 'requests' | 'settings' = 'dashboard';
+  activeNav: 'dashboard' | 'requests' | 'feedback' | 'settings' = 'dashboard';
   loading = true;
 
   mentorCount = 0;
@@ -36,6 +36,18 @@ export class AdminComponent implements OnInit {
   showConfirmPass = false;
   settingsSaved = false;
   passwordError = '';
+
+  // Feedback
+  feedbackList: any[] = [];
+  feedbackLoading = false;
+  feedbackError = '';
+  feedbackSearch = '';
+  feedbackSortBy: 'newest' | 'oldest' | 'highest' | 'lowest' = 'newest';
+  // Grouped by mentor
+  mentorFeedbackGroups: { mentor: any; feedbacks: any[]; avgRating: number; total: number }[] = [];
+  // Selected mentor for drawer
+  selectedFeedbackMentor: { mentor: any; feedbacks: any[]; avgRating: number; total: number } | null = null;
+  showFeedbackDrawer = false;
 
   constructor(
     private router: Router,
@@ -183,6 +195,140 @@ export class AdminComponent implements OnInit {
     if (status === 'approved') return 'badge-approved';
     if (status === 'rejected') return 'badge-rejected';
     return 'badge-pending';
+  }
+
+  async loadFeedback() {
+    this.feedbackLoading = true;
+    this.feedbackList = [];
+    this.feedbackError = '';
+    this.mentorFeedbackGroups = [];
+    this.cdr.markForCheck();
+
+    try {
+      // 1. Get all feedback rows
+      const { data, error } = await this.supabase.getAllFeedback();
+
+      if (error) {
+        this.feedbackError = `Could not load feedback: ${(error as any).message || JSON.stringify(error)}`;
+        this.feedbackLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        this.feedbackLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // 2. Collect unique mentor and mentee user IDs
+      const mentorIds = [...new Set<string>((data as any[]).map((f: any) => f.mentor_user_id).filter(Boolean))];
+      const menteeIds = [...new Set<string>((data as any[]).map((f: any) => f.mentee_user_id).filter(Boolean))];
+
+      // 3. Fetch mentor profiles
+      const { data: mentorData } = await this.supabase.getClient()
+        .from('mentor_profiles')
+        .select('user_id, full_name, expertise, profile_picture')
+        .in('user_id', mentorIds);
+
+      // 4. Fetch mentee profiles
+      const { data: menteeData } = await this.supabase.getClient()
+        .from('mentee_profiles')
+        .select('user_id, full_name, profile_picture')
+        .in('user_id', menteeIds);
+
+      // 5. Build lookup maps
+      const mentorMap = new Map((mentorData ?? []).map((m: any) => [m.user_id, m]));
+      const menteeMap = new Map((menteeData ?? []).map((m: any) => [m.user_id, m]));
+
+      // 6. Enrich each feedback row
+      this.feedbackList = (data as any[]).map((fb: any) => ({
+        ...fb,
+        mentor: mentorMap.get(fb.mentor_user_id) ?? { full_name: 'Unknown Mentor', expertise: '' },
+        mentee: menteeMap.get(fb.mentee_user_id) ?? { full_name: 'Unknown Mentee' }
+      }));
+
+      // 7. Group by mentor
+      const groupMap = new Map<string, { mentor: any; feedbacks: any[] }>();
+      for (const fb of this.feedbackList) {
+        const key = fb.mentor_user_id;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, { mentor: fb.mentor, feedbacks: [] });
+        }
+        groupMap.get(key)!.feedbacks.push(fb);
+      }
+      this.mentorFeedbackGroups = [...groupMap.values()].map(g => {
+        const total = g.feedbacks.length;
+        const sum = g.feedbacks.reduce((acc, f) => acc + (f.rating ?? 0), 0);
+        return {
+          mentor: g.mentor,
+          feedbacks: g.feedbacks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+          avgRating: total ? Math.round((sum / total) * 10) / 10 : 0,
+          total
+        };
+      }).sort((a, b) => b.total - a.total);
+
+    } catch (e: any) {
+      this.feedbackError = `Unexpected error: ${e?.message ?? e}`;
+      this.feedbackList = [];
+    }
+
+    this.feedbackLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  get filteredFeedback() {
+    const q = this.feedbackSearch.toLowerCase();
+    let list = q
+      ? this.feedbackList.filter(fb =>
+          fb.mentor?.full_name?.toLowerCase().includes(q) ||
+          fb.mentee?.full_name?.toLowerCase().includes(q) ||
+          fb.feedback_text?.toLowerCase().includes(q)
+        )
+      : [...this.feedbackList];
+
+    switch (this.feedbackSortBy) {
+      case 'oldest':  list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()); break;
+      case 'highest': list.sort((a, b) => b.rating - a.rating); break;
+      case 'lowest':  list.sort((a, b) => a.rating - b.rating); break;
+      default:        list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); break;
+    }
+    return list;
+  }
+
+  get feedbackAverageRating(): number {
+    if (!this.feedbackList.length) return 0;
+    const sum = this.feedbackList.reduce((acc, fb) => acc + (fb.rating ?? 0), 0);
+    return Math.round((sum / this.feedbackList.length) * 10) / 10;
+  }
+
+  onNavFeedback() {
+    this.activeNav = 'feedback';
+    this.loadFeedback();
+  }
+
+  openFeedbackDrawer(group: any) {
+    this.selectedFeedbackMentor = group;
+    this.showFeedbackDrawer = true;
+  }
+
+  closeFeedbackDrawer() {
+    this.showFeedbackDrawer = false;
+    this.selectedFeedbackMentor = null;
+  }
+
+  get filteredMentorGroups() {
+    const q = this.feedbackSearch.toLowerCase();
+    return q
+      ? this.mentorFeedbackGroups.filter(g =>
+          g.mentor?.full_name?.toLowerCase().includes(q) ||
+          g.mentor?.expertise?.toLowerCase().includes(q)
+        )
+      : this.mentorFeedbackGroups;
+  }
+
+  renderStars(rating: number): number[] {
+    return [1, 2, 3, 4, 5];
   }
 
   saveSettings() {

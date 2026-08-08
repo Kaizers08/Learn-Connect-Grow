@@ -532,6 +532,16 @@ export class SupabaseService {
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────
+
+  async getAllFeedback() {
+    const { data, error } = await this.client
+      .from('feedback_submissions')
+      .select('id, mentor_user_id, mentee_user_id, rating, feedback_text, created_at')
+      .order('created_at', { ascending: false });
+    if (error) this.logError('getAllFeedback', error);
+    return { data: data ?? [], error };
+  }
+
   async getPlatformStats() {
     const [mentees, mentors] = await Promise.all([
       this.getMenteeProfiles(),

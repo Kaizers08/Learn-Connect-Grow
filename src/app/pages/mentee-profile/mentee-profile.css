@@ -449,3 +449,35 @@ select.form-input {
     width: 100%;
   }
 }
+
+/* ── Validation error styles ── */
+.required { color: #e74c3c; margin-left: 2px; }
+
+.input-error {
+  border-color: #e74c3c !important;
+  background-color: #fff5f5;
+}
+
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+}
+
+.input-error-border {
+  border: 2px solid #e74c3c !important;
+  border-radius: 10px;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.field-error::before {
+  content: '⚠';
+  font-size: 0.85rem;
+}

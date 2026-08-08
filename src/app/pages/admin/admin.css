@@ -167,7 +167,7 @@
 
 .admin-user-name { font-size: 0.82rem; font-weight: 600; color: #333; }
 
-.admin-body { padding: 1.5rem; flex: 1; }
+.admin-body { padding: 0.5rem 1.5rem 1.5rem; flex: 1; }
 
 /* ─── Shared ─── */
 .admin-dash-header { margin-bottom: 1.5rem; }
@@ -554,4 +554,319 @@
   .admin-main { margin-left: 70px; }
   .admin-sidebar { width: 70px; }
   .admin-sidebar:hover { width: 200px; }
+}
+
+/* ─── Mentor Feedback View ────────────────────────────────────────────────── */
+.admin-feedback-wrapper {
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+
+.admin-feedback-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  max-width: 560px;
+}
+
+.admin-fb-stat-card {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.admin-fb-stat-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* Filters */
+.admin-feedback-filters {
+  display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+}
+
+.admin-fb-search-wrap {
+  position: relative; flex: 1; min-width: 220px;
+}
+
+.admin-fb-search-icon {
+  position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.admin-fb-search {
+  width: 100%; padding: 0.6rem 0.875rem 0.6rem 2.5rem;
+  border: 1.5px solid #e0e0e0; border-radius: 50px;
+  font-size: 0.85rem; color: #333; outline: none;
+  background: white; box-sizing: border-box; font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-fb-search:focus {
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4,162,215,0.1);
+}
+
+.admin-fb-refresh-btn {
+  padding: 0.6rem 1rem;
+  border: 1.5px solid #e0e0e0; border-radius: 50px;
+  font-size: 0.83rem; font-weight: 600; color: #555;
+  background: white; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; gap: 0.4rem;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.admin-fb-refresh-btn:hover:not(:disabled) { border-color: #04A2D7; color: #04A2D7; }
+.admin-fb-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Mentor Cards Grid ── */
+.admin-fb-mentor-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.admin-fb-mentor-card {
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 1.25rem 1rem 1rem;
+  display: flex; flex-direction: column; gap: 0.4rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.admin-fb-mentor-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-color: #04A2D7;
+}
+
+.admin-fb-mc-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.admin-fb-mc-avatar {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: linear-gradient(135deg, #04A2D7, #043E92);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 1rem; font-weight: 700;
+  overflow: hidden; flex-shrink: 0;
+}
+
+.admin-fb-mc-avatar-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.admin-fb-mc-badge {
+  background: #e8f4fb; color: #04A2D7;
+  font-size: 0.68rem; font-weight: 700;
+  padding: 0.2rem 0.6rem; border-radius: 50px;
+}
+
+.admin-fb-mc-name {
+  font-size: 0.92rem; font-weight: 700; color: #222; margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.admin-fb-mc-role {
+  font-size: 0.75rem; color: #888; margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.admin-fb-mc-stars {
+  display: flex; align-items: center; gap: 0.18rem; margin-top: 0.25rem;
+}
+
+.admin-fb-mc-avg {
+  font-size: 0.75rem; font-weight: 700; color: #F59E0B; margin-left: 0.3rem;
+}
+
+.admin-fb-mc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 0.5rem; padding-top: 0.6rem;
+  border-top: 1px solid #f0f0f0;
+  font-size: 0.75rem; font-weight: 600; color: #04A2D7;
+}
+
+/* ─── Star shared styles ── */
+.star-filled { fill: #F59E0B; stroke: #F59E0B; }
+.star-empty  { fill: none; stroke: #ddd; }
+
+/* ─── Feedback Drawer ── */
+.admin-drawer-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 300;
+  display: flex; justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.admin-drawer {
+  width: 460px; max-width: 95vw;
+  height: 100vh;
+  background: white;
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  animation: slideInRight 0.25s ease;
+  overflow: hidden;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.admin-drawer-header {
+  padding: 1.5rem 1.5rem 1.25rem;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.admin-drawer-mentor-info {
+  display: flex; align-items: flex-start; gap: 1rem;
+}
+
+.admin-drawer-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #04A2D7, #043E92);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 1.15rem; font-weight: 700;
+  overflow: hidden; flex-shrink: 0;
+}
+
+.admin-drawer-avatar-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.admin-drawer-name {
+  font-size: 1.05rem; font-weight: 700; color: #222; margin: 0 0 0.15rem;
+}
+
+.admin-drawer-role {
+  font-size: 0.8rem; color: #888; margin: 0 0 0.5rem;
+}
+
+.admin-drawer-meta {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+
+.admin-drawer-stars {
+  display: flex; align-items: center; gap: 0.18rem;
+}
+
+.admin-drawer-avg {
+  font-size: 0.75rem; font-weight: 700; color: #F59E0B; margin-left: 0.3rem;
+}
+
+.admin-drawer-count {
+  font-size: 0.75rem; font-weight: 600;
+  background: #e8f4fb; color: #04A2D7;
+  padding: 0.15rem 0.55rem; border-radius: 50px;
+}
+
+.admin-drawer-close {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #f5f7fa; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.2s;
+}
+
+.admin-drawer-close:hover { background: #e8e8e8; }
+
+.admin-drawer-divider {
+  height: 1px; background: #f0f0f0; flex-shrink: 0;
+}
+
+.admin-drawer-body {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0.5rem 0;
+}
+
+/* Each feedback row */
+.admin-drawer-fb-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  transition: background 0.15s;
+}
+
+.admin-drawer-fb-item:hover { background: #fafafa; }
+.admin-drawer-fb-item:last-child { border-bottom: none; }
+
+.admin-drawer-fb-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+
+.admin-drawer-mentee {
+  display: flex; align-items: center; gap: 0.65rem;
+}
+
+.admin-drawer-mentee-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, #21AA3A, #0d7a28);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 0.75rem; font-weight: 700;
+  overflow: hidden; flex-shrink: 0;
+}
+
+.admin-drawer-mentee-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.admin-drawer-mentee-info {
+  display: flex; flex-direction: column; gap: 0.1rem;
+}
+
+.admin-drawer-mentee-name {
+  font-size: 0.875rem; font-weight: 700; color: #222;
+}
+
+.admin-drawer-mentee-label {
+  font-size: 0.65rem; font-weight: 700;
+  background: #e6f7ea; color: #21AA3A;
+  padding: 0.1rem 0.45rem; border-radius: 50px;
+  width: fit-content;
+}
+
+.admin-drawer-fb-stars {
+  display: flex; align-items: center; gap: 0.15rem; flex-shrink: 0;
+}
+
+.admin-drawer-fb-num {
+  font-size: 0.75rem; font-weight: 700; color: #F59E0B; margin-left: 0.25rem;
+}
+
+.admin-drawer-fb-text {
+  font-size: 0.83rem; color: #555; line-height: 1.6;
+  font-style: italic; margin: 0;
+  background: #f8f9fa; border-left: 3px solid #04A2D7;
+  padding: 0.5rem 0.75rem; border-radius: 0 8px 8px 0;
+}
+
+.admin-drawer-fb-date {
+  font-size: 0.7rem; color: #bbb; font-weight: 500;
+}
+
+/* ─── Responsive ── */
+@media (max-width: 1200px) {
+  .admin-fb-mentor-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .admin-fb-mentor-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-feedback-stats { grid-template-columns: 1fr 1fr; max-width: 100%; }
+  .admin-drawer { width: 100vw; }
+}
+
+@media (max-width: 560px) {
+  .admin-fb-mentor-grid { grid-template-columns: 1fr; }
+  .admin-feedback-stats { grid-template-columns: 1fr; }
 }
