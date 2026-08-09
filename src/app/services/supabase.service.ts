@@ -455,20 +455,42 @@ export class SupabaseService {
   }
 
   // ── Messages ────────────────────────────────────────────────────────────────
-  async sendMessage(receiverId: string, message: string) {
+  async sendMessage(receiverId: string, message: string, attachmentUrl?: string, attachmentName?: string, attachmentType?: string) {
     const { data, error } = await this.client
       .from('messages')
       .insert({
         sender_id: await this.getCurrentUserId(),
         receiver_id: receiverId,
         message: message.trim(),
-        status: 'sent'
+        status: 'sent',
+        ...(attachmentUrl ? { attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType } : {})
       })
       .select()
       .single();
     
     if (error) this.logError('sendMessage', error);
     return { data, error };
+  }
+
+  async uploadMessageAttachment(senderId: string, file: File): Promise<string | null> {
+    const ext = file.name.split('.').pop() ?? 'bin';
+    // Reuse the existing 'profiles' bucket under a messages/ subfolder
+    const path = `${senderId}/messages/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+
+    const { error } = await this.client.storage
+      .from('profiles')
+      .upload(path, file, { upsert: false, contentType: file.type });
+
+    if (error) {
+      this.logError('uploadMessageAttachment', error);
+      return null;
+    }
+
+    const { data } = this.client.storage
+      .from('profiles')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
   }
 
   async getMessages(userId1: string, userId2: string) {
@@ -529,6 +551,15 @@ export class SupabaseService {
       .eq('status', 'sent');
     
     if (error) this.logError('markMessageAsDelivered', error);
+  }
+
+  async deleteMessage(messageId: string) {
+    const { error } = await this.client
+      .from('messages')
+      .delete()
+      .eq('id', messageId);
+    if (error) this.logError('deleteMessage', error);
+    return { error };
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────

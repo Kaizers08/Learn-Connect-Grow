@@ -3,16 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
+import { AdminSafeUrlPipe } from './admin-safe-url.pipe';
 
 @Component({
   selector: 'app-admin',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminSafeUrlPipe],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css']
 })
 export class AdminComponent implements OnInit {
 
-  activeNav: 'dashboard' | 'requests' | 'feedback' | 'settings' = 'dashboard';
+  activeNav: 'dashboard' | 'requests' | 'feedback' | 'resources' | 'settings' = 'dashboard';
   loading = true;
 
   mentorCount = 0;
@@ -205,13 +206,22 @@ export class AdminComponent implements OnInit {
     this.cdr.markForCheck();
 
     try {
-      // 1. Get all feedback rows
+      // Use already-loaded mentors, or fetch fresh
+      let mentorProfiles: any[] = this.mentors.length ? this.mentors : [];
+      if (!mentorProfiles.length) {
+        const { data: mp } = await this.supabase.getClient()
+          .from('mentor_profiles')
+          .select('user_id, full_name, expertise, profile_picture');
+        mentorProfiles = mp ?? [];
+      }
+
+      // Try bulk fetch first
       const { data, error } = await this.supabase.getAllFeedback();
 
       if (error) {
-        this.feedbackError = `Could not load feedback: ${(error as any).message || JSON.stringify(error)}`;
-        this.feedbackLoading = false;
-        this.cdr.markForCheck();
+        // RLS blocked — fall back to per-mentor queries
+        console.warn('[Admin:Feedback] Bulk query blocked, trying per-mentor fallback:', (error as any).message);
+        await this.loadFeedbackPerMentor(mentorProfiles);
         return;
       }
 
@@ -221,57 +231,75 @@ export class AdminComponent implements OnInit {
         return;
       }
 
-      // 2. Collect unique mentor and mentee user IDs
-      const mentorIds = [...new Set<string>((data as any[]).map((f: any) => f.mentor_user_id).filter(Boolean))];
-      const menteeIds = [...new Set<string>((data as any[]).map((f: any) => f.mentee_user_id).filter(Boolean))];
-
-      // 3. Fetch mentor profiles
-      const { data: mentorData } = await this.supabase.getClient()
-        .from('mentor_profiles')
-        .select('user_id, full_name, expertise, profile_picture')
-        .in('user_id', mentorIds);
-
-      // 4. Fetch mentee profiles
-      const { data: menteeData } = await this.supabase.getClient()
-        .from('mentee_profiles')
-        .select('user_id, full_name, profile_picture')
-        .in('user_id', menteeIds);
-
-      // 5. Build lookup maps
-      const mentorMap = new Map((mentorData ?? []).map((m: any) => [m.user_id, m]));
-      const menteeMap = new Map((menteeData ?? []).map((m: any) => [m.user_id, m]));
-
-      // 6. Enrich each feedback row
-      this.feedbackList = (data as any[]).map((fb: any) => ({
-        ...fb,
-        mentor: mentorMap.get(fb.mentor_user_id) ?? { full_name: 'Unknown Mentor', expertise: '' },
-        mentee: menteeMap.get(fb.mentee_user_id) ?? { full_name: 'Unknown Mentee' }
-      }));
-
-      // 7. Group by mentor
-      const groupMap = new Map<string, { mentor: any; feedbacks: any[] }>();
-      for (const fb of this.feedbackList) {
-        const key = fb.mentor_user_id;
-        if (!groupMap.has(key)) {
-          groupMap.set(key, { mentor: fb.mentor, feedbacks: [] });
-        }
-        groupMap.get(key)!.feedbacks.push(fb);
-      }
-      this.mentorFeedbackGroups = [...groupMap.values()].map(g => {
-        const total = g.feedbacks.length;
-        const sum = g.feedbacks.reduce((acc, f) => acc + (f.rating ?? 0), 0);
-        return {
-          mentor: g.mentor,
-          feedbacks: g.feedbacks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-          avgRating: total ? Math.round((sum / total) * 10) / 10 : 0,
-          total
-        };
-      }).sort((a, b) => b.total - a.total);
+      await this.enrichAndBuildFeedback(data as any[], mentorProfiles);
 
     } catch (e: any) {
       this.feedbackError = `Unexpected error: ${e?.message ?? e}`;
-      this.feedbackList = [];
     }
+
+    this.feedbackLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  private async loadFeedbackPerMentor(mentorProfiles: any[]) {
+    const allFeedback: any[] = [];
+
+    for (const mentor of mentorProfiles) {
+      const { data } = await this.supabase.getClient()
+        .from('feedback_submissions')
+        .select('id, mentor_user_id, mentee_user_id, rating, feedback_text, created_at')
+        .eq('mentor_user_id', mentor.user_id)
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0) {
+        allFeedback.push(...(data as any[]));
+      }
+    }
+
+    if (allFeedback.length === 0) {
+      this.feedbackLoading = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    await this.enrichAndBuildFeedback(allFeedback, mentorProfiles);
+  }
+
+  private async enrichAndBuildFeedback(data: any[], mentorProfiles: any[]) {
+    const menteeIds = [...new Set<string>(data.map((f: any) => f.mentee_user_id).filter(Boolean))];
+
+    const { data: menteeData } = await this.supabase.getClient()
+      .from('mentee_profiles')
+      .select('user_id, full_name, profile_picture')
+      .in('user_id', menteeIds);
+
+    const mentorMap = new Map(mentorProfiles.map((m: any) => [m.user_id, m]));
+    const menteeMap = new Map((menteeData ?? []).map((m: any) => [m.user_id, m]));
+
+    this.feedbackList = data.map((fb: any) => ({
+      ...fb,
+      mentor: mentorMap.get(fb.mentor_user_id) ?? { full_name: 'Unknown Mentor', expertise: '' },
+      mentee: menteeMap.get(fb.mentee_user_id) ?? { full_name: 'Unknown Mentee' }
+    }));
+
+    // Group by mentor
+    const groupMap = new Map<string, { mentor: any; feedbacks: any[] }>();
+    for (const fb of this.feedbackList) {
+      const key = fb.mentor_user_id;
+      if (!groupMap.has(key)) groupMap.set(key, { mentor: fb.mentor, feedbacks: [] });
+      groupMap.get(key)!.feedbacks.push(fb);
+    }
+
+    this.mentorFeedbackGroups = [...groupMap.values()].map(g => {
+      const total = g.feedbacks.length;
+      const sum = g.feedbacks.reduce((acc, f) => acc + (f.rating ?? 0), 0);
+      return {
+        mentor: g.mentor,
+        feedbacks: g.feedbacks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+        avgRating: total ? Math.round((sum / total) * 10) / 10 : 0,
+        total
+      };
+    }).sort((a, b) => b.total - a.total);
 
     this.feedbackLoading = false;
     this.cdr.markForCheck();
@@ -329,6 +357,173 @@ export class AdminComponent implements OnInit {
 
   renderStars(rating: number): number[] {
     return [1, 2, 3, 4, 5];
+  }
+
+  // Resources
+  resourcesLoading = false;
+  resourcesError = '';
+  resourceSearch = '';
+  // All mentors with their materials grouped
+  mentorResourceGroups: { mentor: any; materials: any[]; total: number }[] = [];
+  // Selected mentor for drawer
+  selectedResourceMentor: { mentor: any; materials: any[]; total: number } | null = null;
+  showResourcesDrawer = false;
+
+  async loadResources() {
+    this.resourcesLoading = true;
+    this.resourcesError = '';
+    this.mentorResourceGroups = [];
+    this.cdr.markForCheck();
+
+    try {
+      // Use already-loaded mentors list, or fetch fresh
+      let mentorProfiles: any[] = this.mentors.length ? this.mentors : [];
+      if (!mentorProfiles.length) {
+        const { data: mp } = await this.supabase.getClient()
+          .from('mentor_profiles')
+          .select('user_id, full_name, expertise, profile_picture');
+        mentorProfiles = mp ?? [];
+      }
+
+      if (!mentorProfiles.length) {
+        this.resourcesLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // Fetch materials for ALL mentors in one query using their IDs
+      const mentorIds = mentorProfiles.map((m: any) => m.user_id).filter(Boolean);
+
+      const { data, error } = await this.supabase.getClient()
+        .from('learning_materials')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at')
+        .in('mentor_user_id', mentorIds)
+        .order('order_number', { ascending: true });
+
+      if (error) {
+        // RLS blocked the bulk query — fall back to fetching per mentor
+        console.warn('[Admin:Resources] Bulk query blocked, trying per-mentor fallback:', error.message);
+        await this.loadResourcesPerMentor(mentorProfiles);
+        return;
+      }
+
+      const materials = (data as any[]) ?? [];
+      this.buildResourceGroups(materials, mentorProfiles);
+
+    } catch (e: any) {
+      this.resourcesError = `Unexpected error: ${e?.message ?? e}`;
+    }
+
+    this.resourcesLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  private async loadResourcesPerMentor(mentorProfiles: any[]) {
+    // Fallback: query each mentor's materials individually
+    // This works even with restrictive RLS since each mentor can read their own rows
+    const groups: { mentor: any; materials: any[]; total: number }[] = [];
+
+    for (const mentor of mentorProfiles) {
+      const { data } = await this.supabase.getClient()
+        .from('learning_materials')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at')
+        .eq('mentor_user_id', mentor.user_id)
+        .order('order_number', { ascending: true });
+
+      const materials = (data as any[]) ?? [];
+      if (materials.length > 0) {
+        groups.push({ mentor, materials, total: materials.length });
+      }
+    }
+
+    this.mentorResourceGroups = groups.sort((a, b) => b.total - a.total);
+    this.resourcesLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  private buildResourceGroups(materials: any[], mentorProfiles: any[]) {
+    const mentorMap = new Map(mentorProfiles.map((m: any) => [m.user_id, m]));
+    const groupMap = new Map<string, any[]>();
+
+    for (const mat of materials) {
+      if (!groupMap.has(mat.mentor_user_id)) groupMap.set(mat.mentor_user_id, []);
+      groupMap.get(mat.mentor_user_id)!.push(mat);
+    }
+
+    this.mentorResourceGroups = [...groupMap.entries()]
+      .map(([mentorId, mats]) => ({
+        mentor: mentorMap.get(mentorId) ?? { full_name: 'Unknown Mentor', expertise: '' },
+        materials: mats,
+        total: mats.length
+      }))
+      .sort((a, b) => b.total - a.total);
+  }
+
+  get filteredResourceGroups() {
+    const q = this.resourceSearch.toLowerCase();
+    return q
+      ? this.mentorResourceGroups.filter(g =>
+          g.mentor?.full_name?.toLowerCase().includes(q) ||
+          g.mentor?.expertise?.toLowerCase().includes(q)
+        )
+      : this.mentorResourceGroups;
+  }
+
+  get totalResourcesCount() {
+    return this.mentorResourceGroups.reduce((sum, g) => sum + g.total, 0);
+  }
+
+  onNavResources() {
+    this.activeNav = 'resources';
+    this.loadResources();
+  }
+
+  openResourcesDrawer(group: any) {
+    this.selectedResourceMentor = group;
+    this.showResourcesDrawer = true;
+  }
+
+  closeResourcesDrawer() {
+    this.showResourcesDrawer = false;
+    this.selectedResourceMentor = null;
+  }
+
+  // File preview modal
+  showFilePreview = false;
+  previewMaterial: any = null;
+
+  openFilePreview(material: any) {
+    this.previewMaterial = material;
+    this.showFilePreview = true;
+  }
+
+  closeFilePreview() {
+    this.showFilePreview = false;
+    this.previewMaterial = null;
+  }
+
+  getGoogleDocsViewerUrl(fileUrl: string): string {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+  }
+
+  getFileTypeIcon(fileType: string): string {
+    switch (fileType) {
+      case 'video':    return 'video';
+      case 'pdf':      return 'pdf';
+      case 'document': return 'doc';
+      case 'image':    return 'img';
+      default:         return 'file';
+    }
+  }
+
+  getFileTypeLabel(fileType: string): string {
+    switch (fileType) {
+      case 'video':    return 'Video';
+      case 'pdf':      return 'PDF';
+      case 'document': return 'Document';
+      case 'image':    return 'Image';
+      default:         return 'File';
+    }
   }
 
   saveSettings() {

@@ -1645,12 +1645,15 @@
 }
 
 .msg-bubble {
-  max-width: 72%;
-  padding: 0.75rem 1.1rem;
+  padding: 0.55rem 0.9rem 0.5rem;
   border-radius: 18px;
   font-size: 0.88rem;
   line-height: 1.55;
   word-break: break-word;
+  display: inline-flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .bubble-them {
@@ -2930,42 +2933,32 @@ select.st-input {
 
 .msg-status {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.7rem;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  font-size: 0.72rem;
   margin-top: 0.25rem;
-  opacity: 0.7;
+  align-self: flex-end;
+  white-space: nowrap;
+  opacity: 0.85;
+  line-height: 1;
 }
 
 .msg-status-icon {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
-.msg-status.status-sent {
-  color: white;
-}
-
-.msg-status.status-delivered {
-  color: #04A2D7;
-}
-
-.msg-status.status-seen {
-  color: white;
-}
+.msg-status.status-sent      { color: rgba(255,255,255,0.85); }
+.msg-status.status-delivered { color: rgba(255,255,255,0.9); }
+.msg-status.status-seen      { color: #ffe082; }
 
 .msg-status-text {
   text-transform: capitalize;
+  font-size: 0.65rem;
+  line-height: 1;
 }
-
-/* ─── Improved Message Bubble Layout ─────────────────────────────────────── */
-.msg-bubble {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-
-
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  RESOURCES / LEARNING MATERIALS STYLES                                     */
@@ -5960,3 +5953,301 @@ textarea.form-control {
 }
 
 
+
+/* ─── Material File Preview Modal ──────────────────────────────────────────── */
+.material-preview-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.75rem;
+  animation: fadeInPreview 0.2s ease;
+}
+
+@keyframes fadeInPreview {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.material-preview-modal {
+  background: white;
+  border-radius: 18px;
+  width: 100%; max-width: 1100px;
+  max-height: 95vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+  overflow: hidden;
+  animation: slideUpPreview 0.25s ease;
+}
+
+@keyframes slideUpPreview {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.material-preview-header {
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.material-preview-header-info {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+
+.material-preview-type-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f0f9ff; color: #04A2D7; flex-shrink: 0;
+}
+
+.material-preview-type-icon[data-type="video"]    { background: #fff0f6; color: #db2777; }
+.material-preview-type-icon[data-type="pdf"]      { background: #fff5f0; color: #e74c3c; }
+.material-preview-type-icon[data-type="document"] { background: #f0f8ff; color: #2563eb; }
+.material-preview-type-icon[data-type="image"]    { background: #f0fff4; color: #21AA3A; }
+
+.material-preview-title {
+  font-size: 0.95rem; font-weight: 700; color: #222; margin: 0 0 0.1rem;
+}
+
+.material-preview-sub {
+  font-size: 0.73rem; color: #aaa; margin: 0;
+}
+
+.material-preview-close {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #f5f7fa; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.2s;
+}
+
+.material-preview-close:hover { background: #e8e8e8; }
+
+.material-preview-body {
+  flex: 1; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #1a1a2e;
+  min-height: 650px;
+}
+
+.material-preview-iframe {
+  width: 100%; height: 100%;
+  min-height: 650px;
+  border: none;
+  background: white;
+}
+
+.material-preview-video {
+  width: 100%; max-height: 720px;
+  background: #000;
+  outline: none;
+}
+
+.material-preview-img {
+  max-width: 100%; max-height: 720px;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .material-preview-modal  { border-radius: 12px; }
+  .material-preview-body   { min-height: 350px; }
+  .material-preview-iframe,
+  .material-preview-video  { min-height: 350px; }
+}
+
+/* ─── Emoji Picker ──────────────────────────────────────────────────────────── */
+.msg-emoji-panel {
+  display: flex; flex-wrap: wrap; gap: 2px;
+  padding: 0.6rem 0.75rem;
+  background: white;
+  border-top: 1px solid #f0f0f0;
+  max-height: 160px; overflow-y: auto;
+}
+
+.msg-emoji-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.25rem; padding: 0.2rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.msg-emoji-btn:hover { background: #f0f0f0; }
+
+/* Active state for emoji / attach icon buttons */
+.msg-icon-btn.active {
+  color: #04A2D7;
+}
+
+/* ─── Pending attachment preview bar ─────────────────────────────────────────── */
+.msg-pending-attachment {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  background: #f0f9ff;
+  border-top: 1px solid #c8e8f5;
+}
+
+.msg-pending-img {
+  width: 44px; height: 44px; object-fit: cover;
+  border-radius: 6px; border: 1px solid #c8e8f5;
+}
+
+.msg-pending-icon { font-size: 1.4rem; }
+
+.msg-pending-name {
+  flex: 1; font-size: 0.8rem; color: #333; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.msg-pending-remove {
+  background: none; border: none; cursor: pointer;
+  color: #888; padding: 0.2rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; transition: background 0.15s, color 0.15s;
+}
+
+.msg-pending-remove:hover { background: #ffd6d6; color: #e74c3c; }
+
+/* ─── Attachment rendering inside message bubbles ─────────────────────────────── */
+.msg-attachment-img {
+  max-width: 220px; max-height: 200px;
+  border-radius: 10px; display: block;
+  cursor: pointer; object-fit: cover;
+}
+
+.msg-attachment-file {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit; font-size: 0.8rem;
+  transition: background 0.15s;
+  max-width: 220px;
+}
+
+.bubble-me .msg-attachment-file {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.35);
+  color: white;
+}
+
+.bubble-them .msg-attachment-file {
+  background: #f5f7fa;
+  border-color: #e0e0e0;
+  color: #333;
+}
+
+.msg-attachment-file:hover { opacity: 0.85; }
+
+.msg-attachment-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.msg-attachment-name {
+  flex: 1; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500;
+}
+
+/* ─── Send spinner ───────────────────────────────────────────────────────────── */
+.msg-send-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ─── Message bubble wrap (needed for delete positioning) ───────────────────── */
+.msg-bubble-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 70%;
+  min-width: 0;
+}
+
+.msg-row.from-me .msg-bubble-wrap {
+  align-items: flex-end;
+}
+
+/* ─── Delete trigger button ─────────────────────────────────────────────────── */
+.msg-delete-trigger {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #888;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+.msg-delete-trigger.msg-delete-mine  { right: calc(100% + 6px); }
+.msg-delete-trigger.msg-delete-theirs { left: calc(100% + 6px); }
+
+.msg-bubble-wrap:hover .msg-delete-trigger { opacity: 1; }
+.msg-delete-trigger:hover { background: #f5f5f5; color: #333; }
+
+/* ─── Delete context menu ────────────────────────────────────────────────────── */
+.msg-delete-menu {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+  z-index: 50;
+  min-width: 150px;
+  overflow: hidden;
+  animation: fadeInPreview 0.15s ease;
+}
+
+.msg-delete-menu.menu-left  { right: calc(100% + 32px); }
+.msg-delete-menu.menu-right { left: calc(100% + 32px); }
+
+.msg-delete-item {
+  width: 100%; padding: 0.65rem 1rem;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.83rem; font-weight: 600; color: #e74c3c;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.msg-delete-item:hover { background: #fff0f0; }
+
+/* ─── Emoji panel bigger ─────────────────────────────────────────────────────── */
+.msg-emoji-panel {
+  display: flex; flex-wrap: wrap; gap: 1px;
+  padding: 0.5rem 0.6rem;
+  background: white;
+  border-top: 1px solid #f0f0f0;
+  max-height: 220px; overflow-y: auto;
+}
+
+.msg-emoji-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.3rem; padding: 0.22rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.msg-emoji-btn:hover { background: #f0f0f0; }
+
+/* ─── Message timestamp ─────────────────────────────────────────────────────── */
+.msg-time {
+  font-size: 0.62rem;
+  white-space: nowrap;
+  line-height: 1;
+  margin-top: 0.1rem;
+  align-self: flex-end;
+  color: rgba(255,255,255,0.6);
+}
+
+/* time for received messages (grey bubbles) */
+.msg-time.msg-time-them {
+  color: #aaa;
+}

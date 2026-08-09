@@ -45,6 +45,18 @@
         <span class="admin-nav-label">Mentor Feedback</span>
       </button>
 
+      <button class="admin-nav-item" [class.active]="activeNav === 'resources'" (click)="onNavResources()">
+        <span class="admin-nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="9" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="9" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="admin-nav-label">Mentor Resources</span>
+      </button>
+
       <button class="admin-nav-item" [class.active]="activeNav === 'settings'" (click)="activeNav = 'settings'">
         <span class="admin-nav-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -374,6 +386,110 @@
         </div>
       }
 
+      <!-- ── RESOURCES VIEW ── -->
+      @if (activeNav === 'resources') {
+        <div class="admin-feedback-wrapper">
+          <div class="admin-dash-header">
+            <h1 class="admin-dash-title">Mentor Resources</h1>
+            <p class="admin-dash-subtitle">View all learning materials uploaded by mentors</p>
+          </div>
+
+          <!-- Stats -->
+          <div class="admin-feedback-stats">
+            <div class="admin-fb-stat-card">
+              <div class="admin-fb-stat-icon admin-stat-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="admin-stat-info">
+                <span class="admin-stat-label">Total Materials</span>
+                <span class="admin-stat-value">{{ totalResourcesCount }}</span>
+                <span class="admin-stat-sub">Across all mentors</span>
+              </div>
+            </div>
+            <div class="admin-fb-stat-card">
+              <div class="admin-fb-stat-icon admin-stat-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <circle cx="9" cy="7" r="4" stroke="white" stroke-width="2"/>
+                  <path d="M3 21V19C3 16.8 4.8 15 7 15H11C13.2 15 15 16.8 15 19V21" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16 3.13A4 4 0 0118 11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M21 21V19C20.99 17.15 19.76 15.53 18 15.13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="admin-stat-info">
+                <span class="admin-stat-label">Mentors with Materials</span>
+                <span class="admin-stat-value">{{ mentorResourceGroups.length }}</span>
+                <span class="admin-stat-sub">Active resource contributors</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search + Refresh -->
+          <div class="admin-feedback-filters">
+            <div class="admin-fb-search-wrap">
+              <svg class="admin-fb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="#aaa" stroke-width="2"/>
+                <path d="M21 21L16.65 16.65" stroke="#aaa" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <input class="admin-fb-search" type="text" placeholder="Search mentor by name or expertise…" [(ngModel)]="resourceSearch">
+            </div>
+            <button class="admin-fb-refresh-btn" (click)="loadResources()" [disabled]="resourcesLoading">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3.51 15A9 9 0 1020.49 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          @if (resourcesLoading) {
+            <div class="admin-loading"><div class="admin-spinner"></div><p>Loading resources…</p></div>
+          } @else if (resourcesError) {
+            <div class="admin-error" style="max-width:100%">⚠ {{ resourcesError }}</div>
+          } @else if (filteredResourceGroups.length === 0) {
+            <div class="admin-empty">
+              {{ resourceSearch ? 'No mentor matches your search.' : 'No resources have been uploaded yet.' }}
+            </div>
+          } @else {
+            <!-- Mentor Cards -->
+            <div class="admin-fb-mentor-grid">
+              @for (group of filteredResourceGroups; track group.mentor?.user_id) {
+                <div class="admin-fb-mentor-card" (click)="openResourcesDrawer(group)">
+                  <div class="admin-fb-mc-top">
+                    <div class="admin-fb-mc-avatar">
+                      @if (group.mentor?.profile_picture) {
+                        <img [src]="group.mentor.profile_picture" alt="" class="admin-fb-mc-avatar-img">
+                      } @else {
+                        {{ getInitials(group.mentor?.full_name) }}
+                      }
+                    </div>
+                    <div class="admin-fb-mc-badge">{{ group.total }} {{ group.total === 1 ? 'material' : 'materials' }}</div>
+                  </div>
+                  <h3 class="admin-fb-mc-name">{{ group.mentor?.full_name || 'Unknown Mentor' }}</h3>
+                  <p class="admin-fb-mc-role">{{ group.mentor?.expertise || 'Mentor' }}</p>
+                  <div class="admin-res-type-chips">
+                    @for (mat of group.materials.slice(0,3); track mat.id) {
+                      <span class="admin-res-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
+                    }
+                    @if (group.materials.length > 3) {
+                      <span class="admin-res-chip">+{{ group.materials.length - 3 }} more</span>
+                    }
+                  </div>
+                  <div class="admin-fb-mc-footer">
+                    <span>View materials</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
       <!-- ── SETTINGS VIEW ── -->
       @if (activeNav === 'settings') {
         <div class="admin-settings-wrapper">
@@ -530,6 +646,148 @@
               <p class="admin-drawer-fb-text">"{{ fb.feedback_text }}"</p>
             }
             <span class="admin-drawer-fb-date">{{ fb.created_at | date:'MMM d, yyyy · h:mm a' }}</span>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ── FILE PREVIEW MODAL ── -->
+@if (showFilePreview && previewMaterial) {
+  <div class="admin-preview-backdrop" (click)="closeFilePreview()">
+    <div class="admin-preview-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="admin-preview-header">
+        <div class="admin-preview-header-info">
+          <div class="admin-res-type-icon" [attr.data-type]="previewMaterial.file_type" style="width:36px;height:36px;border-radius:9px;flex-shrink:0">
+            @if (previewMaterial.file_type === 'video') {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+            }
+          </div>
+          <div>
+            <h3 class="admin-preview-title">{{ previewMaterial.title }}</h3>
+            <p class="admin-preview-subtitle">{{ previewMaterial.file_name }} · {{ getFileTypeLabel(previewMaterial.file_type) }}</p>
+          </div>
+        </div>
+        <button class="admin-drawer-close" (click)="closeFilePreview()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Preview body -->
+      <div class="admin-preview-body">
+
+        @if (previewMaterial.file_type === 'video') {
+          <!-- Native video player -->
+          <video class="admin-preview-video" controls controlsList="nodownload" [src]="previewMaterial.file_url">
+            Your browser does not support the video tag.
+          </video>
+
+        } @else if (previewMaterial.file_type === 'pdf') {
+          <!-- PDF inline via iframe -->
+          <iframe
+            class="admin-preview-iframe"
+            [src]="previewMaterial.file_url + '#toolbar=0&navpanes=0' | adminSafeUrl"
+            type="application/pdf"
+            title="{{ previewMaterial.title }}">
+          </iframe>
+
+        } @else if (previewMaterial.file_type === 'image') {
+          <!-- Image -->
+          <img class="admin-preview-img" [src]="previewMaterial.file_url" [alt]="previewMaterial.title">
+
+        } @else {
+          <!-- Documents (ppt, doc, etc.) via Google Docs Viewer -->
+          <iframe
+            class="admin-preview-iframe"
+            [src]="getGoogleDocsViewerUrl(previewMaterial.file_url) | adminSafeUrl"
+            title="{{ previewMaterial.title }}">
+          </iframe>
+        }
+
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ── RESOURCES DRAWER ── -->
+@if (showResourcesDrawer && selectedResourceMentor) {
+  <div class="admin-drawer-backdrop" (click)="closeResourcesDrawer()">
+    <div class="admin-drawer" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="admin-drawer-header">
+        <div class="admin-drawer-mentor-info">
+          <div class="admin-drawer-avatar">
+            @if (selectedResourceMentor.mentor?.profile_picture) {
+              <img [src]="selectedResourceMentor.mentor.profile_picture" alt="" class="admin-drawer-avatar-img">
+            } @else {
+              {{ getInitials(selectedResourceMentor.mentor?.full_name) }}
+            }
+          </div>
+          <div>
+            <h2 class="admin-drawer-name">{{ selectedResourceMentor.mentor?.full_name || 'Unknown Mentor' }}</h2>
+            <p class="admin-drawer-role">{{ selectedResourceMentor.mentor?.expertise || 'Mentor' }}</p>
+            <div class="admin-drawer-meta">
+              <span class="admin-drawer-count">{{ selectedResourceMentor.total }} {{ selectedResourceMentor.total === 1 ? 'material' : 'materials' }}</span>
+            </div>
+          </div>
+        </div>
+        <button class="admin-drawer-close" (click)="closeResourcesDrawer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="admin-drawer-divider"></div>
+
+      <!-- Materials list -->
+      <div class="admin-drawer-body">
+        @for (mat of selectedResourceMentor.materials; track mat.id) {
+          <div class="admin-res-item">
+            <div class="admin-res-item-left">
+              <div class="admin-res-order">{{ mat.order_number }}</div>
+              <div class="admin-res-type-icon" [attr.data-type]="mat.file_type">
+                @if (mat.file_type === 'video') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                } @else if (mat.file_type === 'pdf') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+                } @else if (mat.file_type === 'document') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/></svg>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="2"/><polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2"/></svg>
+                }
+              </div>
+            </div>
+            <div class="admin-res-item-body">
+              <span class="admin-res-title">{{ mat.title }}</span>
+              @if (mat.description) {
+                <span class="admin-res-desc">{{ mat.description }}</span>
+              }
+              <div class="admin-res-meta">
+                <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
+                <span class="admin-res-filename">{{ mat.file_name }}</span>
+                @if (mat.duration_minutes) {
+                  <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
+                }
+              </div>
+            </div>
+            <button class="admin-res-view-btn" (click)="openFilePreview(mat); $event.stopPropagation()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              View
+            </button>
           </div>
         }
       </div>

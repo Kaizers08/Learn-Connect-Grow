@@ -226,9 +226,9 @@
 .admin-stat-orange { background: #F59E0B; }
 
 .admin-stat-info { display: flex; flex-direction: column; gap: 0.05rem; }
-.admin-stat-label { font-size: 0.75rem; color: #888; font-weight: 500; }
+.admin-stat-label { font-size: 0.75rem; color: #888; font-weight: 500; white-space: nowrap; }
 .admin-stat-value { font-size: 1.6rem; font-weight: 700; color: #222; line-height: 1.1; }
-.admin-stat-sub   { font-size: 0.7rem; color: #aaa; }
+.admin-stat-sub   { font-size: 0.7rem; color: #aaa; white-space: nowrap; }
 
 /* ─── Badges ── */
 .admin-badge {
@@ -565,14 +565,13 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-  max-width: 560px;
 }
 
 .admin-fb-stat-card {
   background: white;
   border: 1.5px solid #e8e8e8;
   border-radius: 14px;
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.5rem;
   display: flex; align-items: center; gap: 1rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
@@ -869,4 +868,175 @@
 @media (max-width: 560px) {
   .admin-fb-mentor-grid { grid-template-columns: 1fr; }
   .admin-feedback-stats { grid-template-columns: 1fr; }
+}
+
+/* ─── Mentor Resources (type chips on cards) ──────────────────────────────── */
+.admin-res-type-chips {
+  display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem;
+}
+
+.admin-res-chip {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 0.15rem 0.5rem; border-radius: 50px;
+  background: #f0f9ff; color: #04A2D7; border: 1px solid #c8e8f5;
+}
+
+.admin-res-chip[data-type="video"]    { background: #fff0f6; color: #db2777; border-color: #fcc8e2; }
+.admin-res-chip[data-type="pdf"]      { background: #fff5f0; color: #e74c3c; border-color: #fcc8b8; }
+.admin-res-chip[data-type="document"] { background: #f0f8ff; color: #2563eb; border-color: #c8dcf5; }
+.admin-res-chip[data-type="image"]    { background: #f0fff4; color: #21AA3A; border-color: #c8f0d0; }
+
+/* ─── Resources Drawer Items ──────────────────────────────────────────────── */
+.admin-res-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+  display: flex; align-items: flex-start; gap: 0.875rem;
+  transition: background 0.15s;
+}
+
+.admin-res-item:hover { background: #fafafa; }
+.admin-res-item:last-child { border-bottom: none; }
+
+.admin-res-item-left {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.4rem; flex-shrink: 0;
+}
+
+.admin-res-order {
+  font-size: 0.68rem; font-weight: 700; color: #aaa;
+  background: #f5f7fa; padding: 0.15rem 0.4rem;
+  border-radius: 4px; min-width: 28px; text-align: center;
+}
+
+.admin-res-type-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f0f9ff; color: #04A2D7; flex-shrink: 0;
+}
+
+.admin-res-type-icon[data-type="video"]    { background: #fff0f6; color: #db2777; }
+.admin-res-type-icon[data-type="pdf"]      { background: #fff5f0; color: #e74c3c; }
+.admin-res-type-icon[data-type="document"] { background: #f0f8ff; color: #2563eb; }
+.admin-res-type-icon[data-type="image"]    { background: #f0fff4; color: #21AA3A; }
+
+.admin-res-item-body {
+  flex: 1; display: flex; flex-direction: column; gap: 0.25rem;
+}
+
+.admin-res-title {
+  font-size: 0.875rem; font-weight: 700; color: #222;
+}
+
+.admin-res-desc {
+  font-size: 0.78rem; color: #777; line-height: 1.45;
+}
+
+.admin-res-meta {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.15rem;
+}
+
+.admin-res-meta-chip {
+  font-size: 0.62rem; font-weight: 700;
+  padding: 0.1rem 0.45rem; border-radius: 50px;
+  background: #f0f9ff; color: #04A2D7; border: 1px solid #c8e8f5;
+}
+
+.admin-res-meta-chip[data-type="video"]    { background: #fff0f6; color: #db2777; border-color: #fcc8e2; }
+.admin-res-meta-chip[data-type="pdf"]      { background: #fff5f0; color: #e74c3c; border-color: #fcc8b8; }
+.admin-res-meta-chip[data-type="document"] { background: #f0f8ff; color: #2563eb; border-color: #c8dcf5; }
+.admin-res-meta-chip[data-type="image"]    { background: #f0fff4; color: #21AA3A; border-color: #c8f0d0; }
+
+.admin-res-filename {
+  font-size: 0.72rem; color: #aaa;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;
+}
+
+.admin-res-duration {
+  font-size: 0.72rem; color: #888; font-weight: 500;
+}
+
+.admin-res-view-btn {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 0.875rem;
+  background: #04A2D7; color: white;
+  border: none; border-radius: 50px;
+  font-size: 0.75rem; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: background 0.2s;
+  align-self: center;
+}
+
+.admin-res-view-btn:hover { background: #0390c0; }
+
+/* ─── File Preview Modal ──────────────────────────────────────────────────── */
+.admin-preview-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.75rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.admin-preview-modal {
+  background: white;
+  border-radius: 18px;
+  width: 100%; max-width: 1200px;
+  max-height: 95vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+.admin-preview-header {
+  padding: 1.1rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.admin-preview-header-info {
+  display: flex; align-items: center; gap: 0.875rem;
+}
+
+.admin-preview-title {
+  font-size: 0.95rem; font-weight: 700; color: #222; margin: 0 0 0.1rem;
+}
+
+.admin-preview-subtitle {
+  font-size: 0.75rem; color: #999; margin: 0;
+}
+
+.admin-preview-body {
+  flex: 1; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #1a1a2e;
+  min-height: 700px;
+}
+
+.admin-preview-iframe {
+  width: 100%; height: 100%;
+  min-height: 700px;
+  border: none;
+  background: white;
+}
+
+.admin-preview-video {
+  width: 100%; max-height: 760px;
+  background: #000;
+  outline: none;
+}
+
+.admin-preview-img {
+  max-width: 100%; max-height: 760px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .admin-preview-modal { max-width: 100%; border-radius: 12px; }
+  .admin-preview-body  { min-height: 400px; }
+  .admin-preview-iframe, .admin-preview-video { min-height: 400px; }
 }

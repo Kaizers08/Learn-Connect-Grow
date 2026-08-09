@@ -6,10 +6,11 @@ import { UserService } from '../../services/user.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { FeedbackModalComponent } from './feedback-modal.component';
 import { IconComponent } from './icon.component';
+import { DashSafeUrlPipe } from './dash-safe-url.pipe';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, FeedbackModalComponent, IconComponent],
+  imports: [CommonModule, FormsModule, FeedbackModalComponent, IconComponent, DashSafeUrlPipe],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -923,8 +924,149 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   
   activeConversation: any = null;
 
-  messages: { id: string | number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean }[] = [];
+  messages: { id: string | number; text: string; fromMe: boolean; timestamp?: string; status?: string; isPlaceholder?: boolean; attachmentUrl?: string; attachmentName?: string; attachmentType?: string }[] = [];
   private lastMessageCursor: { createdAt: number; id: string | number } | null = null;
+
+  // Emoji picker
+  showEmojiPicker = false;
+  readonly EMOJIS = [
+    // Smileys & People
+    '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊',
+    '😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗',
+    '🤩','🤔','🤨','😐','😑','😶','🙄','😏','😒','😓',
+    '😔','😕','🙃','😲','😖','😞','😟','😤','😢','😭',
+    '😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶',
+    '😳','🤪','😜','😝','😛','🤑','😷','🤒','🤕','🤢',
+    '🤮','🥴','😵','🤧','🥺','😠','😡','🤬','😈','👿',
+    // Hand gestures & People
+    '👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞',
+    '🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍',
+    '👎','✊','👊','🤛','🤜','👏','🙌','🫶','🤲','🤝',
+    '🙏','💪','🦾','🫁','🫀','🧠','🦷','👀','👁','👅',
+    // Hearts & Love
+    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔',
+    '❣️','💕','💞','💓','💗','💖','💘','💝','💟','♥️',
+    // Objects & Symbols
+    '🎉','🎊','🎈','🎁','🏆','🥇','🎯','🎮','🎲','🃏',
+    '🔥','⭐','🌟','✨','💫','⚡','🌈','🍀','🌸','🌺',
+    '🌻','🌹','🌷','💐','🍁','🍂','🍃','🌊','🌙','☀️',
+    '⛅','🌤','🌦','🌧','⛈','🌩','❄️','🌬','🌀','🌈',
+    // Food & Drink
+    '🍕','🍔','🍟','🌮','🌯','🍜','🍝','🍣','🍱','🍦',
+    '🎂','🍰','🧁','🍩','🍪','☕','🧋','🥤','🍺','🥂',
+    // Activities & Travel
+    '⚽','🏀','🏈','⚾','🎾','🏐','🏉','🥊','🏋️','🤸',
+    '🚀','🛸','✈️','🚗','🏠','🏖','🏔','🗺','📍','🧭',
+    // Misc symbols
+    '💯','💢','💥','💦','💨','🕳','💬','💭','🗯','📣',
+    '🔔','🔕','🎵','🎶','🎤','🎧','📱','💻','⌨️','🖨',
+    '📷','📸','🔍','🔎','💡','🔦','🕯','📚','📖','✏️',
+    '📝','📌','📎','🔗','✂️','🗑','🔒','🔑','🔨','⚙️'
+  ];
+
+  // File attachment
+  pendingAttachmentFile: File | null = null;
+  pendingAttachmentPreview: string | null = null;
+  isUploadingAttachment = false;
+
+  onEmojiClick(emoji: string) {
+    this.newMessageText += emoji;
+    this.showEmojiPicker = false;
+  }
+
+  toggleEmojiPicker() {
+    this.showEmojiPicker = !this.showEmojiPicker;
+  }
+
+  closeEmojiPicker() {
+    this.showEmojiPicker = false;
+  }
+
+  onAttachmentSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const maxSize = 20 * 1024 * 1024; // 20 MB
+    if (file.size > maxSize) {
+      this.displayNotification('File too large. Maximum size is 20 MB.', 'error');
+      (event.target as HTMLInputElement).value = '';
+      return;
+    }
+    this.pendingAttachmentFile = file;
+    if (file.type.startsWith('image/')) {
+      this.pendingAttachmentPreview = URL.createObjectURL(file);
+    } else {
+      this.pendingAttachmentPreview = null;
+    }
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  removePendingAttachment() {
+    if (this.pendingAttachmentPreview) URL.revokeObjectURL(this.pendingAttachmentPreview);
+    this.pendingAttachmentFile = null;
+    this.pendingAttachmentPreview = null;
+  }
+
+  formatMsgTime(timestamp: string | undefined): string {
+    if (!timestamp) return '';
+    const msgDate = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - msgDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 1) {
+      // Same day — show time only e.g. "3:45 PM"
+      return msgDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } else if (diffDays < 7) {
+      // Within a week — show day + time e.g. "Mon 3:45 PM"
+      return msgDate.toLocaleDateString([], { weekday: 'short' }) + ' ' +
+             msgDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } else {
+      // Older than a week — show full date e.g. "Aug 1, 2026"
+      return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+
+  getMsgFileIcon(type: string): string {
+    if (!type) return '📎';
+    if (type.startsWith('image/')) return '🖼️';
+    if (type === 'application/pdf') return '📄';
+    if (type.includes('word') || type.includes('document')) return '📝';
+    if (type.includes('sheet') || type.includes('excel')) return '📊';
+    if (type.includes('presentation') || type.includes('powerpoint')) return '📑';
+    if (type.startsWith('video/')) return '🎥';
+    if (type.startsWith('audio/')) return '🎵';
+    return '📎';
+  }
+
+  isImageType(type: string): boolean {
+    return !!type && type.startsWith('image/');
+  }
+
+  // ─── Delete message ──────────────────────────────────────────────────────
+  msgDeleteMenuId: string | number | null = null;
+
+  toggleMsgDeleteMenu(msgId: string | number, event: Event) {
+    event.stopPropagation();
+    this.msgDeleteMenuId = this.msgDeleteMenuId === msgId ? null : msgId;
+  }
+
+  closeMsgDeleteMenu() {
+    this.msgDeleteMenuId = null;
+  }
+
+  async deleteMessage(msg: any) {
+    this.msgDeleteMenuId = null;
+    // Optimistic removal
+    this.messages = this.messages.filter(m => m.id !== msg.id);
+    this.refreshView();
+
+    const { error } = await this.supabase.deleteMessage(String(msg.id));
+    if (error) {
+      // Restore if failed
+      this.displayNotification('Failed to delete message', 'error');
+      await this.loadMessages(this.activeConversation.id);
+    }
+  }
 
   get filteredConversations() {
     if (!this.chatSearchQuery) return this.conversations;
@@ -963,7 +1105,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       text: msg.message,
       fromMe: msg.sender_id === myId,
       timestamp: msg.created_at,
-      status: msg.status
+      status: msg.status,
+      attachmentUrl: msg.attachment_url || null,
+      attachmentName: msg.attachment_name || null,
+      attachmentType: msg.attachment_type || null
     }));
     const latestMessage = this.messages[this.messages.length - 1];
     this.lastMessageCursor = latestMessage?.timestamp
@@ -973,25 +1118,62 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async sendMessage() {
-    if (!this.newMessageText.trim() || !this.activeConversation) return;
+    const hasText = this.newMessageText.trim().length > 0;
+    const hasFile = !!this.pendingAttachmentFile;
+    if (!hasText && !hasFile) return;
+    if (!this.activeConversation) return;
 
     const message = this.newMessageText.trim();
     this.newMessageText = '';
+    this.showEmojiPicker = false;
 
-    // Optimistic UI update - add message immediately
+    const fileToUpload = this.pendingAttachmentFile;
+    const filePreview = this.pendingAttachmentPreview;
+    this.pendingAttachmentFile = null;
+    this.pendingAttachmentPreview = null;
+
+    // Optimistic UI
     const tempId = Date.now();
     this.messages.push({
       id: tempId,
       text: message,
       fromMe: true,
       timestamp: new Date().toISOString(),
-      status: 'sent'
+      status: 'sent',
+      attachmentUrl: filePreview || undefined,
+      attachmentName: fileToUpload?.name,
+      attachmentType: fileToUpload?.type
     });
     this.scheduleMessagesScroll();
     this.refreshView();
 
     try {
-      const result = await this.supabase.sendMessage(this.activeConversation.id, message);
+      let attachmentUrl: string | undefined;
+      let attachmentName: string | undefined;
+      let attachmentType: string | undefined;
+
+      if (fileToUpload) {
+        this.isUploadingAttachment = true;
+        this.refreshView();
+        const url = await this.supabase.uploadMessageAttachment(this.currentUserId, fileToUpload);
+        this.isUploadingAttachment = false;
+        if (!url) {
+          this.messages = this.messages.filter(m => m.id !== tempId);
+          if (filePreview) URL.revokeObjectURL(filePreview);
+          this.displayNotification('Failed to upload attachment. Check your storage bucket settings.', 'error');
+          this.refreshView();
+          return;
+        }
+        attachmentUrl = url;
+        attachmentName = fileToUpload.name;
+        attachmentType = fileToUpload.type;
+        // Revoke object URL now that we have the real URL
+        if (filePreview) URL.revokeObjectURL(filePreview);
+      }
+
+      const result = await this.supabase.sendMessage(
+        this.activeConversation.id, message, attachmentUrl, attachmentName, attachmentType
+      );
 
       if (result.error || !result.data) {
         this.messages = this.messages.filter(m => m.id !== tempId);
@@ -1007,14 +1189,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           text: message,
           fromMe: true,
           timestamp: result.data.created_at,
-          status: result.data.status
+          status: result.data.status,
+          attachmentUrl: result.data.attachment_url || undefined,
+          attachmentName: result.data.attachment_name || undefined,
+          attachmentType: result.data.attachment_type || undefined
         };
       }
 
-      // Update conversation preview
-      this.activeConversation.lastMessage = message;
+      const preview = message || (attachmentName ? `📎 ${attachmentName}` : 'Attachment');
+      this.activeConversation.lastMessage = preview;
       const conv = this.conversations.find(c => c.id === this.activeConversation.id);
-      if (conv) conv.lastMessage = message;
+      if (conv) conv.lastMessage = preview;
 
       this.scheduleMessagesScroll();
       this.refreshView();
@@ -1089,6 +1274,30 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   showDeleteMaterialModal = false;
   materialPendingDelete: any = null;
   isDeletingMaterial = false;
+
+  // File preview modal
+  showMaterialPreview = false;
+  previewingMaterial: any = null;
+
+  openMaterialPreview(material: any) {
+    this.previewingMaterial = material;
+    this.showMaterialPreview = true;
+  }
+
+  closeMaterialPreview() {
+    this.showMaterialPreview = false;
+    this.previewingMaterial = null;
+  }
+
+  getMaterialPreviewUrl(material: any): string {
+    if (!material) return '';
+    const type = material.file_type;
+    if (type === 'video' || type === 'pdf' || type === 'image') {
+      return material.file_url;
+    }
+    // doc / ppt / txt → Google Docs Viewer
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(material.file_url)}&embedded=true`;
+  }
 
   // Materials modal (for mentee viewing mentor's materials)
   showMaterialsModal = false;
