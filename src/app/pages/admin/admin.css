@@ -1093,3 +1093,12 @@
   display: flex; align-items: center; gap: 0.35rem;
   font-size: 0.78rem; font-weight: 600; color: #888; flex-shrink: 0;
 }
+
+/* ─── Shared avatar image style ──────────────────────────────────────────── */
+.admin-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}

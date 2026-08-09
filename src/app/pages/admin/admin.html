@@ -197,7 +197,13 @@
                 <div class="admin-request-cards">
                   @for (m of pendingMentors.slice(0, 3); track m.id) {
                     <div class="admin-request-card">
-                      <div class="admin-card-avatar">{{ getInitials(m.full_name) }}</div>
+                      <div class="admin-card-avatar">
+                        @if (m.profile_picture) {
+                          <img [src]="m.profile_picture" alt="" class="admin-avatar-img">
+                        } @else {
+                          {{ getInitials(m.full_name) }}
+                        }
+                      </div>
                       <div class="admin-card-info">
                         <span class="admin-card-name">{{ m.full_name || 'Unknown' }}</span>
                         <span class="admin-card-role">{{ m.expertise || 'N/A' }}</span>
@@ -237,7 +243,13 @@
                   @for (m of pendingMentors; track m.id) {
                     <div class="admin-mentor-card">
                       <div class="admin-mentor-card-top">
-                        <div class="admin-mentor-avatar-lg">{{ getInitials(m.full_name) }}</div>
+                        <div class="admin-mentor-avatar-lg">
+                          @if (m.profile_picture) {
+                            <img [src]="m.profile_picture" alt="" class="admin-avatar-img">
+                          } @else {
+                            {{ getInitials(m.full_name) }}
+                          }
+                        </div>
                         <span class="admin-badge badge-pending">Pending</span>
                       </div>
                       <h3 class="admin-mentor-card-name">{{ m.full_name || 'Unknown' }}</h3>
@@ -266,7 +278,13 @@
                   @for (m of approvedMentors; track m.id) {
                     <div class="admin-mentor-card">
                       <div class="admin-mentor-card-top">
-                        <div class="admin-mentor-avatar-lg">{{ getInitials(m.full_name) }}</div>
+                        <div class="admin-mentor-avatar-lg">
+                          @if (m.profile_picture) {
+                            <img [src]="m.profile_picture" alt="" class="admin-avatar-img">
+                          } @else {
+                            {{ getInitials(m.full_name) }}
+                          }
+                        </div>
                         <span class="admin-badge badge-approved">Approved</span>
                       </div>
                       <h3 class="admin-mentor-card-name">{{ m.full_name || 'Unknown' }}</h3>
@@ -897,7 +915,13 @@
 
       <!-- Header -->
       <div class="admin-modal-header">
-        <div class="admin-modal-avatar">{{ getInitials(selectedMentor.full_name) }}</div>
+        <div class="admin-modal-avatar">
+          @if (selectedMentor.profile_picture) {
+            <img [src]="selectedMentor.profile_picture" alt="" class="admin-avatar-img">
+          } @else {
+            {{ getInitials(selectedMentor.full_name) }}
+          }
+        </div>
         <div class="admin-modal-title-info">
           <h2 class="admin-modal-name">{{ selectedMentor.full_name || 'Unknown' }}</h2>
           <p class="admin-modal-role">{{ selectedMentor.expertise || 'N/A' }}</p>
