@@ -319,13 +319,13 @@ export class SupabaseService {
         .update(profile)
         .eq('user_id', userId)
         .select()
-        .single();
+        .maybeSingle();
     } else {
       result = await this.client
         .from('mentee_profiles')
         .insert(profile)
         .select()
-        .single();
+        .maybeSingle();
     }
 
     if (result.error) this.logError('saveMenteeProfile', result.error);
@@ -358,13 +358,13 @@ export class SupabaseService {
         .update(profile)
         .eq('user_id', userId)
         .select()
-        .single();
+        .maybeSingle();
     } else {
       result = await this.client
         .from('mentor_profiles')
         .insert(profile)
         .select()
-        .single();
+        .maybeSingle();
     }
 
     if (result.error) this.logError('saveMentorProfile', result.error);
