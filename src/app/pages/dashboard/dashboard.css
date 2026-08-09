@@ -2582,12 +2582,11 @@ select.st-input {
 }
 
 .profile-modal-close {
-  position: absolute;
-  top: 1rem; right: 1rem;
-  width: 32px; height: 32px;
+  width: 34px; height: 34px;
   border: none; background: #f5f7fa; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: background 0.2s;
+  flex-shrink: 0;
 }
 
 .profile-modal-close:hover { background: #e8e8e8; }
@@ -2597,6 +2596,7 @@ select.st-input {
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 1.25rem;
+  padding: 0 1.75rem;
 }
 
 .pm-avatar {
@@ -6362,3 +6362,50 @@ textarea.form-control {
   .lb-row { flex-wrap: wrap; }
   .lb-info { min-width: 120px; }
 }
+
+/* ─── Profile modal top bar (close + 3-dots) ──────────────────────────────── */
+.pm-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0;
+  position: relative;
+}
+
+.pm-dots-wrap {
+  position: relative;
+}
+
+.pm-dots-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #f5f7fa; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #555; transition: background 0.2s;
+}
+.pm-dots-btn:hover { background: #e8e8e8; }
+
+.pm-dots-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+  z-index: 100;
+  min-width: 160px;
+  overflow: hidden;
+  animation: fadeInPreview 0.15s ease;
+}
+
+.pm-dots-item {
+  width: 100%; padding: 0.65rem 1rem;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.85rem; font-weight: 600;
+  text-align: left; transition: background 0.15s;
+  color: #333;
+}
+.pm-dots-item:hover { background: #f5f7fa; }
+.pm-dots-danger { color: #e74c3c; }
+.pm-dots-danger:hover { background: #fff0f0; }

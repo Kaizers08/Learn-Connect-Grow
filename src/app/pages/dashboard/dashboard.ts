@@ -45,6 +45,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Profile modal
   showProfileModal = false;
   selectedProfile: any = null;
+  showProfileDotsMenu = false;
 
   // ─── Debug UI ──────────────────────────────────────────────────────────────
   upcomingSessions: Array<{
@@ -2115,6 +2116,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   closeProfile() {
     this.showProfileModal = false;
     this.selectedProfile = null;
+    this.showProfileDotsMenu = false;
   }
 
   onViewProfile(user: any) { 

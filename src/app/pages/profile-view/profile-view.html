@@ -29,7 +29,7 @@
 
     <!-- Profile Card -->
     @if (!isLoading && profile) {
-      <div class="profile-card">
+      <div class="profile-card" (click)="closeDotsMenu()">
         <!-- Profile Header -->
         <div class="profile-header">
           <div class="profile-avatar-lg">
@@ -83,6 +83,28 @@
               }
             }
           </div>
+
+          <!-- Three-dot menu — only when connected -->
+          @if (isConnected) {
+            <div class="pv-dots-wrap" (click)="$event.stopPropagation()">
+              <button class="pv-dots-btn" (click)="toggleDotsMenu($event)" title="More options" [disabled]="isDisconnecting">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                </svg>
+              </button>
+              @if (showDotsMenu) {
+                <div class="pv-dots-menu">
+                  <button class="pv-dots-item pv-dots-danger" (click)="onUnconnect()" [disabled]="isDisconnecting">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    {{ isDisconnecting ? 'Disconnecting…' : 'Unconnect' }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
         </div>
 
         <div class="profile-divider"></div>

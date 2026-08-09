@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
@@ -20,8 +20,14 @@ export class ProfileViewComponent implements OnInit {
   isLoading = true;
   errorMsg = '';
 
+  // Three-dot menu
+  showDotsMenu = false;
+  isConnected = false;
+  isDisconnecting = false;
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -60,7 +66,8 @@ export class ProfileViewComponent implements OnInit {
     try {
       await Promise.all([
         this.loadUserProfile(),
-        this.loadUserFeedback()
+        this.loadUserFeedback(),
+        this.checkConnection()
       ]);
     } catch (error) {
       console.error('Error loading profile data:', error);
@@ -162,6 +169,47 @@ export class ProfileViewComponent implements OnInit {
 
   isFilled(star: number, rating: number): boolean {
     return star <= Math.round(rating);
+  }
+
+  async checkConnection() {
+    this.isConnected = await this.supabase.isConnected(this.userId);
+    this.cdr.detectChanges();
+  }
+
+  toggleDotsMenu(event: Event) {
+    event.stopPropagation();
+    this.showDotsMenu = !this.showDotsMenu;
+  }
+
+  closeDotsMenu() {
+    this.showDotsMenu = false;
+  }
+
+  async onUnconnect() {
+    this.showDotsMenu = false;
+    this.isDisconnecting = true;
+    this.cdr.detectChanges();
+
+    try {
+      const myId = await this.supabase.getCurrentUserId();
+      if (!myId) return;
+
+      // Disconnect — works regardless of who is mentor/mentee
+      if (this.userType === 'mentor') {
+        // I'm the mentee viewing a mentor
+        await this.supabase.disconnect(myId, this.userId);
+      } else {
+        // I'm the mentor viewing a mentee
+        await this.supabase.disconnect(this.userId, myId);
+      }
+
+      this.isConnected = false;
+    } catch (e) {
+      console.error('Unconnect error', e);
+    }
+
+    this.isDisconnecting = false;
+    this.cdr.detectChanges();
   }
 
   goBack() {
