@@ -1691,10 +1691,79 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshView();
   }
 
+  // ─── Leaderboard ────────────────────────────────────────────────────────────
+  leaderboard: { mentor: any; avgRating: number; totalFeedback: number; rank: number }[] = [];
+  leaderboardLoading = false;
+
+  async loadLeaderboard() {
+    this.leaderboardLoading = true;
+    this.refreshView();
+
+    try {
+      // Fetch all approved mentors
+      const { data: mentors } = await this.supabase.getClient()
+        .from('mentor_profiles')
+        .select('user_id, full_name, expertise, profile_picture')
+        .eq('status', 'approved');
+
+      if (!mentors || mentors.length === 0) {
+        this.leaderboard = [];
+        this.leaderboardLoading = false;
+        this.refreshView();
+        return;
+      }
+
+      const mentorIds = mentors.map((m: any) => m.user_id);
+
+      // Fetch all feedback for these mentors in one query
+      const { data: feedbacks } = await this.supabase.getClient()
+        .from('feedback_submissions')
+        .select('mentor_user_id, rating')
+        .in('mentor_user_id', mentorIds);
+
+      // Group by mentor
+      const feedbackMap = new Map<string, number[]>();
+      for (const fb of (feedbacks ?? []) as any[]) {
+        if (!feedbackMap.has(fb.mentor_user_id)) feedbackMap.set(fb.mentor_user_id, []);
+        feedbackMap.get(fb.mentor_user_id)!.push(fb.rating);
+      }
+
+      // Build ranked list — only mentors with at least 1 feedback
+      const ranked = mentors
+        .map((m: any) => {
+          const ratings = feedbackMap.get(m.user_id) ?? [];
+          const total = ratings.length;
+          const avg = total > 0 ? Math.round((ratings.reduce((a, b) => a + b, 0) / total) * 10) / 10 : 0;
+          return { mentor: m, avgRating: avg, totalFeedback: total, rank: 0 };
+        })
+        .filter(e => e.totalFeedback > 0)
+        .sort((a, b) => b.avgRating - a.avgRating || b.totalFeedback - a.totalFeedback);
+
+      ranked.forEach((e, i) => e.rank = i + 1);
+      this.leaderboard = ranked;
+    } catch (e) {
+      console.error('leaderboard error', e);
+      this.leaderboard = [];
+    }
+
+    this.leaderboardLoading = false;
+    this.refreshView();
+  }
+
+  getRankMedal(rank: number): string {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
+  }
+
   // ─── Navigation ────────────────────────────────────────────────────────────
   async setActiveNav(id: string) { 
     this.activeNavItem = id;
     this.setDashboardScrollLock(id === 'messages');
+    if (id === 'leaderboard') {
+      await this.loadLeaderboard();
+    }
     if (id === 'messages') {
       await this.loadConnections();
       if (this.messages.length > 0) {

@@ -13,7 +13,7 @@ import { AdminSafeUrlPipe } from './admin-safe-url.pipe';
 })
 export class AdminComponent implements OnInit {
 
-  activeNav: 'dashboard' | 'requests' | 'feedback' | 'resources' | 'settings' = 'dashboard';
+  activeNav: 'dashboard' | 'requests' | 'feedback' | 'resources' | 'leaderboard' | 'settings' = 'dashboard';
   loading = true;
 
   mentorCount = 0;
@@ -524,6 +524,96 @@ export class AdminComponent implements OnInit {
       case 'image':    return 'Image';
       default:         return 'File';
     }
+  }
+
+  // Leaderboard
+  leaderboardList: { mentor: any; avgRating: number; totalFeedback: number; rank: number }[] = [];
+  leaderboardLoading = false;
+  leaderboardError = '';
+
+  async loadLeaderboard() {
+    this.leaderboardLoading = true;
+    this.leaderboardError = '';
+    this.leaderboardList = [];
+    this.cdr.markForCheck();
+
+    try {
+      // Use already-loaded mentors or fetch fresh
+      let mentorProfiles: any[] = this.mentors.length ? this.mentors : [];
+      if (!mentorProfiles.length) {
+        const { data: mp } = await this.supabase.getClient()
+          .from('mentor_profiles')
+          .select('user_id, full_name, expertise, profile_picture')
+          .eq('status', 'approved');
+        mentorProfiles = mp ?? [];
+      }
+
+      if (!mentorProfiles.length) {
+        this.leaderboardLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      const mentorIds = mentorProfiles.map((m: any) => m.user_id);
+
+      // Try bulk feedback fetch first
+      const { data: feedbacks, error } = await this.supabase.getClient()
+        .from('feedback_submissions')
+        .select('mentor_user_id, rating')
+        .in('mentor_user_id', mentorIds);
+
+      let allFeedback: any[] = [];
+      if (error) {
+        // Fallback: per-mentor
+        for (const mentor of mentorProfiles) {
+          const { data } = await this.supabase.getClient()
+            .from('feedback_submissions')
+            .select('mentor_user_id, rating')
+            .eq('mentor_user_id', mentor.user_id);
+          if (data) allFeedback.push(...data);
+        }
+      } else {
+        allFeedback = feedbacks ?? [];
+      }
+
+      // Group ratings by mentor
+      const ratingMap = new Map<string, number[]>();
+      for (const fb of allFeedback) {
+        if (!ratingMap.has(fb.mentor_user_id)) ratingMap.set(fb.mentor_user_id, []);
+        ratingMap.get(fb.mentor_user_id)!.push(fb.rating);
+      }
+
+      const ranked = mentorProfiles
+        .map((m: any) => {
+          const ratings = ratingMap.get(m.user_id) ?? [];
+          const total = ratings.length;
+          const avg = total > 0 ? Math.round((ratings.reduce((a: number, b: number) => a + b, 0) / total) * 10) / 10 : 0;
+          return { mentor: m, avgRating: avg, totalFeedback: total, rank: 0 };
+        })
+        .filter(e => e.totalFeedback > 0)
+        .sort((a, b) => b.avgRating - a.avgRating || b.totalFeedback - a.totalFeedback);
+
+      ranked.forEach((e, i) => e.rank = i + 1);
+      this.leaderboardList = ranked;
+
+    } catch (e: any) {
+      this.leaderboardError = `Error: ${e?.message ?? e}`;
+    }
+
+    this.leaderboardLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  onNavLeaderboard() {
+    this.activeNav = 'leaderboard';
+    this.loadLeaderboard();
+  }
+
+  getAdminRankMedal(rank: number): string {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
   }
 
   saveSettings() {
