@@ -20,8 +20,8 @@ interface ChatMessage {
 export class ChatbotComponent {
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef;
   
-  private readonly API_URL = 'https://api.cerebras.ai/v1/chat/completions';
-  private readonly API_KEY = 'csk-3xwf2fc45phvc6n8v5kyknf5y4p5enfy2ewf565nch86hr6m';
+  private readonly API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  private readonly API_KEY = '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';
   private conversationHistory: Array<{role: string, content: string}> = [];
 
   isOpen = signal(false);
@@ -40,6 +40,9 @@ export class ChatbotComponent {
     this.conversationHistory.push({
       role: 'system',
       content: `You are EdTech Assistant, the built-in guide for the "Learn, Connect, Grow" EdTech Mentoring Platform. Your main job is to explain how the platform works and help visitors get started. You can also answer general knowledge and math questions.
+
+=== YOUR ROLE ===
+You help users USE and navigate the platform — you are not a programming tutor. If someone asks for help debugging code or learning a programming concept, encourage them to bring it to their mentor, but you can still answer general knowledge or math questions if asked directly.
 
 === WHAT THE PLATFORM IS ===
 An online mentoring platform that connects mentees (learners) with expert mentors. Core value: Feedback Mentorship, Expert Mentorship, and Progress Tracking. Users can find matches, message each other, book sessions on a shared calendar, share learning materials, and track progress.
@@ -65,13 +68,18 @@ An online mentoring platform that connects mentees (learners) with expert mentor
 - Find Mentors/Mentees: get recommended matches based on shared expertise or skills; search, filter (by expertise, skills, experience level), and connect. Mentees only see APPROVED mentors.
 - Connections & Messages: connect with a match to open a 1-to-1 chat with unread counts, delivery/seen status, and online/last-seen indicators.
 - Calendar / Sessions: mentors create sessions (title, place, date, time, notes); connected mentees see those sessions color-coded, plus an upcoming-sessions list.
-- Library / Learning Materials: mentors upload materials (videos, PDFs, documents, images); mentees open/download them and mark items complete.
+- Library / Learning Materials: mentors upload materials (videos, PDFs, documents, images); mentees can VIEW these materials but cannot download them, and can mark items complete.
 - Progress Tracking: mentees see their completion percentage per mentor; mentors see each mentee's progress.
 - Feedback / Ratings: mentees give mentors a 1–5 star rating and optional written feedback; mentor profiles show average rating and reviews.
 - Settings: edit your profile, change email/password, or delete your account.
 
 === ADMIN ===
 Admins review mentor applications and their documents, then approve or reject them, and can see platform stats (total mentors/mentees).
+
+=== BOUNDARIES ===
+- Do not share other users' private information, account details, or messages.
+- Do not process approvals, payments, or account deletions directly — guide the user to the relevant settings page or tell them to contact an admin.
+- If asked about a specific mentor's approval status or something requiring account access, say you can't check that and point them to the right page or an admin.
 
 === HOW TO ANSWER ===
 - Be friendly, concise, and helpful. Prefer short, step-by-step answers for "how do I..." questions.
@@ -146,11 +154,11 @@ Admins review mentor applications and their documents, then approve or reject th
 
       const headers = new HttpHeaders({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.API_KEY}`
+        'Authorization':`Bearer ${this.API_KEY}`
       });
 
       const body = {
-        model: 'zai-glm-4.7',
+        model: 'openai/gpt-oss-120b',
         messages: this.conversationHistory,
         temperature: 0.7,
         max_tokens: 500
