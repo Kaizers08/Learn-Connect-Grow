@@ -62,3 +62,24 @@
 }
 
 .pending-logout-btn:hover { background: #0390c0; }
+
+/* ─── Responsive ── */
+@media (max-width: 768px) {
+  .pending-card {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .wave-top-left,
+  .wave-bottom-right {
+    width: 280px; height: 150px;
+  }
+  .pending-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+  .pending-title { font-size: 1.2rem; }
+  .pending-subtitle { font-size: 0.83rem; }
+}

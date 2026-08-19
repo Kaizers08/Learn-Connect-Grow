@@ -1509,6 +1509,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  onSettingsPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    this.settingsPhone = cleaned;
+    input.value = cleaned;
+  }
+
   onSettingsPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
@@ -1716,29 +1723,47 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       const mentorIds = mentors.map((m: any) => m.user_id);
 
-      // Fetch all feedback for these mentors in one query
-      const { data: feedbacks } = await this.supabase.getClient()
+      // Try bulk feedback fetch first
+      let allFeedback: any[] = [];
+      const { data: feedbacks, error: feedbackError } = await this.supabase.getClient()
         .from('feedback_submissions')
         .select('mentor_user_id, rating')
         .in('mentor_user_id', mentorIds);
 
+      if (feedbackError) {
+        // RLS blocked bulk — fall back to per-mentor queries
+        console.warn('[Leaderboard] bulk feedback blocked, trying per-mentor');
+        for (const mentor of mentors) {
+          const { data } = await this.supabase.getClient()
+            .from('feedback_submissions')
+            .select('mentor_user_id, rating')
+            .eq('mentor_user_id', mentor.user_id);
+          if (data) allFeedback.push(...(data as any[]));
+        }
+      } else {
+        allFeedback = feedbacks ?? [];
+      }
+
       // Group by mentor
       const feedbackMap = new Map<string, number[]>();
-      for (const fb of (feedbacks ?? []) as any[]) {
+      for (const fb of allFeedback) {
         if (!feedbackMap.has(fb.mentor_user_id)) feedbackMap.set(fb.mentor_user_id, []);
         feedbackMap.get(fb.mentor_user_id)!.push(fb.rating);
       }
 
-      // Build ranked list — only mentors with at least 1 feedback
-      const ranked = mentors
+      // Build ranked list — ALL approved mentors, those with reviews first
+      const ranked = (mentors as any[])
         .map((m: any) => {
           const ratings = feedbackMap.get(m.user_id) ?? [];
           const total = ratings.length;
-          const avg = total > 0 ? Math.round((ratings.reduce((a, b) => a + b, 0) / total) * 10) / 10 : 0;
+          const avg = total > 0 ? Math.round((ratings.reduce((a: number, b: number) => a + b, 0) / total) * 10) / 10 : 0;
           return { mentor: m, avgRating: avg, totalFeedback: total, rank: 0 };
         })
-        .filter(e => e.totalFeedback > 0)
-        .sort((a, b) => b.avgRating - a.avgRating || b.totalFeedback - a.totalFeedback);
+        .sort((a, b) => {
+          if (a.totalFeedback > 0 && b.totalFeedback === 0) return -1;
+          if (a.totalFeedback === 0 && b.totalFeedback > 0) return 1;
+          return b.avgRating - a.avgRating || b.totalFeedback - a.totalFeedback;
+        });
 
       ranked.forEach((e, i) => e.rank = i + 1);
       this.leaderboard = ranked;
@@ -1810,6 +1835,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   getInitials(name: string): string {
     if (!name || name === '') return '?';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+
+  getMenteeTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      'student':              'Student',
+      'working-professional': 'Working Professional',
+      'entrepreneur':         'Entrepreneur',
+      'unemployed':           'Unemployed',
+      'fresh-graduate':       'Fresh Graduate'
+    };
+    return map[type] || (type ? type.charAt(0).toUpperCase() + type.slice(1) : '');
   }
 
   // ─── Matchmaking ───────────────────────────────────────────────────────────

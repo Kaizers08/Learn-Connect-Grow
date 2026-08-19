@@ -158,9 +158,11 @@
           type="tel"
           class="form-input"
           [class.input-error]="showErrors && !phoneNumber.trim()"
-          placeholder="e.g. +63 912 345 6789"
+          placeholder="e.g. 912 345 6789"
           [(ngModel)]="phoneNumber"
           name="phoneNumber"
+          inputmode="numeric"
+          (input)="onPhoneInput($event)"
         >
         @if (showErrors && !phoneNumber.trim()) {
           <div class="field-error">Please enter your phone number</div>

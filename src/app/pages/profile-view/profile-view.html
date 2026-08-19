@@ -73,7 +73,7 @@
 
             @if (userType === 'mentee') {
               @if (profile.type) {
-                <p class="profile-type">{{ profile.type }}</p>
+                <p class="profile-type">{{ getMenteeTypeLabel(profile.type) }}</p>
               }
               @if (profile.university) {
                 <p class="profile-university">{{ profile.university }}</p>

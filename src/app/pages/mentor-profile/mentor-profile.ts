@@ -71,6 +71,13 @@ export class MentorProfileComponent implements OnInit {
     this.profileFile = null;
   }
 
+  onPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    this.phoneNumber = cleaned;
+    input.value = cleaned;
+  }
+
   addSkill() {
     const s = this.skillInput.trim();
     if (s && !this.skills.includes(s)) this.skills.push(s);

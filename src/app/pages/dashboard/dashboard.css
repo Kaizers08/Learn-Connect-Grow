@@ -6409,3 +6409,172 @@ textarea.form-control {
 .pm-dots-item:hover { background: #f5f7fa; }
 .pm-dots-danger { color: #e74c3c; }
 .pm-dots-danger:hover { background: #fff0f0; }
+
+/* ─── Extra mobile (≤480px) ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Sidebar even smaller on phones */
+  .sidebar { width: 60px; }
+  .sidebar:hover { width: 200px; }
+  .main-content { margin-left: 60px; }
+  .dashboard-layout:has(.sidebar:hover) .main-content { margin-left: 200px; }
+
+  .sidebar-logo-img { width: 40px; height: 40px; }
+  .nav-item, .sidebar-logout { height: 42px; padding: 0 0.5rem 0 0.85rem; }
+
+  /* Topbar */
+  .topbar { padding: 0 0.75rem; gap: 0.5rem; }
+  .search-bar { min-width: unset; flex: 1; padding: 0.5rem 0.875rem; }
+  .user-info { display: none; }
+
+  /* Page body */
+  .page-body { padding: 0.75rem; gap: 0.75rem; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .mentors-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .welcome-title { font-size: 1rem; }
+  .welcome-subtitle { font-size: 0.75rem; }
+
+  /* Messages on phones: hide chats panel, show only chat window */
+  .msg-body { grid-template-columns: 1fr; padding: 0.5rem; }
+  .msg-chats-panel { display: none; }
+
+  /* Profile modal */
+  .profile-modal { padding: 1.25rem; border-radius: 14px; }
+  .pm-avatar { width: 60px; height: 60px; font-size: 1rem; }
+  .pm-name { font-size: 1rem; }
+
+  /* Find mentors */
+  .page-body.find-mentors-layout { padding: 0.75rem; }
+  .fm-body { padding-right: 0; }
+  .fm-mentor-avatar { width: 60px; height: 60px; margin-left: 0; }
+  .fm-mentor-name { font-size: 0.95rem; }
+  .fm-btn-view, .fm-btn-connect, .fm-btn-message-sm { width: 110px; font-size: 0.72rem; }
+
+  /* Resources */
+  .resources-wrapper { padding: 0.75rem; }
+  .res-header { padding: 1rem; border-radius: 12px; }
+  .res-title { font-size: 1.35rem; }
+
+  /* Leaderboard */
+  .lb-row { padding: 0.75rem 0.875rem; gap: 0.65rem; }
+  .lb-rank { min-width: 32px; font-size: 1rem; }
+  .lb-avatar { width: 38px; height: 38px; }
+  .lb-name { font-size: 0.82rem; }
+  .lb-stars { display: none; }
+
+  /* Settings */
+  .st-form-grid { grid-template-columns: 1fr; }
+  .st-card { padding: 1.25rem; }
+}
+
+/* ─── Messages: tablet (640px) – show chats panel on top ─────────────────── */
+@media (max-width: 640px) {
+  .msg-body {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 0.75rem;
+    overflow-y: auto;
+    height: auto;
+  }
+
+  /* Show chats panel as a horizontal scrollable list */
+  .msg-chats-panel {
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    min-height: unset;
+    overflow-y: auto;
+  }
+
+  .msg-panel-heading { display: none; }
+
+  .msg-chat-window {
+    height: 60dvh;
+    min-height: 300px;
+  }
+
+  .msg-messages-area {
+    padding: 0.75rem;
+  }
+
+  .msg-input-bar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Smaller bubbles on mobile */
+  .msg-bubble-wrap { max-width: 85%; }
+  .msg-attachment-img { max-width: 160px; max-height: 140px; }
+}
+
+/* ─── Find Mentors: hide sidebar filters on phone, show inline ────────────── */
+@media (max-width: 640px) {
+  .fm-body {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+    gap: 1rem;
+  }
+  .fm-filters {
+    border-radius: 12px;
+  }
+  .fm-mentor-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .fm-mentor-avatar {
+    margin-left: 0;
+    width: 64px; height: 64px;
+  }
+  .fm-mentor-actions {
+    flex-wrap: wrap;
+  }
+  .fm-btn-view, .fm-btn-connect, .fm-btn-message-sm {
+    flex: 1; width: auto;
+  }
+}
+
+/* ─── Mentee type badge on cards ─────────────────────────────────────────── */
+.mentor-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  background: #e6f7ea;
+  color: #21AA3A;
+  border-radius: 50px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin: 0.1rem 0 0.3rem;
+}
+
+.fm-mentee-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  background: #e6f7ea;
+  color: #21AA3A;
+  border-radius: 50px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin: 0.2rem 0;
+}
+
+/* ─── Leaderboard: no rating yet label ───────────────────────────────────── */
+.lb-no-rating {
+  font-size: 0.72rem;
+  color: #bbb;
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+/* ─── Leaderboard rating block (always visible) ─────────────────────────── */
+.lb-rating-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.lb-review-count {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 500;
+  white-space: nowrap;
+}

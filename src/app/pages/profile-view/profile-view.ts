@@ -226,6 +226,17 @@ export class ProfileViewComponent implements OnInit {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
 
+  getMenteeTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      'student':              'Student',
+      'working-professional': 'Working Professional',
+      'entrepreneur':         'Entrepreneur',
+      'unemployed':           'Unemployed',
+      'fresh-graduate':       'Fresh Graduate'
+    };
+    return map[type] || (type ? type.charAt(0).toUpperCase() + type.slice(1) : '');
+  }
+
   get loadingMessage(): string {
     return this.userType === 'mentor' ? 'Loading mentor profile...' : 'Loading mentee profile...';
   }

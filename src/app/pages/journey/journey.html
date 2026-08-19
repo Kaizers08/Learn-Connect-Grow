@@ -17,54 +17,6 @@
     <!-- Card -->
     <div class="journey-card">
 
-      <!-- Profile Photo -->
-      <div class="photo-section">
-        <div class="photo-wrapper">
-          <div class="photo-preview" (click)="photoInput.click()">
-            @if (profilePhoto) {
-              <img [src]="profilePhoto" alt="Profile" class="photo-img">
-              <div class="photo-overlay">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </div>
-            } @else {
-              <div class="photo-placeholder">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#04A2D7" stroke-width="1.5">
-                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <span class="photo-hint">Upload Photo</span>
-              </div>
-            }
-          </div>
-          @if (profilePhoto) {
-            <button class="remove-photo" (click)="removePhoto()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          }
-        </div>
-        <div class="photo-info">
-          <p class="photo-title">Your profile photo</p>
-          @if (profilePhoto) {
-            <p class="photo-desc">Photo already uploaded. Click to change it.<br>JPG, PNG or GIF (max 5MB)</p>
-          } @else {
-            <p class="photo-desc">Click to upload a photo (optional).<br>JPG, PNG or GIF (max 5MB)</p>
-          }
-        </div>
-        <input
-          #photoInput
-          type="file"
-          accept="image/*"
-          class="photo-input"
-          (change)="onPhotoChange($event)"
-        >
-      </div>
-
       <div class="divider-line"></div>
 
       <!-- Date of Birth -->
@@ -104,6 +56,8 @@
             placeholder="912 345 6789"
             [(ngModel)]="phoneNumber"
             name="phoneNumber"
+            inputmode="numeric"
+            (input)="onPhoneInput($event)"
           >
         </div>
       </div>

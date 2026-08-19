@@ -20,6 +20,14 @@ export class JourneyComponent implements OnInit {
   gender: string = '';
   selectedDialCode: string = '';
 
+  onPhoneInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    // Strip everything except digits and spaces
+    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    this.phoneNumber = cleaned;
+    input.value = cleaned;
+  }
+
   countries = [
     { name: 'Afghanistan', code: '+93' },
     { name: 'Albania', code: '+355' },

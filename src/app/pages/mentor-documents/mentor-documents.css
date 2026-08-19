@@ -205,6 +205,7 @@
 @media (max-width: 480px) {
   .mentor-docs-page {
     padding: 3rem 1rem 2rem 1rem;
+    align-items: flex-start;
   }
   .mentor-docs-card {
     padding: 1.5rem 1.25rem;
@@ -214,6 +215,14 @@
     grid-template-columns: 1fr;
     margin-top: -1rem;
   }
+}
+
+/* ─── Tablet (768px) ── */
+@media (max-width: 768px) {
+  .mentor-docs-page { padding: 2rem 1.25rem; align-items: flex-start; }
+  .mentor-docs-card { padding: 1.75rem 1.5rem; }
+  .mentor-docs-title { font-size: 1.5rem; }
+  .btn-row { gap: 0.75rem; }
 }
 
 .docs-error {

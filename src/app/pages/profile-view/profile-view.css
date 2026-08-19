@@ -501,3 +501,20 @@
 .pv-dots-danger { color: #e74c3c; }
 .pv-dots-danger:hover:not(:disabled) { background: #fff0f0; }
 .pv-dots-item:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ─── Responsive (mobile) ── */
+@media (max-width: 480px) {
+  .profile-view-container {
+    padding: 16px;
+  }
+  .profile-avatar-lg {
+    width: 72px; height: 72px; font-size: 28px;
+  }
+  .profile-name { font-size: 1.35rem; }
+  .profile-job, .profile-expertise { font-size: 0.85rem; }
+  .profile-header { gap: 16px; }
+  .profile-card { padding: 20px 16px; }
+  .feedback-section { padding: 20px 16px; }
+  .section-title { font-size: 1.1rem; }
+  .btn-back { padding: 8px 12px; font-size: 0.82rem; }
+}
