@@ -2883,7 +2883,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const d = data as any;
         // Prefer full_name from mentor_profiles, fallback to auth metadata
         const fullName = d.full_name || authFullName;
-        if (fullName) this.userName = this.stripMiddleName(fullName);
+        if (fullName) this.userName = fullName.trim();
         this.profilePicture          = d.profile_picture || null;
         this.settingsJobPosition     = d.job_position    || '';
         this.settingsCompany         = d.company         || '';
@@ -2896,7 +2896,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.settingsGender          = d.gender          || '';
         this.settingsDateOfBirth     = d.date_of_birth   || '';
       } else if (authFullName) {
-        this.userName = this.stripMiddleName(authFullName);
+        this.userName = authFullName.trim();
       }
       this.userRole = 'Mentor';
     } else {
@@ -2910,7 +2910,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         const d = data as any;
         // Prefer full_name from mentee_profiles, fallback to auth metadata
         const fullName = d.full_name || authFullName;
-        if (fullName) this.userName = this.stripMiddleName(fullName);
+        if (fullName) this.userName = fullName.trim();
         this.profilePicture           = d.profile_picture   || null;
         this.settingsMenteeType       = d.type              || '';
         this.settingsUniversity       = d.university        || '';
@@ -2924,14 +2924,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.settingsGender           = d.gender            || '';
         this.settingsDateOfBirth      = d.date_of_birth     || '';
       } else if (authFullName) {
-        this.userName = this.stripMiddleName(authFullName);
+        this.userName = authFullName.trim();
       }
       this.userRole = 'Mentee';
     }
 
-    const nameParts = this.userName.split(' ');
+    // Populate settings name fields — prefer profile table, fall back to auth metadata
+    // Split as: first word = First Name, everything else = Last Name
+    // This preserves compound last names like "Dela Cruz" across save/reload cycles.
+    const sourceName = this.userName || authFullName;
+    const nameParts = sourceName.trim().split(/\s+/);
     this.settingsFirstName = nameParts[0] || '';
-    this.settingsLastName  = nameParts.slice(-1)[0] || '';
+    this.settingsLastName  = nameParts.slice(1).join(' ');
     this.refreshView();
   }
 
@@ -2997,10 +3001,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           alert(`Failed to save: ${error.message}`);
           return;
         }
+        // Sync name to auth metadata so it persists across sessions
+        await this.supabase.updateUserMeta({ full_name: newName });
       } else {
         const { error } = await this.supabase.getClient()
           .from('mentee_profiles')
           .update({
+            full_name:         newName,
             type:              this.settingsMenteeType         || null,
             university:        this.settingsUniversity         || null,
             job_position:      this.settingsMenteeJobPosition  || null,
