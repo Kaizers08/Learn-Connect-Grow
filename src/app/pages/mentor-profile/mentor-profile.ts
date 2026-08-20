@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
+import { PhoneLimitsService } from '../../services/phone-limits.service';
 
 @Component({
   selector: 'app-mentor-profile',
@@ -20,6 +21,9 @@ export class MentorProfileComponent implements OnInit {
   profilePhoto: string | null = null;  // preview URL
   profileFile: File | null = null;     // actual file for upload
   phoneNumber = '';
+  gender = '';
+  country = '';
+  dateOfBirth = '';
   githubUrl = '';
   linkedinUrl = '';
   twitterUrl = '';
@@ -50,8 +54,17 @@ export class MentorProfileComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    public phoneLimits: PhoneLimitsService
   ) {}
+
+  get phoneMaxLength(): number {
+    return this.phoneLimits.getLimits(this.country).max;
+  }
+
+  get phoneHint(): string {
+    return this.phoneLimits.getHint(this.country);
+  }
 
   async ngOnInit() {
     const meta = await this.supabase.getCurrentUserMeta();
@@ -73,7 +86,17 @@ export class MentorProfileComponent implements OnInit {
 
   onPhoneInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    let cleaned = input.value.replace(/[^0-9\s]/g, '');
+    // Enforce max digits for selected country
+    const max = this.phoneLimits.getLimits(this.country).max;
+    const digits = cleaned.replace(/\s/g, '');
+    if (digits.length > max) {
+      let count = 0;
+      cleaned = cleaned.split('').filter(ch => {
+        if (ch === ' ') return true;
+        return count++ < max;
+      }).join('');
+    }
     this.phoneNumber = cleaned;
     input.value = cleaned;
   }
@@ -122,6 +145,19 @@ export class MentorProfileComponent implements OnInit {
       return; 
     }
 
+    // Validate phone digit count against selected country
+    if (this.phoneNumber.trim()) {
+      const digits = this.phoneLimits.countDigits(this.phoneNumber);
+      const { min, max } = this.phoneLimits.getLimits(this.country);
+      if (digits < min || digits > max) {
+        this.errorMsg = this.country
+          ? `Phone number for ${this.country} must be ${min === max ? min + ' digits' : min + '–' + max + ' digits'}.`
+          : `Phone number must be between ${min} and ${max} digits.`;
+        this.scrollToTop();
+        return;
+      }
+    }
+
     const userId = await this.supabase.getCurrentUserId();
 
     // Upload photo to Storage if selected
@@ -142,6 +178,9 @@ export class MentorProfileComponent implements OnInit {
       profile_picture:  pictureUrl,
       skills:           this.skills,
       phone_number:     this.phoneNumber     || undefined,
+      gender:           this.gender          || undefined,
+      country:          this.country         || undefined,
+      date_of_birth:    this.dateOfBirth     || undefined,
       github_url:       this.githubUrl       || undefined,
       linkedin_url:     this.linkedinUrl     || undefined,
       twitter_url:      this.twitterUrl      || undefined,

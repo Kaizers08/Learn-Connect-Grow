@@ -151,19 +151,57 @@
         ></textarea>
       </div>
 
-      <!-- Phone Number (required) -->
+      <!-- Country -->
+      <div class="form-section">
+        <label class="field-label">Country</label>
+        <select class="form-input" [(ngModel)]="country" name="country">
+          <option value="">Select country</option>
+          @for (c of phoneLimits.countries; track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Gender -->
+      <div class="form-section">
+        <label class="field-label">Gender</label>
+        <select class="form-input" [(ngModel)]="gender" name="gender">
+          <option value="">Prefer not to say</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="non-binary">Non-binary</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <!-- Date of Birth -->
+      <div class="form-section">
+        <label class="field-label">Date of Birth</label>
+        <input
+          type="date"
+          class="form-input"
+          [(ngModel)]="dateOfBirth"
+          name="dateOfBirth"
+        >
+      </div>
+
+      <!-- Phone Number -->
       <div class="form-section">
         <label class="field-label">Phone Number <span class="required">*</span></label>
         <input
           type="tel"
           class="form-input"
           [class.input-error]="showErrors && !phoneNumber.trim()"
-          placeholder="e.g. 912 345 6789"
+          placeholder="e.g. 09123456789"
           [(ngModel)]="phoneNumber"
           name="phoneNumber"
           inputmode="numeric"
+          [maxlength]="phoneMaxLength"
           (input)="onPhoneInput($event)"
         >
+        @if (country) {
+          <small class="field-hint">{{ phoneHint }}</small>
+        }
         @if (showErrors && !phoneNumber.trim()) {
           <div class="field-error">Please enter your phone number</div>
         }

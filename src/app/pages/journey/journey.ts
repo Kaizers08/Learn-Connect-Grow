@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { UserService } from '../../services/user.service';
+import { PhoneLimitsService } from '../../services/phone-limits.service';
 
 @Component({
   selector: 'app-journey',
@@ -22,8 +23,16 @@ export class JourneyComponent implements OnInit {
 
   onPhoneInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    // Strip everything except digits and spaces
-    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    let cleaned = input.value.replace(/[^0-9\s]/g, '');
+    const max = this.phoneLimits.getLimits(this.country).max;
+    const digits = cleaned.replace(/\s/g, '');
+    if (digits.length > max) {
+      let count = 0;
+      cleaned = cleaned.split('').filter(ch => {
+        if (ch === ' ') return true;
+        return count++ < max;
+      }).join('');
+    }
     this.phoneNumber = cleaned;
     input.value = cleaned;
   }
@@ -122,7 +131,20 @@ export class JourneyComponent implements OnInit {
     }
   }
 
-  constructor(private router: Router, private userService: UserService, private supabase: SupabaseService) {}
+  constructor(
+    private router: Router,
+    private userService: UserService,
+    private supabase: SupabaseService,
+    public phoneLimits: PhoneLimitsService
+  ) {}
+
+  get phoneMaxLength(): number {
+    return this.phoneLimits.getLimits(this.country).max;
+  }
+
+  get phoneHint(): string {
+    return this.phoneLimits.getHint(this.country);
+  }
 
   async ngOnInit() {
     // Load existing profile picture from database
@@ -164,6 +186,16 @@ export class JourneyComponent implements OnInit {
       return;
     }
 
+    // Validate phone digit count against selected country
+    const digits = this.phoneLimits.countDigits(this.phoneNumber);
+    const { min, max } = this.phoneLimits.getLimits(this.country);
+    if (digits < min || digits > max) {
+      alert(this.country
+        ? `Phone number for ${this.country} must be ${min === max ? min + ' digits' : min + '–' + max + ' digits'}.`
+        : `Phone number must be between ${min} and ${max} digits.`);
+      return;
+    }
+
     const userId = await this.supabase.getCurrentUserId();
     if (!userId) return;
 
@@ -192,14 +224,14 @@ export class JourneyComponent implements OnInit {
     } else {
       await this.supabase.getClient()
         .from('mentee_profiles')
-        .upsert({
-          user_id:       userId,
+        .update({
           ...(pictureUrl ? { profile_picture: pictureUrl } : {}),
           phone_number:  fullPhone,
           country:       this.country     || null,
           gender:        this.gender      || null,
           date_of_birth: this.dateOfBirth || null,
-        });
+        })
+        .eq('user_id', userId);
     }
 
     this.router.navigate(['/dashboard']);

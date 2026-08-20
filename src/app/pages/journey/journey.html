@@ -57,9 +57,13 @@
             [(ngModel)]="phoneNumber"
             name="phoneNumber"
             inputmode="numeric"
+            [maxlength]="phoneMaxLength"
             (input)="onPhoneInput($event)"
           >
         </div>
+        @if (country) {
+          <small class="field-hint">{{ phoneHint }}</small>
+        }
       </div>
 
       <!-- Gender -->

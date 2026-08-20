@@ -1623,7 +1623,9 @@
                   [(ngModel)]="settingsPhone"
                   placeholder="e.g. 09123456789"
                   inputmode="numeric"
+                  [maxlength]="getPhoneLimits().max"
                   (input)="onSettingsPhoneInput($event)">
+                <small class="st-hint">{{ phoneHint }}</small>
               </div>
             </div>
           </div>

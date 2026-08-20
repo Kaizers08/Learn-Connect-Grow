@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { PhoneLimitsService } from '../../services/phone-limits.service';
 import { FeedbackModalComponent } from './feedback-modal.component';
 import { IconComponent } from './icon.component';
 import { DashSafeUrlPipe } from './dash-safe-url.pipe';
@@ -1499,6 +1500,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     'Uzbekistan','Venezuela','Vietnam','Yemen','Zimbabwe'
   ];
 
+  // Phone limits delegated to shared service
+  getPhoneLimits(): { min: number; max: number } {
+    return this.phoneLimitsSvc.getLimits(this.settingsCountry);
+  }
+
+  get phoneHint(): string {
+    return this.phoneLimitsSvc.getHint(this.settingsCountry);
+  }
+
   toggleSettingsSkill(skill: string, type: 'mentor' | 'mentee') {
     if (type === 'mentor') {
       if (this.settingsTechnicalSkills.includes(skill)) this.settingsTechnicalSkills = this.settingsTechnicalSkills.filter(s => s !== skill);
@@ -1511,7 +1521,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   onSettingsPhoneInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    const cleaned = input.value.replace(/[^0-9\s]/g, '');
+    let cleaned = input.value.replace(/[^0-9\s]/g, '');
+    // Enforce max digits for selected country
+    const max = this.phoneLimitsSvc.getLimits(this.settingsCountry).max;
+    const digits = cleaned.replace(/\s/g, '');
+    if (digits.length > max) {
+      let count = 0;
+      cleaned = cleaned.split('').filter(ch => {
+        if (ch === ' ') return true;
+        return count++ < max;
+      }).join('');
+    }
     this.settingsPhone = cleaned;
     input.value = cleaned;
   }
@@ -1529,6 +1549,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     private router: Router,
     private userService: UserService,
     private supabase: SupabaseService,
+    public phoneLimitsSvc: PhoneLimitsService,
     private cdr: ChangeDetectorRef,
     private zone: NgZone,
     private appRef: ApplicationRef
@@ -2874,11 +2895,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const authFullName = meta.fullName || '';
 
     if (role === 'mentor') {
-      const { data } = await this.supabase.getClient()
+      const { data, error: mentorErr } = await this.supabase.getClient()
         .from('mentor_profiles')
         .select('full_name, profile_picture, job_position, company, expertise, years_experience, bio, skills, phone_number, country, gender, date_of_birth')
         .eq('user_id', userId)
         .maybeSingle();
+      if (mentorErr) console.error('[loadUserProfile] mentor_profiles fetch error:', mentorErr);
       if (data) {
         const d = data as any;
         // Prefer full_name from mentor_profiles, fallback to auth metadata
@@ -2901,11 +2923,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.userRole = 'Mentor';
     } else {
       // For mentees, check profile table first, then fall back to auth metadata
-      const { data } = await this.supabase.getClient()
+      const { data, error: menteeErr } = await this.supabase.getClient()
         .from('mentee_profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
+      if (menteeErr) console.error('[loadUserProfile] mentee_profiles fetch error:', menteeErr);
       if (data) {
         const d = data as any;
         // Prefer full_name from mentee_profiles, fallback to auth metadata
@@ -2947,6 +2970,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     const role = this.userService.role();
     const newName = `${this.settingsFirstName} ${this.settingsLastName}`.trim();
+
+    // Phone number validation based on selected country
+    const phoneDigits = this.settingsPhone.replace(/\s/g, '');
+    if (phoneDigits) {
+      const { min, max } = this.phoneLimitsSvc.getLimits(this.settingsCountry);
+      if (phoneDigits.length < min || phoneDigits.length > max) {
+        const countryLabel = this.settingsCountry || 'your country';
+        const rangeLabel = min === max ? `${min} digits` : `${min}–${max} digits`;
+        alert(`Phone number for ${countryLabel} must be ${rangeLabel}.`);
+        return;
+      }
+    }
 
     try {
       // Upload new photo to Storage if one was selected
