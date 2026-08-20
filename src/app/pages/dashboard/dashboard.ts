@@ -38,6 +38,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   // Matched mentors/mentees from DB
   recommendedMentors: any[] = [];
+  // Full unfiltered list for name search
+  allProfiles: any[] = [];
   // My connections (online side panel)
   connectedUsers: any[] = [];
   // Which user IDs I'm connected to
@@ -803,7 +805,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   ];
 
   get filteredMentors() {
-    return this.recommendedMentors
+    // No search query → show matchmaking results only (recommended)
+    // Search query active → search across ALL mentees/mentors by name
+    const query = this.mentorSearchQuery.trim();
+    const source = query ? this.allProfiles : this.recommendedMentors;
+
+    if (query) {
+      console.log('[filteredMentors] searching query:', query, '| source count:', source.length);
+    }
+
+    return source
       .map((mentor: any) => this.normalizeMentorCard(mentor))
       .filter((mentor: any) => {
         const matchName = this.matchesNameSearch(
@@ -1891,6 +1902,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         rating: 0,
         reviews: 0
       }));
+
+      // For name search: load ALL mentees so mentor can search anyone by name
+      const { data: allMentees, error: allMenteesErr } = await this.supabase.getMenteeProfiles();
+      if (allMenteesErr) console.error('[loadMatchedUsers] getMenteeProfiles error:', allMenteesErr);
+      console.log('[loadMatchedUsers] allMentees count:', allMentees?.length, allMentees?.map((m: any) => m.full_name));
+      this.allProfiles = (allMentees || []).filter((m: any) => m.user_id !== userId).map((m: any) => ({
+        ...m,
+        rating: 0,
+        reviews: 0
+      }));
+      console.log('[loadMatchedUsers] allProfiles count:', this.allProfiles.length);
+
       this.refreshView();
     } else {
       const { data } = await this.supabase.getClient()
@@ -1968,6 +1991,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         }));
         this.refreshView();
       }
+
+      // Load ALL approved mentors for name search (regardless of matchmaking)
+      const { data: allMentorData } = await this.supabase.getMentorProfiles();
+      this.allProfiles = (allMentorData || [])
+        .filter((m: any) => m.user_id !== userId && m.status === 'approved')
+        .map((m: any) => ({ ...m, rating: 0, reviews: 0 }));
     }
   }
 

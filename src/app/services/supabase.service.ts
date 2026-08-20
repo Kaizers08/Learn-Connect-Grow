@@ -448,7 +448,7 @@ export class SupabaseService {
     };
 
     return {
-      data: [...list].sort((a, b) => score(b) - score(a)),
+      data: [...list].filter(mentee => score(mentee) > 0).sort((a, b) => score(b) - score(a)),
       error: null
     };
   }
