@@ -633,7 +633,8 @@ export class AdminComponent implements OnInit {
     setTimeout(() => this.settingsSaved = false, 3000);
   }
 
-  onLogout() {
+  async onLogout() {
+    await this.supabase.signOut();
     this.router.navigate(['/login']);
   }
 }

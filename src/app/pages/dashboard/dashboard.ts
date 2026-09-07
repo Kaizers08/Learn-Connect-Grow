@@ -1881,7 +1881,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }
   closeUserMenu() { this.showUserMenu = false; }
-  onLogout() { this.showUserMenu = false; this.router.navigate(['/login']); }
+  async onLogout() {
+    this.showUserMenu = false;
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
+  }
 
   getInitials(name: string): string {
     if (!name || name === '') return '?';
