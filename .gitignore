@@ -52,6 +52,6 @@ seed-admin.js
 
 
 # Environment files
-src/environments/environment.ts
-src/environments/environment.development.ts
-src/environments/environment.*.ts
+# Note: environment files are tracked (they use build-time injection, no secrets hardcoded)
+# src/environments/environment.ts
+# src/environments/environment.development.ts
