@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Component, ViewChild, ElementRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ export class ChatbotComponent {
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef;
   
   private readonly API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-  private readonly API_KEY = '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';
+  private readonly API_KEY = environment.groqApiKey;
   private conversationHistory: Array<{role: string, content: string}> = [];
 
   isOpen = signal(false);
@@ -55,6 +56,7 @@ An online mentoring platform that connects mentees (learners) with expert mentor
 - You may use **bold** for emphasis and emojis sparingly, but avoid 
   heavy formatting.
 
+  
 === ROLES ===
 - Mentee: a learner looking to grow skills.
 - Mentor: an expert who guides mentees (must be approved by an admin before appearing to mentees).

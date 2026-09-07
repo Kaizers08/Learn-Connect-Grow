@@ -129,12 +129,19 @@
 
     <!-- Top Bar -->
     <header class="topbar">
+
+      <!-- Search bar -->
       <div class="search-bar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <circle cx="11" cy="11" r="7" stroke="#999" stroke-width="2"/>
           <path d="M20 20L16.5 16.5" stroke="#999" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <input type="text" [placeholder]="isMentor ? 'Search mentees' : 'Search mentors'" class="search-input" [(ngModel)]="searchQuery">
+        <input type="text"
+          [placeholder]="isMentor ? 'Search mentees...' : 'Search mentors...'"
+          class="search-input"
+          [(ngModel)]="mentorSearchQuery"
+          (focus)="onTopSearchFocus()"
+          (ngModelChange)="onTopSearchChange($event)">
       </div>
 
       <div class="topbar-right">
