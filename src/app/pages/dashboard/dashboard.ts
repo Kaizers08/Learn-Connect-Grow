@@ -920,10 +920,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   onMentorSearchChange() {
+    this.searchQuery = this.mentorSearchQuery;
     this.currentPage = 1;
   }
 
-  resetFilters() { this.mentorSearchQuery = ''; this.selectedExpertise = ''; this.selectedSkills = []; this.currentPage = 1; }
+  resetFilters() { 
+    this.mentorSearchQuery = ''; 
+    this.searchQuery = '';
+    this.selectedExpertise = ''; 
+    this.selectedSkills = []; 
+    this.currentPage = 1; 
+  }
   goToPage(page: number) { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
   getPages(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
 
@@ -1860,6 +1867,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   onViewAllSessions() { this.setActiveNav('calendar'); }
   onViewAllOnline() { this.setActiveNav('messages'); }
   onSettings() { this.showUserMenu = false; this.setActiveNav('settings'); }
+
+  onTopSearchFocus() {
+    this.activeNavItem = 'search';
+    this.refreshView();
+  }
+
+  onTopSearchChange(query: string) {
+    this.activeNavItem = 'search';
+    this.mentorSearchQuery = query;
+    this.currentPage = 1;
+    this.refreshView();
+  }
   toggleUserMenu() { this.showUserMenu = !this.showUserMenu; }
   closeUserMenu() { this.showUserMenu = false; }
   onLogout() { this.showUserMenu = false; this.router.navigate(['/login']); }
