@@ -2,14 +2,16 @@
  * set-env.mjs
  *
  * Runs before `ng build`.
- * Reads GROQ_API_KEY from the build environment (Vercel sets it automatically)
- * and writes both Angular environment files with the value baked in.
+ * Priority order for GROQ_API_KEY:
+ *   1. process.env (Vercel sets this from Environment Variables)
+ *   2. .env file (local development)
+ *   3. existing environment.ts value (fallback — preserves what's already there)
  */
 
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Load .env file if present (local development only)
+// Step 1: Load .env file if present (local dev)
 const envPath = '.env';
 if (existsSync(envPath)) {
   const lines = readFileSync(envPath, 'utf8').split('\n');
@@ -23,18 +25,28 @@ if (existsSync(envPath)) {
     if (!process.env[key]) process.env[key] = val;
   }
   console.log('[set-env] Loaded .env file');
-} else {
-  console.log('[set-env] No .env file found — using process.env (Vercel mode)');
 }
 
-const groqApiKey = process.env['GROQ_API_KEY'] ?? '';
+// Step 2: Get key from environment
+let groqApiKey = process.env['GROQ_API_KEY'] ?? '';
 
-// Log key status without exposing the full value
+// Step 3: Fallback — read existing environment.ts if key is still empty
+if (!groqApiKey) {
+  const existingEnvPath = join('src', 'environments', 'environment.ts');
+  if (existsSync(existingEnvPath)) {
+    const existing = readFileSync(existingEnvPath, 'utf8');
+    const match = existing.match(/groqApiKey:\s*'([^']+)'/);
+    if (match?.[1]) {
+      groqApiKey = match[1];
+      console.log('[set-env] GROQ_API_KEY not in env — using existing value from environment.ts');
+    }
+  }
+}
+
 console.log('[set-env] GROQ_API_KEY present:', groqApiKey.length > 0, '| Length:', groqApiKey.length);
 
 if (!groqApiKey) {
   console.warn('[set-env] WARNING: GROQ_API_KEY is empty! Chatbot will not work.');
-  console.warn('[set-env] On Vercel: add GROQ_API_KEY in Project Settings → Environment Variables');
 }
 
 const envDir = join('src', 'environments');
