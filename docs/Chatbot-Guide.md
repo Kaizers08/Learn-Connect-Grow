@@ -119,8 +119,8 @@ knowledge needed.
 - **The brain (AI):** The actual answers come from an external AI service (a large language
   model) that the chatbot talks to over the internet. The platform sends the visitor's
   question to this service and displays the answer it returns.
-  - **Model provider:** Cerebras (AI inference service)
-  - **Model used:** `zai-glm-4.7`
+  - **Model provider:** Groq (AI inference service)
+  - **Model used:** `openai/gpt-oss-120b`
 - **The instructions:** Before any conversation starts, the chatbot is given a hidden set of
   instructions (the platform's documentation and its "personality"). This is what makes it
   answer accurately about *this* platform instead of giving generic replies.
