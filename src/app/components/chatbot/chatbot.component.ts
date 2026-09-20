@@ -168,7 +168,7 @@ Admins review mentor applications and their documents, then approve or reject th
       });
 
       const body = {
-        model: 'openai/gpt-oss-120b',
+        model: 'llama3-70b-8192',
         messages: this.conversationHistory,
         temperature: 0.7,
         max_tokens: 500
