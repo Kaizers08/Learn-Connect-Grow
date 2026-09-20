@@ -138,7 +138,7 @@ Answer general knowledge and math questions too. For coding help, suggest they b
       });
 
       const body = {
-        model: 'llama3-70b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500
@@ -156,8 +156,9 @@ Answer general knowledge and math questions too. For coding help, suggest they b
       });
 
       return botMessage;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Chatbot] Error:', error);
+      console.error('[Chatbot] Error body:', JSON.stringify(error?.error));
       return 'Sorry, I\'m having trouble connecting right now. Please try again later.';
     }
   }
