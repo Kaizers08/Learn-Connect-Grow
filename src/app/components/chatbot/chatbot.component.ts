@@ -138,7 +138,7 @@ Answer general knowledge and math questions too. For coding help, suggest they b
       });
 
       const body = {
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500
