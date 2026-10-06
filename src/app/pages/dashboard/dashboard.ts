@@ -1269,12 +1269,57 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   selectedResourceMentorId = '';
   availableResourceMentors: any[] = [];
   resourceMenteesProgress: any[] = [];
+
+  // ─── Folder / Category state ────────────────────────────────────────────────
+  resourceFolders: Array<{
+    id: string;
+    mentor_user_id: string;
+    name: string;
+    display_order: number;
+    created_at: string;
+    materials: any[];
+    isExpanded: boolean;
+  }> = [];
+
+  // Create folder modal
+  showFolderCreateModal = false;
+  newFolderName = '';
+  isCreatingFolder = false;
+
+  // Rename folder modal
+  showFolderRenameModal = false;
+  renamingFolder: any = null;
+  renameFolderName = '';
+  isRenamingFolder = false;
+
+  // Delete folder confirmation
+  showDeleteFolderModal = false;
+  folderPendingDelete: any = null;
+  isDeletingFolder = false;
+
+  // Which folder the upload drawer was opened from (null = no folder pre-selected)
+  uploadTargetFolder: any = null;
+
+  // Mentee navigation:
+  // null = showing mentor cards; set = showing that mentor's folders
+  selectedMenteeViewMentor: any = null;
+  // null = showing folder cards; set = showing that folder's materials
+  activeMenteeFolder: any = null;
+  // Folders for the selected mentor (mentee view)
+  menteeFolders: Array<{
+    id: string;
+    name: string;
+    materials: any[];
+    completedCount: number;
+    progressPercentage: number;
+  }> = [];
   
   // Upload modal
   showResourcesUploadModal = false;
   resourceUploadTitle = '';
   resourceUploadDescription = '';
   resourceUploadOrderNumber = '';
+  resourceUploadFolderId = '';
   resourceUploadFile: File | null = null;
   resourceUploadFileName = '';
   resourceUploadFileSize = 0;
@@ -1288,6 +1333,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   resourceEditTitle = '';
   resourceEditDescription = '';
   resourceEditOrderNumber = '';
+  resourceEditFolderId = '';
   resourceEditDuration: number | null = null;
 
   // Delete confirmation modal
@@ -1329,6 +1375,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Mentee progress modal (for mentor viewing mentee's progress)
   showMenteeProgressModal = false;
   selectedMenteeForProgress: any = null;
+  menteeProgressFolders: Array<{
+    id: string;
+    name: string;
+    materials: any[];
+    completedCount: number;
+    totalCount: number;
+    progressPercentage: number;
+    isExpanded: boolean;
+  }> = [];
+  menteeProgressUncategorized: any[] = [];
+  mpmUncategorizedExpanded = false;
 
   // ─── Mentors & Feedback ────────────────────────────────────────────────────
   connectedMentors: any[] = [];
@@ -1856,6 +1913,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         await this.loadResourceMaterials();
         await this.loadResourceMenteesProgress();
       } else {
+        this.selectedMenteeViewMentor = null;
+        this.activeMenteeFolder = null;
+        this.menteeFolders = [];
         await this.loadResourceMentors();
       }
     } else if (id === 'calendar') {
@@ -2341,7 +2401,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async selectResourceMentor(mentorId: string) {
     this.selectedResourceMentorId = mentorId;
-    await this.loadResourceMaterialsForMentee();
+    this.activeMenteeFolder = null;
+    await this.loadMenteeFolders(mentorId);
+  }
+
+  async selectMenteeViewMentor(mentor: any) {
+    this.selectedMenteeViewMentor = mentor;
+    this.selectedResourceMentorId = mentor.user_id;
+    this.activeMenteeFolder = null;
+    await this.loadMenteeFolders(mentor.user_id);
+  }
+
+  backToMentorCards() {
+    this.selectedMenteeViewMentor = null;
+    this.activeMenteeFolder = null;
+    this.menteeFolders = [];
+    this.refreshView();
   }
 
   async loadResourceMaterials() {
@@ -2361,50 +2436,329 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.resourceMaterials = data || [];
+    await this.loadResourceFolders();
     this.refreshView();
   }
 
-  async loadResourceMaterialsForMentee() {
-    if (!this.selectedResourceMentorId) return;
+  // ─── Folder CRUD ───────────────────────────────────────────────────────────
 
-    const { data: materialsData, error: materialsError } = await this.supabase.getClient()
-      .from('learning_materials')
+  async loadResourceFolders() {
+    const { data, error } = await this.supabase.getClient()
+      .from('material_folders')
       .select('*')
-      .eq('mentor_user_id', this.selectedResourceMentorId)
-      .order('order_number', { ascending: true });
+      .eq('mentor_user_id', this.currentUserId)
+      .order('display_order', { ascending: true });
 
-    if (materialsError) {
-      if (this.handleResourceSetupError(materialsError)) {
-        this.resourceMaterials = [];
+    if (error) {
+      if ((error as any)?.code === '42P01') {
+        this.resourceFolders = [];
         return;
       }
-      console.error('Error loading mentor materials:', materialsError);
+      console.error('Error loading folders:', error);
       return;
     }
 
-    const { data: progressData, error: progressError } = await this.supabase.getClient()
+    const folders = (data || []) as any[];
+    // Auto-expand if only 1 folder, or preserve existing expanded state
+    const autoExpand = folders.length === 1;
+    this.resourceFolders = folders.map(f => ({
+      ...f,
+      materials: this.resourceMaterials
+        .filter(m => m.folder_id === f.id)
+        .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true })),
+      isExpanded: autoExpand || (this.resourceFolders.find(existing => existing.id === f.id)?.isExpanded ?? false)
+    }));
+  }
+
+  openFolderCreateModal() {
+    this.newFolderName = '';
+    this.showFolderCreateModal = true;
+    this.refreshView();
+  }
+
+  closeFolderCreateModal() {
+    this.showFolderCreateModal = false;
+    this.newFolderName = '';
+    this.refreshView();
+  }
+
+  async createFolder() {
+    if (!this.newFolderName.trim()) {
+      this.displayNotification('Please enter a folder name', 'warning');
+      return;
+    }
+    this.isCreatingFolder = true;
+    this.refreshView();
+    try {
+      const userId = this.currentUserId || await this.supabase.getCurrentUserId();
+      if (!userId) {
+        this.displayNotification('Please log in to create a folder', 'error');
+        return;
+      }
+      const nextOrder = this.resourceFolders.length;
+      const { data: inserted, error } = await this.supabase.getClient()
+        .from('material_folders')
+        .insert({ mentor_user_id: userId, name: this.newFolderName.trim(), display_order: nextOrder })
+        .select('*')
+        .single();
+      if (error) {
+        // Table doesn't exist yet — guide the user to run the migration
+        if ((error as any)?.code === '42P01') {
+          this.displayNotification('Setup required: run the SQL migration in Supabase to enable folders.', 'error');
+          return;
+        }
+        throw error;
+      }
+      this.resourceFolders = [...this.resourceFolders, { ...inserted, materials: [], isExpanded: true }];
+      this.closeFolderCreateModal();
+      this.displayNotification('Folder created', 'success');
+    } catch (err: any) {
+      console.error('Error creating folder:', err);
+      const msg = err?.message || 'Failed to create folder. Please try again.';
+      this.displayNotification(msg, 'error');
+    } finally {
+      this.isCreatingFolder = false;
+      this.refreshView();
+    }
+  }
+
+  openFolderRenameModal(folder: any) {
+    this.renamingFolder = folder;
+    this.renameFolderName = folder.name;
+    this.showFolderRenameModal = true;
+    this.refreshView();
+  }
+
+  closeFolderRenameModal() {
+    this.showFolderRenameModal = false;
+    this.renamingFolder = null;
+    this.renameFolderName = '';
+    this.refreshView();
+  }
+
+  async renameFolder() {
+    if (!this.renamingFolder || !this.renameFolderName.trim()) {
+      this.displayNotification('Please enter a folder name', 'warning');
+      return;
+    }
+    this.isRenamingFolder = true;
+    this.refreshView();
+    try {
+      const { error } = await this.supabase.getClient()
+        .from('material_folders')
+        .update({ name: this.renameFolderName.trim() })
+        .eq('id', this.renamingFolder.id);
+      if (error) throw error;
+      const target = this.resourceFolders.find(f => f.id === this.renamingFolder.id);
+      if (target) target.name = this.renameFolderName.trim();
+      this.closeFolderRenameModal();
+      this.displayNotification('Folder renamed', 'success');
+    } catch (err) {
+      console.error('Error renaming folder:', err);
+      this.displayNotification('Failed to rename folder. Please try again.', 'error');
+    } finally {
+      this.isRenamingFolder = false;
+      this.refreshView();
+    }
+  }
+
+  askDeleteFolder(folder: any) {
+    this.folderPendingDelete = folder;
+    this.showDeleteFolderModal = true;
+    this.refreshView();
+  }
+
+  cancelDeleteFolder() {
+    this.showDeleteFolderModal = false;
+    this.folderPendingDelete = null;
+    this.refreshView();
+  }
+
+  async confirmDeleteFolder() {
+    const folder = this.folderPendingDelete;
+    if (!folder || this.isDeletingFolder) return;
+    this.isDeletingFolder = true;
+    this.refreshView();
+    try {
+      // Unlink materials from this folder first (set folder_id = null)
+      await this.supabase.getClient()
+        .from('learning_materials')
+        .update({ folder_id: null })
+        .eq('folder_id', folder.id);
+
+      const { error } = await this.supabase.getClient()
+        .from('material_folders')
+        .delete()
+        .eq('id', folder.id);
+      if (error) throw error;
+
+      this.resourceFolders = this.resourceFolders.filter(f => f.id !== folder.id);
+      // Update materials so unlinked ones appear in uncategorized
+      this.resourceMaterials = this.resourceMaterials.map(m =>
+        m.folder_id === folder.id ? { ...m, folder_id: null } : m
+      );
+      this.cancelDeleteFolder();
+      this.displayNotification('Folder deleted', 'success');
+    } catch (err) {
+      console.error('Error deleting folder:', err);
+      this.displayNotification('Failed to delete folder. Please try again.', 'error');
+    } finally {
+      this.isDeletingFolder = false;
+      this.refreshView();
+    }
+  }
+
+  toggleFolderExpand(folder: any) {
+    folder.isExpanded = !folder.isExpanded;
+    this.refreshView();
+  }
+
+  getFolderNextOrderNumber(folderId: string): string {
+    const folderMaterials = this.resourceMaterials
+      .filter(m => m.folder_id === folderId)
+      .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true }));
+    if (folderMaterials.length === 0) return '1.1';
+    const lastOrder = folderMaterials[folderMaterials.length - 1].order_number || '1.0';
+    const parts = String(lastOrder).split('.');
+    const major = parseInt(parts[0]) || 1;
+    const minor = parseInt(parts[1]) || 0;
+    return `${major}.${minor + 1}`;
+  }
+
+  getUncategorizedMaterials(): any[] {
+    return this.resourceMaterials
+      .filter(m => !m.folder_id)
+      .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true }));
+  }
+
+  getCompletedCount(materials: any[]): number {
+    return materials.filter(m => m.completed).length;
+  }
+
+  toggleMpmFolder(folder: any) {
+    folder.isExpanded = !folder.isExpanded;
+    this.refreshView();
+  }
+
+  getSelectedMentor(): any {
+    if (this.selectedMenteeViewMentor) return this.selectedMenteeViewMentor;
+    if (!this.availableResourceMentors.length) return null;
+    if (!this.selectedResourceMentorId) return this.availableResourceMentors[0];
+    return this.availableResourceMentors.find(m => m.user_id === this.selectedResourceMentorId)
+      ?? this.availableResourceMentors[0];
+  }
+
+  // ─── Mentee Folder Methods ─────────────────────────────────────────────────
+
+  async loadMenteeFolders(mentorId: string) {
+    const { data: foldersData, error: foldersError } = await this.supabase.getClient()
+      .from('material_folders')
+      .select('*')
+      .eq('mentor_user_id', mentorId)
+      .order('display_order', { ascending: true });
+
+    if (foldersError) {
+      if ((foldersError as any)?.code === '42P01') {
+        this.menteeFolders = [];
+        return;
+      }
+      console.error('Error loading mentee folders:', foldersError);
+      return;
+    }
+
+    const { data: materialsData } = await this.supabase.getClient()
+      .from('learning_materials')
+      .select('*')
+      .eq('mentor_user_id', mentorId)
+      .order('order_number', { ascending: true });
+
+    const { data: progressData } = await this.supabase.getClient()
       .from('material_progress')
       .select('material_id, completed')
       .eq('mentee_user_id', this.currentUserId);
-
-    if (progressError) {
-      if (this.handleResourceSetupError(progressError)) {
-        this.resourceMaterials = [];
-        return;
-      }
-      console.error('Error loading material progress:', progressError);
-      return;
-    }
 
     const progressMap = new Map(
       (progressData || []).map((p: any) => [p.material_id, p.completed])
     );
 
-    this.resourceMaterials = (materialsData || []).map(m => ({
+    const allMaterials = (materialsData || []).map((m: any) => ({
       ...m,
       completed: progressMap.get(m.id) || false
     }));
+
+    this.menteeFolders = (foldersData || []).map((f: any) => {
+      const folderMaterials = allMaterials
+        .filter((m: any) => m.folder_id === f.id)
+        .sort((a: any, b: any) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true }));
+      const completedCount = folderMaterials.filter((m: any) => m.completed).length;
+      const pct = folderMaterials.length > 0 ? Math.round((completedCount / folderMaterials.length) * 100) : 0;
+      return { id: f.id, name: f.name, materials: folderMaterials, completedCount, progressPercentage: pct };
+    });
+
+    // Also keep resourceMaterials updated for progress tracking
+    this.resourceMaterials = allMaterials;
     this.refreshView();
+  }
+
+  openMenteeFolderDetail(folder: any) {
+    this.activeMenteeFolder = folder;
+    this.refreshView();
+  }
+
+  closeMenteeFolderDetail() {
+    this.activeMenteeFolder = null;
+    this.refreshView();
+  }
+
+  async toggleMenteeFolderMaterialCompletion(material: any) {
+    if (this.isMentor) return;
+    try {
+      const newState = !material.completed;
+      const { data: existing } = await this.supabase.getClient()
+        .from('material_progress')
+        .select('id')
+        .eq('mentee_user_id', this.currentUserId)
+        .eq('material_id', material.id)
+        .maybeSingle();
+
+      if (existing) {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .update({ completed: newState, completed_at: newState ? new Date().toISOString() : null })
+          .eq('id', existing.id);
+      } else {
+        await this.supabase.getClient()
+          .from('material_progress')
+          .insert({ mentee_user_id: this.currentUserId, material_id: material.id, completed: newState, completed_at: newState ? new Date().toISOString() : null });
+      }
+
+      material.completed = newState;
+
+      // Recompute folder progress
+      if (this.activeMenteeFolder) {
+        this.activeMenteeFolder.completedCount = this.activeMenteeFolder.materials.filter((m: any) => m.completed).length;
+        const total = this.activeMenteeFolder.materials.length;
+        this.activeMenteeFolder.progressPercentage = total > 0
+          ? Math.round((this.activeMenteeFolder.completedCount / total) * 100) : 0;
+      }
+      // Also update the folder card in menteeFolders
+      const folderInList = this.menteeFolders.find(f => f.id === this.activeMenteeFolder?.id);
+      if (folderInList) {
+        folderInList.completedCount = folderInList.materials.filter((m: any) => m.completed).length;
+        folderInList.progressPercentage = folderInList.materials.length > 0
+          ? Math.round((folderInList.completedCount / folderInList.materials.length) * 100) : 0;
+      }
+      this.refreshView();
+    } catch (err) {
+      console.error('Error toggling material completion:', err);
+      this.displayNotification('Failed to update progress. Please try again.', 'error');
+    }
+  }
+
+  async loadResourceMaterialsForMentee() {
+    if (!this.selectedResourceMentorId) return;
+    this.activeMenteeFolder = null;
+    await this.loadMenteeFolders(this.selectedResourceMentorId);
   }
 
   async loadResourceMenteesProgress() {
@@ -2451,11 +2805,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.refreshView();
   }
 
-  openResourcesUploadModal() {
+  openResourcesUploadModal(folder?: any) {
+    this.uploadTargetFolder = folder || null;
     this.showResourcesUploadModal = true;
     this.resourceUploadTitle = '';
     this.resourceUploadDescription = '';
-    this.resourceUploadOrderNumber = this.getResourceNextOrderNumber();
+    this.resourceUploadFolderId = folder ? folder.id : '';
+    this.resourceUploadOrderNumber = folder
+      ? this.getFolderNextOrderNumber(folder.id)
+      : this.getResourceNextOrderNumber();
     this.resourceUploadFile = null;
     this.resourceUploadFileName = '';
     this.resourceUploadFileSize = 0;
@@ -2560,6 +2918,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
             title: this.resourceUploadTitle,
             description: this.resourceUploadDescription,
             order_number: this.resourceUploadOrderNumber,
+            folder_id: this.resourceUploadFolderId || null,
             file_url: urlData.publicUrl,
             file_type: fileType,
             file_name: fileToUpload.name,
@@ -2578,6 +2937,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.resourceMaterials = [...this.resourceMaterials, inserted].sort((a, b) =>
           String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true })
         );
+        // Add material into correct folder immediately
+        if (inserted.folder_id) {
+          const folder = this.resourceFolders.find(f => f.id === inserted.folder_id);
+          if (folder) {
+            folder.materials = [...folder.materials, inserted].sort((a, b) =>
+              String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true })
+            );
+          }
+        }
       }
       this.isResourceUploading = false;
       this.closeResourcesUploadModal();
@@ -2613,6 +2981,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.resourceEditTitle = material.title;
     this.resourceEditDescription = material.description;
     this.resourceEditOrderNumber = material.order_number;
+    this.resourceEditFolderId = material.folder_id || '';
     this.resourceEditDuration = material.duration_minutes;
     this.showResourcesEditModal = true;
   }
@@ -2635,6 +3004,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           title: this.resourceEditTitle,
           description: this.resourceEditDescription,
           order_number: this.resourceEditOrderNumber,
+          folder_id: this.resourceEditFolderId || null,
           duration_minutes: this.resourceEditDuration,
           updated_at: new Date().toISOString()
         })
@@ -2697,6 +3067,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const deletedId = material.id;
       this.resourceMaterials = this.resourceMaterials.filter(m => m.id !== deletedId);
       this.modalMaterials = this.modalMaterials.filter(m => m.id !== deletedId);
+      // Remove from folder materials array too
+      this.resourceFolders.forEach(f => {
+        f.materials = f.materials.filter((m: any) => m.id !== deletedId);
+      });
       this.updateModalProgress();
       this.isDeletingMaterial = false;
       this.showDeleteMaterialModal = false;
@@ -2849,6 +3223,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   async openMenteeProgressModal(mentee: any) {
     this.selectedMenteeForProgress = mentee;
     this.showMenteeProgressModal = true;
+    this.mpmUncategorizedExpanded = false;
 
     // Load mentor's materials
     const { data: materialsData } = await this.supabase.getClient()
@@ -2873,6 +3248,29 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }));
 
     this.updateModalProgress();
+
+    // Group materials by folder using the mentor's resourceFolders
+    this.menteeProgressFolders = this.resourceFolders.map(f => {
+      const mats = this.modalMaterials
+        .filter(m => m.folder_id === f.id)
+        .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true }));
+      const completed = mats.filter(m => m.completed).length;
+      return {
+        id: f.id,
+        name: f.name,
+        materials: mats,
+        completedCount: completed,
+        totalCount: mats.length,
+        progressPercentage: mats.length > 0 ? Math.round((completed / mats.length) * 100) : 0,
+        isExpanded: false
+      };
+    });
+
+    // Materials not in any folder
+    this.menteeProgressUncategorized = this.modalMaterials
+      .filter(m => !m.folder_id)
+      .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number), undefined, { numeric: true }));
+
     this.refreshView();
   }
 
@@ -2880,6 +3278,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.showMenteeProgressModal = false;
     this.selectedMenteeForProgress = null;
     this.modalMaterials = [];
+    this.menteeProgressFolders = [];
+    this.menteeProgressUncategorized = [];
   }
 
   async toggleMaterialCompletion(material: any) {
@@ -3132,15 +3532,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.settingsCurrentPassword) { this.passwordError = 'Current password is required.'; return; }
     if (this.settingsNewPassword.length < 8) { this.passwordError = 'New password must be at least 8 characters.'; return; }
     if (this.settingsNewPassword !== this.settingsConfirmPassword) { this.passwordError = 'Passwords do not match.'; return; }
-    const { error: signInError } = await this.supabase.signIn(this.settingsEmail, this.settingsCurrentPassword);
-    if (signInError) { this.passwordError = 'Current password is incorrect.'; return; }
-    const { error } = await this.supabase.getClient().auth.updateUser({ password: this.settingsNewPassword });
-    if (error) { this.passwordError = error.message; return; }
-    this.settingsSaved = true;
-    this.settingsCurrentPassword = '';
-    this.settingsNewPassword = '';
-    this.settingsConfirmPassword = '';
-    setTimeout(() => this.settingsSaved = false, 3000);
+
+    try {
+      // Re-authenticate to verify current password
+      const { error: signInError } = await this.supabase.signIn(this.settingsEmail, this.settingsCurrentPassword);
+      if (signInError) { this.passwordError = 'Current password is incorrect.'; return; }
+
+      // Update to new password
+      const { error } = await this.supabase.getClient().auth.updateUser({ password: this.settingsNewPassword });
+      if (error) { this.passwordError = error.message; return; }
+
+      // Clear fields and show success
+      this.settingsCurrentPassword = '';
+      this.settingsNewPassword = '';
+      this.settingsConfirmPassword = '';
+      this.displayNotification('Password updated successfully!', 'success');
+    } catch (err: any) {
+      this.passwordError = err?.message || 'An error occurred. Please try again.';
+    }
   }
 
   private stripMiddleName(fullName: string): string {
@@ -3160,48 +3569,66 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   async confirmDeleteAccount() {
     if (!this.deleteAccountPassword) {
-      alert('Please enter your password to confirm account deletion.');
+      this.displayNotification('Please enter your password to confirm.', 'warning');
       return;
     }
 
     this.isDeleting = true;
+    this.refreshView();
 
     try {
-      // Verify password first
+      // Step 1: Verify password
       const authUser = await this.supabase.getClient().auth.getUser();
       const email = authUser.data.user?.email || '';
 
       const { error: signInError } = await this.supabase.signIn(email, this.deleteAccountPassword);
       if (signInError) {
-        alert('Password is incorrect.');
+        this.displayNotification('Incorrect password. Please try again.', 'error');
         this.isDeleting = false;
+        this.refreshView();
         return;
       }
 
-      // Get user ID
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) {
-        alert('Unable to determine user ID.');
+        this.displayNotification('Unable to identify your account. Please try again.', 'error');
         this.isDeleting = false;
+        this.refreshView();
         return;
       }
 
-      // Call edge function to delete user account and all data
+      // Step 2: Delete profile data from database tables directly
+      const db = this.supabase.getClient();
+      await db.from('material_progress').delete().eq('mentee_user_id', userId);
+      await db.from('learning_materials').delete().eq('mentor_user_id', userId);
+      await db.from('material_folders').delete().eq('mentor_user_id', userId);
+      await db.from('calendar_events').delete().eq('user_id', userId);
+      await db.from('messages').delete().eq('sender_id', userId);
+      await db.from('connections').delete().or(`mentor_user_id.eq.${userId},mentee_user_id.eq.${userId}`);
+      await db.from('feedback_submissions').delete().or(`mentor_user_id.eq.${userId},mentee_user_id.eq.${userId}`);
+      await db.from('mentor_profiles').delete().eq('user_id', userId);
+      await db.from('mentee_profiles').delete().eq('user_id', userId);
+
+      // Step 3: Try Edge Function to delete the auth user
       const deleteResult = await this.supabase.deleteUserAccount(userId);
-      
-      if (!deleteResult.success) {
-        alert(`Failed to delete account: ${deleteResult.error}`);
-        this.isDeleting = false;
+
+      if (deleteResult.success) {
+        // Edge function deleted the auth user — sign out and redirect
+        await this.supabase.signOut();
+        this.router.navigate(['/login']);
         return;
       }
 
-      alert('Your account and all associated data have been successfully deleted.');
+      // Edge function failed — sign out anyway (auth user may still exist but data is gone)
+      console.warn('Edge function delete failed, signing out:', deleteResult.error);
       await this.supabase.signOut();
       this.router.navigate(['/login']);
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Error during account deletion:', error);
-      alert('An error occurred while deleting your account. Please try again.');
+      this.displayNotification('An error occurred. Please try again.', 'error');
       this.isDeleting = false;
+      this.refreshView();
     }
   }
 }

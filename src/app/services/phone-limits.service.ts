@@ -142,6 +142,9 @@ export class PhoneLimitsService {
 
   /** All country names (same list as settingsCountries). */
   readonly countries: string[] = [
+    // Philippines first for easy access
+    'Philippines',
+    // Rest alphabetically
     'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia',
     'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Belarus',
     'Belgium','Bolivia','Bosnia and Herzegovina','Brazil','Bulgaria','Cambodia',
@@ -152,7 +155,7 @@ export class PhoneLimitsService {
     'Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kuwait',
     'Latvia','Lebanon','Libya','Lithuania','Luxembourg','Malaysia','Mexico',
     'Morocco','Myanmar','Nepal','Netherlands','New Zealand','Nicaragua','Nigeria',
-    'Norway','Pakistan','Panama','Paraguay','Peru','Philippines','Poland',
+    'Norway','Pakistan','Panama','Paraguay','Peru','Poland',
     'Portugal','Qatar','Romania','Russia','Saudi Arabia','Serbia','Singapore',
     'Slovakia','South Africa','South Korea','Spain','Sri Lanka','Sudan','Sweden',
     'Switzerland','Syria','Taiwan','Tanzania','Thailand','Tunisia','Turkey',

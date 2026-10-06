@@ -44,8 +44,25 @@ export class AuthCallbackComponent implements OnInit {
       this.userService.role.set(meta.role as 'mentor' | 'mentee');
     }
 
-    // After Google OAuth only — name step before role selection
+    // If name not collected yet, try to get it from Google user_metadata automatically
     if (!meta.nameCollected) {
+      const rawMeta = data.session.user.user_metadata ?? {};
+
+      // Google provides name in `full_name` or `name`
+      const googleName: string = rawMeta['full_name'] || rawMeta['name'] || '';
+
+      if (googleName.trim()) {
+        // Auto-save the Google name — user doesn't need to type it manually
+        await this.supabase.updateUserMeta({
+          full_name: googleName.trim(),
+          name_collected: true
+        });
+        // Skip the name form, go straight to role selection
+        await this.router.navigateByUrl('/complete-profile', { replaceUrl: true });
+        return;
+      }
+
+      // Google didn't provide a name (rare) — fall back to the name form
       await this.router.navigate(['/register'], {
         queryParams: { step: 'name' },
         replaceUrl: true

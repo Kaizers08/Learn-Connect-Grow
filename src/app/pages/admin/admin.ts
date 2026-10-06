@@ -364,9 +364,9 @@ export class AdminComponent implements OnInit {
   resourcesError = '';
   resourceSearch = '';
   // All mentors with their materials grouped
-  mentorResourceGroups: { mentor: any; materials: any[]; total: number }[] = [];
+  mentorResourceGroups: { mentor: any; materials: any[]; folders: any[]; total: number }[] = [];
   // Selected mentor for drawer
-  selectedResourceMentor: { mentor: any; materials: any[]; total: number } | null = null;
+  selectedResourceMentor: { mentor: any; materials: any[]; folders: any[]; total: number } | null = null;
   showResourcesDrawer = false;
 
   async loadResources() {
@@ -376,7 +376,6 @@ export class AdminComponent implements OnInit {
     this.cdr.markForCheck();
 
     try {
-      // Use already-loaded mentors list, or fetch fresh
       let mentorProfiles: any[] = this.mentors.length ? this.mentors : [];
       if (!mentorProfiles.length) {
         const { data: mp } = await this.supabase.getClient()
@@ -391,24 +390,31 @@ export class AdminComponent implements OnInit {
         return;
       }
 
-      // Fetch materials for ALL mentors in one query using their IDs
       const mentorIds = mentorProfiles.map((m: any) => m.user_id).filter(Boolean);
 
-      const { data, error } = await this.supabase.getClient()
+      // Fetch materials
+      const { data: matData, error: matError } = await this.supabase.getClient()
         .from('learning_materials')
-        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id')
         .in('mentor_user_id', mentorIds)
         .order('order_number', { ascending: true });
 
-      if (error) {
-        // RLS blocked the bulk query — fall back to fetching per mentor
-        console.warn('[Admin:Resources] Bulk query blocked, trying per-mentor fallback:', error.message);
+      if (matError) {
+        console.warn('[Admin:Resources] Bulk query blocked, trying per-mentor fallback:', matError.message);
         await this.loadResourcesPerMentor(mentorProfiles);
         return;
       }
 
-      const materials = (data as any[]) ?? [];
-      this.buildResourceGroups(materials, mentorProfiles);
+      // Fetch folders
+      const { data: folderData } = await this.supabase.getClient()
+        .from('material_folders')
+        .select('id, mentor_user_id, name, display_order')
+        .in('mentor_user_id', mentorIds)
+        .order('display_order', { ascending: true });
+
+      const materials = (matData as any[]) ?? [];
+      const folders = (folderData as any[]) ?? [];
+      this.buildResourceGroups(materials, folders, mentorProfiles);
 
     } catch (e: any) {
       this.resourcesError = `Unexpected error: ${e?.message ?? e}`;
@@ -419,20 +425,26 @@ export class AdminComponent implements OnInit {
   }
 
   private async loadResourcesPerMentor(mentorProfiles: any[]) {
-    // Fallback: query each mentor's materials individually
-    // This works even with restrictive RLS since each mentor can read their own rows
-    const groups: { mentor: any; materials: any[]; total: number }[] = [];
+    const groups: { mentor: any; materials: any[]; folders: any[]; total: number }[] = [];
 
     for (const mentor of mentorProfiles) {
-      const { data } = await this.supabase.getClient()
+      const { data: matData } = await this.supabase.getClient()
         .from('learning_materials')
-        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id')
         .eq('mentor_user_id', mentor.user_id)
         .order('order_number', { ascending: true });
 
-      const materials = (data as any[]) ?? [];
-      if (materials.length > 0) {
-        groups.push({ mentor, materials, total: materials.length });
+      const { data: folderData } = await this.supabase.getClient()
+        .from('material_folders')
+        .select('id, mentor_user_id, name, display_order')
+        .eq('mentor_user_id', mentor.user_id)
+        .order('display_order', { ascending: true });
+
+      const materials = (matData as any[]) ?? [];
+      const folders = (folderData as any[]) ?? [];
+
+      if (materials.length > 0 || folders.length > 0) {
+        groups.push({ mentor, materials, folders, total: materials.length });
       }
     }
 
@@ -441,20 +453,26 @@ export class AdminComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  private buildResourceGroups(materials: any[], mentorProfiles: any[]) {
+  private buildResourceGroups(materials: any[], folders: any[], mentorProfiles: any[]) {
     const mentorMap = new Map(mentorProfiles.map((m: any) => [m.user_id, m]));
-    const groupMap = new Map<string, any[]>();
+    const groupMap = new Map<string, { materials: any[]; folders: any[] }>();
 
     for (const mat of materials) {
-      if (!groupMap.has(mat.mentor_user_id)) groupMap.set(mat.mentor_user_id, []);
-      groupMap.get(mat.mentor_user_id)!.push(mat);
+      if (!groupMap.has(mat.mentor_user_id)) groupMap.set(mat.mentor_user_id, { materials: [], folders: [] });
+      groupMap.get(mat.mentor_user_id)!.materials.push(mat);
+    }
+
+    for (const folder of folders) {
+      if (!groupMap.has(folder.mentor_user_id)) groupMap.set(folder.mentor_user_id, { materials: [], folders: [] });
+      groupMap.get(folder.mentor_user_id)!.folders.push({ ...folder, isExpanded: false });
     }
 
     this.mentorResourceGroups = [...groupMap.entries()]
-      .map(([mentorId, mats]) => ({
+      .map(([mentorId, group]) => ({
         mentor: mentorMap.get(mentorId) ?? { full_name: 'Unknown Mentor', expertise: '' },
-        materials: mats,
-        total: mats.length
+        materials: group.materials,
+        folders: group.folders,
+        total: group.materials.length
       }))
       .sort((a, b) => b.total - a.total);
   }
@@ -479,6 +497,10 @@ export class AdminComponent implements OnInit {
   }
 
   openResourcesDrawer(group: any) {
+    // Reset folder expand state on each open
+    if (group.folders) {
+      group.folders.forEach((f: any) => f.isExpanded = false);
+    }
     this.selectedResourceMentor = group;
     this.showResourcesDrawer = true;
   }
@@ -486,6 +508,21 @@ export class AdminComponent implements OnInit {
   closeResourcesDrawer() {
     this.showResourcesDrawer = false;
     this.selectedResourceMentor = null;
+  }
+
+  toggleAdminFolder(folder: any) {
+    folder.isExpanded = !folder.isExpanded;
+    this.cdr.markForCheck();
+  }
+
+  getAdminFolderMaterials(folder: any): any[] {
+    if (!this.selectedResourceMentor) return [];
+    return this.selectedResourceMentor.materials.filter(m => m.folder_id === folder.id);
+  }
+
+  getAdminUncategorized(): any[] {
+    if (!this.selectedResourceMentor) return [];
+    return this.selectedResourceMentor.materials.filter(m => !m.folder_id);
   }
 
   // File preview modal

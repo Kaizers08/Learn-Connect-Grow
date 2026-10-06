@@ -843,7 +843,11 @@
             <h2 class="admin-drawer-name">{{ selectedResourceMentor.mentor?.full_name || 'Unknown Mentor' }}</h2>
             <p class="admin-drawer-role">{{ selectedResourceMentor.mentor?.expertise || 'Mentor' }}</p>
             <div class="admin-drawer-meta">
-              <span class="admin-drawer-count">{{ selectedResourceMentor.total }} {{ selectedResourceMentor.total === 1 ? 'material' : 'materials' }}</span>
+              <span class="admin-drawer-count">
+                {{ selectedResourceMentor.folders.length }} folder{{ selectedResourceMentor.folders.length !== 1 ? 's' : '' }}
+                &nbsp;·&nbsp;
+                {{ selectedResourceMentor.total }} material{{ selectedResourceMentor.total !== 1 ? 's' : '' }}
+              </span>
             </div>
           </div>
         </div>
@@ -856,45 +860,142 @@
 
       <div class="admin-drawer-divider"></div>
 
-      <!-- Materials list -->
-      <div class="admin-drawer-body">
-        @for (mat of selectedResourceMentor.materials; track mat.id) {
-          <div class="admin-res-item">
-            <div class="admin-res-item-left">
-              <div class="admin-res-order">{{ mat.order_number }}</div>
-              <div class="admin-res-type-icon" [attr.data-type]="mat.file_type">
-                @if (mat.file_type === 'video') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                } @else if (mat.file_type === 'pdf') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
-                } @else if (mat.file_type === 'document') {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/></svg>
-                } @else {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="2"/><polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2"/></svg>
-                }
-              </div>
-            </div>
-            <div class="admin-res-item-body">
-              <span class="admin-res-title">{{ mat.title }}</span>
-              @if (mat.description) {
-                <span class="admin-res-desc">{{ mat.description }}</span>
-              }
-              <div class="admin-res-meta">
-                <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
-                <span class="admin-res-filename">{{ mat.file_name }}</span>
-                @if (mat.duration_minutes) {
-                  <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
-                }
-              </div>
-            </div>
-            <button class="admin-res-view-btn" (click)="openFilePreview(mat); $event.stopPropagation()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-              </svg>
-              View
-            </button>
+      <!-- Folder accordion body -->
+      <div class="admin-drawer-body admin-res-folder-body">
+
+        @if (selectedResourceMentor.folders.length === 0 && selectedResourceMentor.total === 0) {
+          <div class="admin-res-empty">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="#ccc" stroke-width="1.5"/>
+            </svg>
+            <p>No learning materials uploaded yet.</p>
           </div>
+        } @else {
+
+          <!-- Folders -->
+          @for (folder of selectedResourceMentor.folders; track folder.id) {
+            <div class="admin-res-folder-acc" [class.admin-res-folder-open]="folder.isExpanded">
+
+              <!-- Folder clickable row -->
+              <div class="admin-res-folder-row" (click)="toggleAdminFolder(folder)">
+                <div class="admin-res-folder-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <span class="admin-res-folder-name">{{ folder.name }}</span>
+                <span class="admin-res-folder-tag">{{ getAdminFolderMaterials(folder).length }} material{{ getAdminFolderMaterials(folder).length !== 1 ? 's' : '' }}</span>
+                <svg class="admin-res-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  [style.transform]="folder.isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'">
+                  <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+
+              <!-- Dropdown: materials inside folder -->
+              @if (folder.isExpanded) {
+                <div class="admin-res-folder-content">
+                  @if (getAdminFolderMaterials(folder).length === 0) {
+                    <div class="admin-res-folder-empty">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="#ccc" stroke-width="1.5"/>
+                      </svg>
+                      <span>No learning materials uploaded in this folder yet.</span>
+                    </div>
+                  } @else {
+                    @for (mat of getAdminFolderMaterials(folder); track mat.id) {
+                      <div class="admin-res-item">
+                        <div class="admin-res-item-left">
+                          <div class="admin-res-order">{{ mat.order_number }}</div>
+                          <div class="admin-res-type-icon" [attr.data-type]="mat.file_type">
+                            @if (mat.file_type === 'video') {
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            } @else if (mat.file_type === 'pdf') {
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+                            } @else {
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="2"/><polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2"/></svg>
+                            }
+                          </div>
+                        </div>
+                        <div class="admin-res-item-body">
+                          <span class="admin-res-title">{{ mat.title }}</span>
+                          @if (mat.description) {
+                            <span class="admin-res-desc">{{ mat.description }}</span>
+                          }
+                          <div class="admin-res-meta">
+                            <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
+                            <span class="admin-res-filename">{{ mat.file_name }}</span>
+                            @if (mat.duration_minutes) {
+                              <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
+                            }
+                          </div>
+                        </div>
+                        <button class="admin-res-view-btn" (click)="openFilePreview(mat); $event.stopPropagation()">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                          </svg>
+                          View
+                        </button>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+
+            </div>
+          }
+
+          <!-- Uncategorized -->
+          @if (getAdminUncategorized().length > 0) {
+            <div class="admin-res-folder-acc admin-res-folder-uncategorized admin-res-folder-open">
+              <div class="admin-res-folder-row admin-res-folder-row-muted" style="cursor:default">
+                <div class="admin-res-folder-icon" style="background:#f3f4f6; color:#9ca3af">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <span class="admin-res-folder-name" style="color:#9ca3af">Uncategorized</span>
+                <span class="admin-res-folder-tag">{{ getAdminUncategorized().length }} material{{ getAdminUncategorized().length !== 1 ? 's' : '' }}</span>
+              </div>
+              <div class="admin-res-folder-content">
+                @for (mat of getAdminUncategorized(); track mat.id) {
+                  <div class="admin-res-item">
+                    <div class="admin-res-item-left">
+                      <div class="admin-res-order">{{ mat.order_number }}</div>
+                      <div class="admin-res-type-icon" [attr.data-type]="mat.file_type">
+                        @if (mat.file_type === 'video') {
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                        } @else {
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="2"/><polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2"/></svg>
+                        }
+                      </div>
+                    </div>
+                    <div class="admin-res-item-body">
+                      <span class="admin-res-title">{{ mat.title }}</span>
+                      @if (mat.description) {
+                        <span class="admin-res-desc">{{ mat.description }}</span>
+                      }
+                      <div class="admin-res-meta">
+                        <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
+                        <span class="admin-res-filename">{{ mat.file_name }}</span>
+                        @if (mat.duration_minutes) {
+                          <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
+                        }
+                      </div>
+                    </div>
+                    <button class="admin-res-view-btn" (click)="openFilePreview(mat); $event.stopPropagation()">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                      View
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
         }
       </div>
 

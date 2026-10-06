@@ -22,13 +22,14 @@ export class MentorProfileComponent implements OnInit {
   profileFile: File | null = null;     // actual file for upload
   phoneNumber = '';
   gender = '';
-  country = '';
+  country = 'Philippines';
   dateOfBirth = '';
   githubUrl = '';
   linkedinUrl = '';
   twitterUrl = '';
   errorMsg = '';
-  showErrors = false;  // Show validation errors
+  showErrors = false;
+  isGoogleUser = false;
 
   skills: string[] = [];
   skillInput = '';
@@ -69,6 +70,10 @@ export class MentorProfileComponent implements OnInit {
   async ngOnInit() {
     const meta = await this.supabase.getCurrentUserMeta();
     if (meta.fullName) this.fullName = meta.fullName;
+
+    // Detect Google vs email signup
+    const { data } = await this.supabase.getClient().auth.getUser();
+    this.isGoogleUser = data.user?.app_metadata?.['provider'] === 'google';
   }
 
   onPhotoChange(event: Event) {

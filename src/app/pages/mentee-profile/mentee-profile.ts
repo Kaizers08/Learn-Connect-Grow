@@ -21,16 +21,123 @@ export class MenteeProfileComponent implements OnInit {
 
   phoneNumber: string = '';
   gender: string = '';
-  country: string = '';
+  country: string = 'Philippines';
   dateOfBirth: string = '';
 
-  profilePhoto: string | null = null;  // preview URL
-  profileFile: File | null = null;     // actual file for upload
+  profilePhoto: string | null = null;
+  profileFile: File | null = null;
 
   desiredExpertise: string = '';
   desiredSkills: string[] = [];
   skillInput = '';
   showErrors = false;
+  isGoogleUser = false;
+
+  readonly universities: string[] = [
+    // National Universities / State Universities
+    'University of the Philippines Diliman',
+    'University of the Philippines Manila',
+    'University of the Philippines Los Baños',
+    'University of the Philippines Visayas',
+    'University of the Philippines Mindanao',
+    'University of the Philippines Baguio',
+    'University of the Philippines Cebu',
+    'Polytechnic University of the Philippines',
+    'Philippine Normal University',
+    'Technological University of the Philippines',
+    'Mindanao State University',
+    'Mindanao State University – Iligan Institute of Technology',
+    'Batangas State University',
+    'Bulacan State University',
+    'Cavite State University',
+    'Central Luzon State University',
+    'Don Mariano Marcos Memorial State University',
+    'Isabela State University',
+    'Laguna State Polytechnic University',
+    'Marinduque State College',
+    'Nueva Vizcaya State University',
+    'Occidental Mindoro State College',
+    'Palawan State University',
+    'Pangasinan State University',
+    'Pampanga State Agricultural University',
+    'Ramon Magsaysay Technological University',
+    'Rizal Technological University',
+    'Tarlac Agricultural University',
+    'Tarlac State University',
+    'Western Philippines University',
+    // Private – Metro Manila
+    'Ateneo de Manila University',
+    'De La Salle University',
+    'University of Santo Tomas',
+    'Mapúa University',
+    'Far Eastern University',
+    'University of the East',
+    'Centro Escolar University',
+    'San Beda University',
+    'Adamson University',
+    'Arellano University',
+    'Asia Pacific College',
+    'Assumption College',
+    'Colegio de San Juan de Letran',
+    'Don Bosco Technical College',
+    'Emilio Aguinaldo College',
+    'Lyceum of the Philippines University',
+    'Manila Central University',
+    'Manuel L. Quezon University',
+    'Miriam College',
+    'National University Philippines',
+    'Our Lady of Fatima University',
+    'Philippine Christian University',
+    'Philippine Women\'s University',
+    'Pontifical and Royal University of Santo Tomas',
+    'St. Scholastica\'s College Manila',
+    'Technological Institute of the Philippines',
+    'University of Makati',
+    'University of Perpetual Help System DALTA',
+    'University of the City of Manila (Pamantasan ng Lungsod ng Maynila)',
+    'Wesleyan University Philippines',
+    // Luzon – private
+    'Ateneo de Naga University',
+    'Ateneo de Zamboanga University',
+    'Batangas State University',
+    'Holy Angel University',
+    'Immaculate Conception College',
+    'Pamantasan ng Lungsod ng Valenzuela',
+    'Pamantasan ng Lungsod ng Muntinlupa',
+    'Pamantasan ng Lungsod ng Pasig',
+    'Saint Louis University Baguio',
+    'University of Baguio',
+    'University of La Salette',
+    'University of Northern Philippines',
+    'University of Pangasinan',
+    'University of Santo Tomas',
+    'University of the Cordilleras',
+    'University of the Immaculate Conception',
+    // Visayas
+    'Ateneo de Cebu',
+    'Cebu Institute of Technology – University',
+    'Cebu Technological University',
+    'Cebu Normal University',
+    'De La Salle University Araneta',
+    'Holy Name University',
+    'Silliman University',
+    'University of Cebu',
+    'University of San Carlos',
+    'University of San Jose–Recoletos',
+    'University of Southern Philippines Foundation',
+    'University of the Visayas',
+    'West Visayas State University',
+    'Xavier University – Ateneo de Cagayan',
+    // Mindanao
+    'Ateneo de Davao University',
+    'Davao Doctors College',
+    'Holy Cross of Davao College',
+    'Mindanao Polytechnic State College',
+    'Notre Dame University Cotabato',
+    'University of Mindanao',
+    'University of Southern Mindanao',
+    'University of the Immaculate Conception Davao',
+  ];
   
   types = [
     { value: 'student', label: 'Student' },
@@ -94,9 +201,12 @@ export class MenteeProfileComponent implements OnInit {
   }
 
   async ngOnInit() {
-    // Get full_name from auth metadata (from registration)
     const meta = await this.supabase.getCurrentUserMeta();
     if (meta.fullName) this.fullName = meta.fullName;
+
+    // Detect Google vs email signup
+    const { data } = await this.supabase.getClient().auth.getUser();
+    this.isGoogleUser = data.user?.app_metadata?.['provider'] === 'google';
   }
 
   get isStudent(): boolean {

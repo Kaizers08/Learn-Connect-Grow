@@ -1183,3 +1183,125 @@
   /* Settings */
   .admin-settings-card { padding: 1.25rem; }
 }
+
+
+/* ─── Resources Drawer — Folder Accordion ────────────────────────────────── */
+.admin-res-folder-body {
+  padding: 0.75rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-res-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  color: #bbb;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Accordion wrapper */
+.admin-res-folder-acc {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.admin-res-folder-acc.admin-res-folder-open {
+  border-color: #04A2D7;
+}
+
+.admin-res-folder-uncategorized {
+  border-style: dashed !important;
+  border-color: #d1d5db !important;
+}
+
+/* Folder row */
+.admin-res-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  background: #f8fafc;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  border-bottom: 1px solid transparent;
+}
+
+.admin-res-folder-row:hover {
+  background: #f0f9ff;
+}
+
+.admin-res-folder-acc.admin-res-folder-open .admin-res-folder-row {
+  background: #e0f2fe;
+  border-bottom-color: #bae6fd;
+}
+
+.admin-res-folder-row-muted { cursor: default !important; }
+.admin-res-folder-row-muted:hover { background: #f8fafc !important; }
+
+/* Folder icon */
+.admin-res-folder-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #dbeafe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Folder name */
+.admin-res-folder-name {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Count tag */
+.admin-res-folder-tag {
+  font-size: 0.68rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Chevron */
+.admin-res-chevron {
+  color: #9ca3af;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.15s;
+}
+
+.admin-res-folder-acc.admin-res-folder-open .admin-res-chevron {
+  color: #0284c7;
+}
+
+/* Folder content (materials list) */
+.admin-res-folder-content {
+  background: #fff;
+}
+
+/* Empty folder message */
+.admin-res-folder-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  color: #bbb;
+  font-size: 0.8rem;
+}

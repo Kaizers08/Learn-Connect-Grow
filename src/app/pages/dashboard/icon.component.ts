@@ -108,6 +108,30 @@ import { Component, Input } from '@angular/core';
           <path d="M22 10L12 5 2 10l10 5 10-5z" />
           <path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5" />
         }
+        @case ('chevron-right') {
+          <polyline points="9 18 15 12 9 6" />
+        }
+        @case ('chevron-left') {
+          <polyline points="15 18 9 12 15 6" />
+        }
+        @case ('chevron-up') {
+          <polyline points="18 15 12 9 6 15" />
+        }
+        @case ('chevron-down') {
+          <polyline points="6 9 12 15 18 9" />
+        }
+        @case ('arrow-left') {
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        }
+        @case ('arrow-right') {
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        }
+        @case ('folder-open') {
+          <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v1" />
+          <path d="M3 15l3-3 3 3 4-4 5 5" />
+        }
         @default {
           <circle cx="12" cy="12" r="10" />
         }

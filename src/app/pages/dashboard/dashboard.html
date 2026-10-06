@@ -1079,20 +1079,27 @@
         
         <!-- MENTOR VIEW -->
         @if (isMentor) {
-          <!-- Header with Upload Button -->
+          <!-- Header -->
           <div class="res-header">
             <div class="res-header-content">
               <h1 class="res-title">Learning Materials</h1>
-              <p class="res-subtitle">Manage your learning materials and track mentee progress</p>
+              <p class="res-subtitle">Manage your folders and track mentee progress</p>
             </div>
-            <button class="res-btn-upload-main" (click)="openResourcesUploadModal()">
-              <app-icon name="upload" [size]="18"></app-icon>
-              <span>Upload Material</span>
+            <button class="res-btn-upload-main" (click)="openFolderCreateModal()">
+              <app-icon name="plus" [size]="18"></app-icon>
+              <span>New Folder</span>
             </button>
           </div>
 
           <!-- Quick Stats -->
           <div class="res-stats-row">
+            <div class="res-stat-card">
+              <div class="res-stat-icon blue"><app-icon name="folder" [size]="22"></app-icon></div>
+              <div class="res-stat-body">
+                <span class="res-stat-value">{{ resourceFolders.length }}</span>
+                <span class="res-stat-label">Folders</span>
+              </div>
+            </div>
             <div class="res-stat-card">
               <div class="res-stat-icon blue"><app-icon name="book" [size]="22"></app-icon></div>
               <div class="res-stat-body">
@@ -1117,40 +1124,319 @@
           </div>
 
           <div class="res-content-grid">
-          <!-- My Uploaded Materials -->
-          <div class="res-section res-col-main">
-            <div class="res-section-head">
-              <h2 class="res-section-title no-border">
-                <app-icon name="book" [size]="20"></app-icon>
-                My Learning Materials
-              </h2>
-              @if (resourceMaterials.length > 0) {
-                <button class="res-btn-upload-sm" (click)="openResourcesUploadModal()">
-                  <app-icon name="plus" [size]="16"></app-icon>
-                  <span>Add Material</span>
-                </button>
+
+            <!-- ── LEFT: Folder list ── -->
+            <div class="res-section res-col-main">
+              <div class="res-section-head">
+                <h2 class="res-section-title no-border">
+                  <app-icon name="folder" [size]="20"></app-icon>
+                  My Folders
+                </h2>
+              </div>
+
+              @if (resourceFolders.length === 0 && getUncategorizedMaterials().length === 0) {
+                <!-- Empty state: no folders and no materials at all -->
+                <div class="res-empty-state highlight">
+                  <div class="res-empty-icon"><app-icon name="folder" [size]="44"></app-icon></div>
+                  <h3 class="res-empty-title">No folders yet</h3>
+                  <p>Create a folder first, then add learning materials inside it.</p>
+                  <button class="res-btn-upload-main dark" (click)="openFolderCreateModal()">
+                    <app-icon name="plus" [size]="18"></app-icon>
+                    <span>New Folder</span>
+                  </button>
+                </div>
+              } @else {
+                <div class="res-folder-list">
+
+                  <!-- Folders -->
+                  @for (folder of resourceFolders; track folder.id) {
+                    <div class="res-folder-card" [class.expanded]="folder.isExpanded">
+
+                      <!-- Folder header (click to expand) -->
+                      <div class="res-folder-header" (click)="toggleFolderExpand(folder)">
+                        <div class="res-folder-icon">
+                          <app-icon [name]="folder.isExpanded ? 'folder-open' : 'folder'" [size]="20"></app-icon>
+                        </div>
+                        <div class="res-folder-info">
+                          <span class="res-folder-name">{{ folder.name }}</span>
+                          <span class="res-folder-count">
+                            {{ folder.materials.length }} material{{ folder.materials.length !== 1 ? 's' : '' }}
+                          </span>
+                        </div>
+                        <div class="res-folder-actions" (click)="$event.stopPropagation()">
+                          <button class="res-folder-action-btn" title="Rename" (click)="openFolderRenameModal(folder)">
+                            <app-icon name="edit" [size]="14"></app-icon>
+                          </button>
+                          <button class="res-folder-action-btn danger" title="Delete" (click)="askDeleteFolder(folder)">
+                            <app-icon name="trash" [size]="14"></app-icon>
+                          </button>
+                        </div>
+                        <div class="res-folder-chevron">
+                          <app-icon [name]="folder.isExpanded ? 'chevron-up' : 'chevron-down'" [size]="16"></app-icon>
+                        </div>
+                      </div>
+
+                      <!-- Folder body (materials list + add button) -->
+                      @if (folder.isExpanded) {
+                        <div class="res-folder-body">
+                          @if (folder.materials.length === 0) {
+                            <div class="res-folder-empty">
+                              <p>No materials yet. Add one below.</p>
+                            </div>
+                          } @else {
+                            <div class="materials-list">
+                              @for (material of folder.materials; track material.id) {
+                                <div class="material-item">
+                                  <div class="material-type-icon" [attr.data-type]="material.file_type">
+                                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="20"></app-icon>
+                                  </div>
+                                  <div class="material-order-badge">{{ material.order_number }}</div>
+                                  <div class="material-details">
+                                    <h4>{{ material.title }}</h4>
+                                    @if (material.description) {
+                                      <p class="material-desc">{{ material.description }}</p>
+                                    }
+                                    <div class="material-meta-row">
+                                      <span class="material-meta-item">
+                                        <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
+                                        {{ material.file_name }}
+                                      </span>
+                                      @if (material.duration_minutes) {
+                                        <span class="material-meta-item">
+                                          <app-icon name="clock" [size]="13"></app-icon>
+                                          {{ material.duration_minutes }} min
+                                        </span>
+                                      }
+                                    </div>
+                                  </div>
+                                  <div class="material-actions-modal">
+                                    <button class="material-view-btn" (click)="openMaterialPreview(material)">
+                                      <app-icon name="eye" [size]="16"></app-icon>
+                                      <span>View</span>
+                                    </button>
+                                    <button class="material-icon-btn edit" title="Edit" (click)="openResourcesEditModal(material)">
+                                      <app-icon name="edit" [size]="16"></app-icon>
+                                    </button>
+                                    <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
+                                      <app-icon name="trash" [size]="16"></app-icon>
+                                    </button>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                          <button class="res-btn-add-in-folder" (click)="openResourcesUploadModal(folder)">
+                            <app-icon name="plus" [size]="15"></app-icon>
+                            <span>Add Material</span>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Uncategorized (materials with no folder) -->
+                  @if (getUncategorizedMaterials().length > 0) {
+                    <div class="res-folder-card res-folder-uncategorized expanded">
+                      <div class="res-folder-header no-hover">
+                        <div class="res-folder-icon muted">
+                          <app-icon name="file" [size]="20"></app-icon>
+                        </div>
+                        <div class="res-folder-info">
+                          <span class="res-folder-name muted">Uncategorized</span>
+                          <span class="res-folder-count">
+                            {{ getUncategorizedMaterials().length }} material{{ getUncategorizedMaterials().length !== 1 ? 's' : '' }}
+                            — assign these to a folder via Edit
+                          </span>
+                        </div>
+                      </div>
+                      <div class="res-folder-body">
+                        <div class="materials-list">
+                          @for (material of getUncategorizedMaterials(); track material.id) {
+                            <div class="material-item">
+                              <div class="material-type-icon" [attr.data-type]="material.file_type">
+                                <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="20"></app-icon>
+                              </div>
+                              <div class="material-order-badge">{{ material.order_number }}</div>
+                              <div class="material-details">
+                                <h4>{{ material.title }}</h4>
+                                @if (material.description) {
+                                  <p class="material-desc">{{ material.description }}</p>
+                                }
+                                <div class="material-meta-row">
+                                  <span class="material-meta-item">
+                                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
+                                    {{ material.file_name }}
+                                  </span>
+                                  @if (material.duration_minutes) {
+                                    <span class="material-meta-item">
+                                      <app-icon name="clock" [size]="13"></app-icon>
+                                      {{ material.duration_minutes }} min
+                                    </span>
+                                  }
+                                </div>
+                              </div>
+                              <div class="material-actions-modal">
+                                <button class="material-view-btn" (click)="openMaterialPreview(material)">
+                                  <app-icon name="eye" [size]="16"></app-icon>
+                                  <span>View</span>
+                                </button>
+                                <button class="material-icon-btn edit" title="Edit (assign to folder)" (click)="openResourcesEditModal(material)">
+                                  <app-icon name="edit" [size]="16"></app-icon>
+                                </button>
+                                <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
+                                  <app-icon name="trash" [size]="16"></app-icon>
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- No folders yet but has uncategorized — prompt to create a folder -->
+                  @if (resourceFolders.length === 0 && getUncategorizedMaterials().length > 0) {
+                    <div class="res-no-folders-hint">
+                      <app-icon name="folder" [size]="18"></app-icon>
+                      <span>Create a folder then edit each material to assign it.</span>
+                      <button class="res-btn-add-in-folder" (click)="openFolderCreateModal()">
+                        <app-icon name="plus" [size]="14"></app-icon>
+                        New Folder
+                      </button>
+                    </div>
+                  }
+
+                </div>
               }
             </div>
 
-            @if (resourceMaterials.length === 0) {
-              <div class="res-empty-state highlight">
-                <div class="res-empty-icon"><app-icon name="folder" [size]="44"></app-icon></div>
-                <h3 class="res-empty-title">No materials yet</h3>
-                <p>Upload your first learning material so your mentees can start learning.</p>
-                <button class="res-btn-upload-main dark" (click)="openResourcesUploadModal()">
-                  <app-icon name="upload" [size]="18"></app-icon>
-                  <span>Upload Material</span>
-                </button>
+            <!-- ── RIGHT: Mentee progress ── -->
+            <div class="res-section res-col-side">
+              <h2 class="res-section-title">
+                <app-icon name="chart" [size]="20"></app-icon>
+                Mentee Progress
+              </h2>
+
+              @if (resourceMenteesProgress.length === 0) {
+                <div class="res-empty-state">
+                  <div class="res-empty-icon subtle"><app-icon name="users" [size]="40"></app-icon></div>
+                  <p>No mentees connected yet. Their progress will appear here once they connect.</p>
+                </div>
+              }
+
+              <div class="res-cards-grid">
+                @for (mentee of resourceMenteesProgress; track mentee.mentee_user_id) {
+                  <div class="res-mentee-card" (click)="openMenteeProgressModal(mentee)">
+                    <div class="res-card-header">
+                      <div class="res-card-avatar">
+                        @if (mentee.mentee_picture) {
+                          <img [src]="mentee.mentee_picture" alt="Mentee">
+                        } @else {
+                          <div class="res-avatar-placeholder small">{{ getInitials(mentee.mentee_name) }}</div>
+                        }
+                      </div>
+                      <div class="res-card-info">
+                        <h3>{{ mentee.mentee_name }}</h3>
+                        <p class="res-card-role">Mentee</p>
+                      </div>
+                    </div>
+                    <div class="res-card-progress">
+                      <div class="res-progress-label">
+                        <span>Progress</span>
+                        <span class="res-progress-value">{{ mentee.progress_percentage }}%</span>
+                      </div>
+                      <div class="res-progress-bar">
+                        <div
+                          class="res-progress-fill"
+                          [style.width.%]="mentee.progress_percentage"
+                          [style.background-color]="getResourceProgressColor(mentee.progress_percentage)">
+                        </div>
+                      </div>
+                      <p class="res-progress-text">{{ mentee.completed_materials }} / {{ mentee.total_materials }} completed</p>
+                    </div>
+                    @if (mentee.progress_percentage === 100) {
+                      <div class="res-card-badge">
+                        <app-icon name="check-circle" [size]="14"></app-icon>
+                        Completed
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- MENTEE VIEW -->
+        @if (!isMentor) {
+
+          @if (availableResourceMentors.length === 0) {
+            <!-- ══ NO MENTOR STATE ══ -->
+            <div class="res-header">
+              <div class="res-header-content">
+                <h1 class="res-title">Learning Resources</h1>
+                <p class="res-subtitle">Access learning materials from your mentors</p>
+              </div>
+            </div>
+            <div class="res-empty-state">
+              <div class="res-empty-icon subtle"><app-icon name="graduation" [size]="40"></app-icon></div>
+              <p>No mentors connected yet. Connect with mentors to access their learning materials.</p>
+            </div>
+
+          } @else if (activeMenteeFolder) {
+            <!-- ══ STATE 3: FOLDER DETAIL — materials inside a folder ══ -->
+            <div class="res-header">
+              <div class="res-header-content">
+                <div class="res-breadcrumb">
+                  <button class="res-breadcrumb-btn" (click)="backToMentorCards()">
+                    <app-icon name="graduation" [size]="13"></app-icon>
+                    Mentors
+                  </button>
+                  <app-icon name="chevron-right" [size]="13"></app-icon>
+                  <button class="res-breadcrumb-btn" (click)="closeMenteeFolderDetail()">
+                    {{ getSelectedMentor()?.full_name }}
+                  </button>
+                  <app-icon name="chevron-right" [size]="13"></app-icon>
+                  <span class="res-breadcrumb-current">{{ activeMenteeFolder.name }}</span>
+                </div>
+                <h1 class="res-title">{{ activeMenteeFolder.name }}</h1>
+                <p class="res-subtitle">{{ activeMenteeFolder.completedCount }}/{{ activeMenteeFolder.materials.length }} completed</p>
+              </div>
+              <button class="res-back-btn" (click)="closeMenteeFolderDetail()">
+                <app-icon name="arrow-left" [size]="16"></app-icon>
+                <span>Back to Folders</span>
+              </button>
+            </div>
+
+            <!-- Folder progress banner -->
+            <div class="res-folder-progress-banner">
+              <div class="res-fpb-label">
+                <span>Folder Progress</span>
+                <span class="res-fpb-pct">{{ activeMenteeFolder.progressPercentage }}%</span>
+              </div>
+              <div class="res-progress-bar res-fpb-bar">
+                <div
+                  class="res-progress-fill"
+                  [style.width.%]="activeMenteeFolder.progressPercentage"
+                  [style.background-color]="getResourceProgressColor(activeMenteeFolder.progressPercentage)">
+                </div>
+              </div>
+            </div>
+
+            @if (activeMenteeFolder.materials.length === 0) {
+              <div class="res-empty-state">
+                <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
+                <p>No materials in this folder yet.</p>
               </div>
             } @else {
-              <div class="materials-list">
-                @for (material of resourceMaterials; track material.id) {
-                  <div class="material-item">
+              <div class="materials-list mentee-list">
+                @for (material of activeMenteeFolder.materials; track material.id) {
+                  <div class="material-item" [class.completed]="material.completed">
                     <div class="material-type-icon" [attr.data-type]="material.file_type">
                       <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="20"></app-icon>
                     </div>
                     <div class="material-order-badge">{{ material.order_number }}</div>
-
                     <div class="material-details">
                       <h4>{{ material.title }}</h4>
                       @if (material.description) {
@@ -1169,152 +1455,185 @@
                         }
                       </div>
                     </div>
-
                     <div class="material-actions-modal">
                       <button class="material-view-btn" (click)="openMaterialPreview(material)">
                         <app-icon name="eye" [size]="16"></app-icon>
                         <span>View</span>
                       </button>
-                      <button class="material-icon-btn edit" title="Edit" (click)="openResourcesEditModal(material)">
-                        <app-icon name="edit" [size]="16"></app-icon>
-                      </button>
-                      <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
-                        <app-icon name="trash" [size]="16"></app-icon>
+                      <button
+                        class="material-complete-btn"
+                        [class.is-completed]="material.completed"
+                        (click)="toggleMenteeFolderMaterialCompletion(material)">
+                        @if (material.completed) {
+                          <app-icon name="check-circle" [size]="16"></app-icon>
+                          <span>Completed</span>
+                        } @else {
+                          <app-icon name="circle" [size]="16"></app-icon>
+                          <span>Mark done</span>
+                        }
                       </button>
                     </div>
                   </div>
                 }
               </div>
             }
-          </div>
 
-          <!-- Mentees Progress Cards -->
-          <div class="res-section res-col-side">
-            <h2 class="res-section-title">
-              <app-icon name="chart" [size]="20"></app-icon>
-              Mentee Progress
-            </h2>
-            
-            @if (resourceMenteesProgress.length === 0) {
-              <div class="res-empty-state">
-                <div class="res-empty-icon subtle"><app-icon name="users" [size]="40"></app-icon></div>
-                <p>No mentees connected yet. When mentees connect with you, their progress will appear here.</p>
+          } @else if (selectedMenteeViewMentor) {
+            <!-- ══ STATE 2: FOLDER CARDS — folders of a selected mentor ══ -->
+            <div class="res-header">
+              <div class="res-header-content">
+                <div class="res-breadcrumb">
+                  <button class="res-breadcrumb-btn" (click)="backToMentorCards()">
+                    <app-icon name="graduation" [size]="13"></app-icon>
+                    Mentors
+                  </button>
+                  <app-icon name="chevron-right" [size]="13"></app-icon>
+                  <span class="res-breadcrumb-current">{{ selectedMenteeViewMentor.full_name }}</span>
+                </div>
+                <h1 class="res-title">Learning Resources</h1>
+                <p class="res-subtitle">Browse folders from your mentor</p>
               </div>
-            }
+              <button class="res-back-btn" (click)="backToMentorCards()">
+                <app-icon name="arrow-left" [size]="16"></app-icon>
+                <span>Back to Mentors</span>
+              </button>
+            </div>
 
-            <div class="res-cards-grid">
-              @for (mentee of resourceMenteesProgress; track mentee.mentee_user_id) {
-                <div class="res-mentee-card" (click)="openMenteeProgressModal(mentee)">
-                  <div class="res-card-header">
-                    <div class="res-card-avatar">
-                      @if (mentee.mentee_picture) {
-                        <img [src]="mentee.mentee_picture" alt="Mentee">
-                      } @else {
-                        <div class="res-avatar-placeholder small">{{ getInitials(mentee.mentee_name) }}</div>
-                      }
-                    </div>
-                    <div class="res-card-info">
-                      <h3>{{ mentee.mentee_name }}</h3>
-                      <p class="res-card-role">Mentee</p>
+            <!-- Mentor profile card (compact) — no duplicate name in header -->
+            <div class="res-mentor-profile-card">
+              <div class="res-mpc-left">
+                <div class="res-mpc-avatar">
+                  @if (selectedMenteeViewMentor.profile_picture) {
+                    <img [src]="selectedMenteeViewMentor.profile_picture" alt="Mentor">
+                  } @else {
+                    <div class="res-avatar-placeholder">{{ getInitials(selectedMenteeViewMentor.full_name || '') }}</div>
+                  }
+                </div>
+                <div class="res-mpc-info">
+                  <p class="res-mpc-label">Your Mentor</p>
+                  <h2 class="res-mpc-name">{{ selectedMenteeViewMentor.full_name }}</h2>
+                  <p class="res-mpc-role">{{ selectedMenteeViewMentor.expertise || 'Mentor' }}</p>
+                </div>
+              </div>
+              <div class="res-mpc-right">
+                <div class="res-mpc-stat">
+                  <span class="res-mpc-stat-value">{{ menteeFolders.length }}</span>
+                  <span class="res-mpc-stat-label">Folders</span>
+                </div>
+                <div class="res-mpc-stat">
+                  <span class="res-mpc-stat-value">{{ selectedMenteeViewMentor.total_materials || 0 }}</span>
+                  <span class="res-mpc-stat-label">Materials</span>
+                </div>
+                <div class="res-mpc-progress-wrap">
+                  <div class="res-mpc-progress-label">
+                    <span>Overall Progress</span>
+                    <span class="res-progress-value">{{ selectedMenteeViewMentor.progress_percentage || 0 }}%</span>
+                  </div>
+                  <div class="res-progress-bar">
+                    <div
+                      class="res-progress-fill"
+                      [style.width.%]="selectedMenteeViewMentor.progress_percentage || 0"
+                      [style.background-color]="getResourceProgressColor(selectedMenteeViewMentor.progress_percentage || 0)">
                     </div>
                   </div>
+                  <p class="res-mpc-progress-sub">
+                    {{ selectedMenteeViewMentor.completed_materials || 0 }} / {{ selectedMenteeViewMentor.total_materials || 0 }} materials completed
+                  </p>
+                </div>
+              </div>
+            </div>
 
-                  <div class="res-card-progress">
-                    <div class="res-progress-label">
-                      <span>Progress</span>
-                      <span class="res-progress-value">{{ mentee.progress_percentage }}%</span>
-                    </div>
-                    <div class="res-progress-bar">
-                      <div 
-                        class="res-progress-fill" 
-                        [style.width.%]="mentee.progress_percentage"
-                        [style.background-color]="getResourceProgressColor(mentee.progress_percentage)">
+            <!-- Folder cards -->
+            <div class="res-section">
+              <h2 class="res-section-title">
+                <app-icon name="folder" [size]="20"></app-icon>
+                Learning Folders
+              </h2>
+              @if (menteeFolders.length === 0) {
+                <div class="res-empty-state">
+                  <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
+                  <p>No folders yet. Your mentor hasn't organized materials into folders.</p>
+                </div>
+              } @else {
+                <div class="res-mentee-folder-grid">
+                  @for (folder of menteeFolders; track folder.id) {
+                    <div class="res-mentee-folder-card" (click)="openMenteeFolderDetail(folder)">
+                      <div class="res-mfc-top">
+                        <div class="res-mfc-icon-wrap">
+                          <app-icon name="folder" [size]="26"></app-icon>
+                        </div>
+                        @if (folder.progressPercentage === 100) {
+                          <div class="res-mfc-done-badge">
+                            <app-icon name="check-circle" [size]="12"></app-icon>
+                            Done
+                          </div>
+                        }
                       </div>
-                    </div>
-                    <p class="res-progress-text">{{ mentee.completed_materials }} / {{ mentee.total_materials }} completed</p>
-                  </div>
-
-                  @if (mentee.progress_percentage === 100) {
-                    <div class="res-card-badge">
-                      <app-icon name="check-circle" [size]="14"></app-icon>
-                      Completed
+                      <h3 class="res-mfc-name">{{ folder.name }}</h3>
+                      <p class="res-mfc-count">{{ folder.materials.length }} material{{ folder.materials.length !== 1 ? 's' : '' }}</p>
+                      <div class="res-mfc-bar"><div class="res-mfc-fill" [style.width.%]="folder.progressPercentage" [style.background]="getResourceProgressColor(folder.progressPercentage)"></div></div>
+                      <div class="res-mfc-stats">
+                        <span>{{ folder.completedCount }}/{{ folder.materials.length }} completed</span>
+                        <span>{{ folder.progressPercentage }}%</span>
+                      </div>
                     </div>
                   }
                 </div>
               }
             </div>
-          </div>
-          </div>
-        }
 
-        <!-- MENTEE VIEW -->
-        @if (!isMentor) {
-          <!-- Header -->
-          <div class="res-header">
-            <div class="res-header-content">
-              <h1 class="res-title">Learning Resources</h1>
-              <p class="res-subtitle">Access learning materials from your mentors</p>
-            </div>
-          </div>
-
-          <!-- Mentor Cards -->
-          <div class="res-section">
-            <h2 class="res-section-title">
-              <app-icon name="graduation" [size]="20"></app-icon>
-              Your Mentors
-            </h2>
-            
-            @if (availableResourceMentors.length === 0) {
-              <div class="res-empty-state">
-                <div class="res-empty-icon subtle"><app-icon name="graduation" [size]="40"></app-icon></div>
-                <p>No mentors connected yet. Connect with mentors to access their learning materials.</p>
+          } @else {
+            <!-- ══ STATE 1: MENTOR CARDS ══ -->
+            <div class="res-header">
+              <div class="res-header-content">
+                <h1 class="res-title">Learning Resources</h1>
+                <p class="res-subtitle">Choose a mentor to browse their learning materials</p>
               </div>
-            }
+            </div>
 
-            <div class="res-cards-grid">
-              @for (mentor of availableResourceMentors; track mentor.user_id) {
-                <div class="res-mentor-card-item" (click)="openMentorMaterialsModal(mentor)">
-                  <div class="res-card-header">
-                    <div class="res-card-avatar">
+            <div class="res-section">
+              <h2 class="res-section-title">
+                <app-icon name="graduation" [size]="20"></app-icon>
+                Your Mentors
+              </h2>
+              <div class="res-mentee-mentor-grid">
+                @for (mentor of availableResourceMentors; track mentor.user_id) {
+                  <div class="res-mentee-mentor-card" (click)="selectMenteeViewMentor(mentor)">
+                    <div class="res-mmc-avatar">
                       @if (mentor.profile_picture) {
                         <img [src]="mentor.profile_picture" alt="Mentor">
                       } @else {
-                        <div class="res-avatar-placeholder small">{{ getInitials(mentor.full_name) }}</div>
+                        <div class="res-mmc-avatar-placeholder">{{ getInitials(mentor.full_name || '') }}</div>
                       }
                     </div>
-                    <div class="res-card-info">
-                      <h3>{{ mentor.full_name }}</h3>
-                      <p class="res-card-role">{{ mentor.expertise || 'Mentor' }}</p>
-                    </div>
-                  </div>
-
-                  <div class="res-card-progress">
-                    <div class="res-progress-label">
-                      <span>Your Progress</span>
-                      <span class="res-progress-value">{{ mentor.progress_percentage }}%</span>
-                    </div>
-                    <div class="res-progress-bar">
-                      <div 
-                        class="res-progress-fill" 
-                        [style.width.%]="mentor.progress_percentage"
-                        [style.background-color]="getResourceProgressColor(mentor.progress_percentage)">
+                    <div class="res-mmc-info">
+                      <h3 class="res-mmc-name">{{ mentor.full_name }}</h3>
+                      <p class="res-mmc-role">{{ mentor.expertise || 'Mentor' }}</p>
+                      <div class="res-mmc-stats">
+                        <span>{{ mentor.total_materials || 0 }} materials</span>
                       </div>
                     </div>
-                    <p class="res-progress-text">{{ mentor.completed_materials }} / {{ mentor.total_materials }} completed</p>
-                  </div>
-
-                  @if (mentor.total_materials === 0) {
-                    <div class="res-card-badge empty">No materials yet</div>
-                  } @else if (mentor.progress_percentage === 100) {
-                    <div class="res-card-badge">
-                      <app-icon name="check-circle" [size]="14"></app-icon>
-                      Completed
+                    <div class="res-mmc-progress">
+                      <div class="res-mmc-pct-label">
+                        <span>Progress</span>
+                        <span class="res-mmc-pct">{{ mentor.progress_percentage || 0 }}%</span>
+                      </div>
+                      <div class="res-progress-bar res-mmc-bar">
+                        <div
+                          class="res-progress-fill"
+                          [style.width.%]="mentor.progress_percentage || 0"
+                          [style.background-color]="getResourceProgressColor(mentor.progress_percentage || 0)">
+                        </div>
+                      </div>
                     </div>
-                  }
-                </div>
-              }
+                    <div class="res-mmc-arrow">
+                      <app-icon name="chevron-right" [size]="20"></app-icon>
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
+          }
         }
       </div>
       } <!-- end resources view -->
@@ -2058,7 +2377,13 @@
         <div class="drawer-header-icon"><app-icon name="upload" [size]="20"></app-icon></div>
         <div class="drawer-header-info">
           <h3>Upload Learning Material</h3>
-          <p class="drawer-subtitle">Add a new material for your mentees</p>
+          <p class="drawer-subtitle">
+            @if (uploadTargetFolder) {
+              Adding to <strong>{{ uploadTargetFolder.name }}</strong>
+            } @else {
+              Add a new material for your mentees
+            }
+          </p>
         </div>
         <button class="drawer-close" (click)="closeResourcesUploadModal()" aria-label="Close">
           <app-icon name="close" [size]="20"></app-icon>
@@ -2066,6 +2391,17 @@
       </div>
 
       <div class="drawer-body">
+        <!-- Folder selector -->
+        <div class="form-group">
+          <label>Folder</label>
+          <select [(ngModel)]="resourceUploadFolderId" class="form-control">
+            <option value="">— No folder (Uncategorized) —</option>
+            @for (f of resourceFolders; track f.id) {
+              <option [value]="f.id">📁 {{ f.name }}</option>
+            }
+          </select>
+        </div>
+
         <div class="upload-form-grid">
           <div class="form-group">
             <label>Order Number *</label>
@@ -2160,6 +2496,17 @@
       </div>
 
       <div class="drawer-body">
+        <!-- Folder selector -->
+        <div class="form-group">
+          <label>Folder</label>
+          <select [(ngModel)]="resourceEditFolderId" class="form-control">
+            <option value="">— No folder (Uncategorized) —</option>
+            @for (f of resourceFolders; track f.id) {
+              <option [value]="f.id">📁 {{ f.name }}</option>
+            }
+          </select>
+        </div>
+
         <div class="upload-form-grid">
           <div class="form-group">
             <label>Order Number *</label>
@@ -2236,6 +2583,89 @@
             <span class="btn-spinner"></span> Deleting…
           } @else {
             <app-icon name="trash" [size]="16"></app-icon> Delete
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── CREATE FOLDER MODAL ──────────────────────────────────────────────────── -->
+@if (showFolderCreateModal) {
+  <div class="modal-overlay" (click)="closeFolderCreateModal()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon blue"><app-icon name="folder" [size]="26"></app-icon></div>
+      <h3 class="confirm-title">New Folder</h3>
+      <p class="confirm-text">Give this folder a name — e.g., "Introduction", "Week 1", "Advanced Topics"</p>
+      <div class="form-group folder-modal-input">
+        <input
+          type="text"
+          [(ngModel)]="newFolderName"
+          placeholder="Folder name"
+          class="form-control"
+          (keydown.enter)="createFolder()"
+          maxlength="80">
+      </div>
+      <div class="confirm-actions folder-modal-actions">
+        <button class="btn-cancel" (click)="closeFolderCreateModal()" [disabled]="isCreatingFolder">Cancel</button>
+        <button class="btn-submit" (click)="createFolder()" [disabled]="isCreatingFolder || !newFolderName.trim()">
+          @if (isCreatingFolder) {
+            <span class="btn-spinner"></span> Creating…
+          } @else {
+            Create Folder
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── RENAME FOLDER MODAL ──────────────────────────────────────────────────── -->
+@if (showFolderRenameModal && renamingFolder) {
+  <div class="modal-overlay" (click)="closeFolderRenameModal()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon blue"><app-icon name="edit" [size]="26"></app-icon></div>
+      <h3 class="confirm-title">Rename Folder</h3>
+      <p class="confirm-text">Enter a new name for "{{ renamingFolder.name }}"</p>
+      <div class="form-group folder-modal-input">
+        <input
+          type="text"
+          [(ngModel)]="renameFolderName"
+          placeholder="New folder name"
+          class="form-control"
+          (keydown.enter)="renameFolder()"
+          maxlength="80">
+      </div>
+      <div class="confirm-actions folder-modal-actions">
+        <button class="btn-cancel" (click)="closeFolderRenameModal()" [disabled]="isRenamingFolder">Cancel</button>
+        <button class="btn-submit" (click)="renameFolder()" [disabled]="isRenamingFolder || !renameFolderName.trim()">
+          @if (isRenamingFolder) {
+            <span class="btn-spinner"></span> Saving…
+          } @else {
+            Save
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── DELETE FOLDER CONFIRMATION MODAL ────────────────────────────────────── -->
+@if (showDeleteFolderModal && folderPendingDelete) {
+  <div class="modal-overlay" (click)="cancelDeleteFolder()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon danger"><app-icon name="alert" [size]="26"></app-icon></div>
+      <h3 class="confirm-title">Delete "{{ folderPendingDelete.name }}"?</h3>
+      <p class="confirm-text">
+        The folder will be removed. Materials inside will become <strong>uncategorized</strong> — they won't be deleted.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-cancel" (click)="cancelDeleteFolder()" [disabled]="isDeletingFolder">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteFolder()" [disabled]="isDeletingFolder">
+          @if (isDeletingFolder) {
+            <span class="btn-spinner"></span> Deleting…
+          } @else {
+            <app-icon name="trash" [size]="16"></app-icon> Delete Folder
           }
         </button>
       </div>
@@ -2327,86 +2757,159 @@
 @if (showMenteeProgressModal && selectedMenteeForProgress) {
   <div class="modal-overlay" (click)="closeMenteeProgressModal()">
     <div class="modal-content large" (click)="$event.stopPropagation()">
+
+      <!-- Modal Header — white, dark blue title -->
       <div class="modal-header">
         <div class="modal-header-info">
           <h3>{{ selectedMenteeForProgress.mentee_name }}'s Progress</h3>
-          <p class="modal-subtitle">Mentee Progress Report</p>
+          <p class="modal-subtitle">
+            {{ modalCompletedCount }}/{{ modalMaterials.length }} materials completed &nbsp;·&nbsp; {{ modalProgressPercentage }}% overall
+          </p>
         </div>
         <button class="btn-close" (click)="closeMenteeProgressModal()" aria-label="Close">
-          <app-icon name="close" [size]="20"></app-icon>
+          <app-icon name="close" [size]="18"></app-icon>
         </button>
       </div>
 
+      <!-- Overall progress bar -->
+      <div class="mpm-overall-bar">
+        <div class="mpm-bar-track">
+          <div class="mpm-bar-fill"
+            [style.width.%]="modalProgressPercentage"
+            [style.background]="getResourceProgressColor(modalProgressPercentage)">
+          </div>
+        </div>
+        <span class="mpm-bar-pct">{{ modalProgressPercentage }}%</span>
+      </div>
+
+      <!-- Scrollable body -->
       <div class="modal-body scrollable">
-        @if (modalMaterials.length === 0) {
+
+        @if (modalMaterials.length === 0 && menteeProgressFolders.length === 0) {
           <div class="empty-state-modal">
             <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
-            <p>No materials uploaded yet. Upload materials to track progress.</p>
+            <p>No materials uploaded yet.</p>
+          </div>
+        } @else {
+
+          <!-- Folder accordion list -->
+          <div class="mpm-folder-list">
+
+            @for (folder of menteeProgressFolders; track folder.id) {
+              <div class="mpm-folder-accordion" [class.mpm-open]="folder.isExpanded">
+
+                <!-- Folder clickable header -->
+                <div class="mpm-folder-row" (click)="toggleMpmFolder(folder)">
+                  <div class="mpm-folder-icon-wrap">
+                    <app-icon [name]="folder.isExpanded ? 'folder-open' : 'folder'" [size]="18"></app-icon>
+                  </div>
+                  <span class="mpm-folder-label">{{ folder.name }}</span>
+                  <span class="mpm-folder-tag">{{ folder.totalCount }} material{{ folder.totalCount !== 1 ? 's' : '' }}</span>
+                  <div class="mpm-folder-mini-bar">
+                    <div class="mpm-folder-mini-fill"
+                      [style.width.%]="folder.progressPercentage"
+                      [style.background]="getResourceProgressColor(folder.progressPercentage)">
+                    </div>
+                  </div>
+                  <span class="mpm-folder-pct-badge"
+                    [style.color]="getResourceProgressColor(folder.progressPercentage)">
+                    {{ folder.progressPercentage }}%
+                  </span>
+                  <div class="mpm-chevron">
+                    <app-icon [name]="folder.isExpanded ? 'chevron-up' : 'chevron-down'" [size]="15"></app-icon>
+                  </div>
+                </div>
+
+                <!-- Dropdown: materials inside folder -->
+                @if (folder.isExpanded) {
+                  <div class="mpm-dropdown">
+                    @if (folder.totalCount === 0) {
+                      <div class="mpm-empty-folder">
+                        <app-icon name="folder" [size]="20"></app-icon>
+                        <span>No learning materials uploaded in this folder yet.</span>
+                      </div>
+                    } @else {
+                      @for (material of folder.materials; track material.id) {
+                        <div class="mpm-material-row" [class.mpm-done]="material.completed">
+                          <div class="mpm-status">
+                            @if (material.completed) {
+                              <app-icon name="check-circle" [size]="17"></app-icon>
+                            } @else {
+                              <app-icon name="circle" [size]="17"></app-icon>
+                            }
+                          </div>
+                          <div class="mpm-order">{{ material.order_number }}</div>
+                          <div class="mpm-details">
+                            <span class="mpm-title">{{ material.title }}</span>
+                            @if (material.duration_minutes) {
+                              <span class="mpm-meta">
+                                <app-icon name="clock" [size]="11"></app-icon>
+                                {{ material.duration_minutes }} min
+                              </span>
+                            }
+                          </div>
+                          <button class="material-view-btn mpm-view" (click)="openMaterialPreview(material)">
+                            <app-icon name="eye" [size]="14"></app-icon>
+                            <span>View</span>
+                          </button>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+              </div>
+            }
+
+            <!-- Uncategorized accordion -->
+            @if (menteeProgressUncategorized.length > 0) {
+              <div class="mpm-folder-accordion mpm-uncategorized-acc" [class.mpm-open]="mpmUncategorizedExpanded">
+                <div class="mpm-folder-row" (click)="mpmUncategorizedExpanded = !mpmUncategorizedExpanded">
+                  <div class="mpm-folder-icon-wrap muted">
+                    <app-icon name="file" [size]="18"></app-icon>
+                  </div>
+                  <span class="mpm-folder-label muted">Uncategorized</span>
+                  <span class="mpm-folder-tag">{{ menteeProgressUncategorized.length }} material{{ menteeProgressUncategorized.length !== 1 ? 's' : '' }}</span>
+                  <div class="mpm-chevron">
+                    <app-icon [name]="mpmUncategorizedExpanded ? 'chevron-up' : 'chevron-down'" [size]="15"></app-icon>
+                  </div>
+                </div>
+                @if (mpmUncategorizedExpanded) {
+                  <div class="mpm-dropdown">
+                    @for (material of menteeProgressUncategorized; track material.id) {
+                      <div class="mpm-material-row" [class.mpm-done]="material.completed">
+                        <div class="mpm-status">
+                          @if (material.completed) {
+                            <app-icon name="check-circle" [size]="17"></app-icon>
+                          } @else {
+                            <app-icon name="circle" [size]="17"></app-icon>
+                          }
+                        </div>
+                        <div class="mpm-order">{{ material.order_number }}</div>
+                        <div class="mpm-details">
+                          <span class="mpm-title">{{ material.title }}</span>
+                          @if (material.duration_minutes) {
+                            <span class="mpm-meta">
+                              <app-icon name="clock" [size]="11"></app-icon>
+                              {{ material.duration_minutes }} min
+                            </span>
+                          }
+                        </div>
+                        <button class="material-view-btn mpm-view" (click)="openMaterialPreview(material)">
+                          <app-icon name="eye" [size]="14"></app-icon>
+                          <span>View</span>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
           </div>
         }
-
-        <div class="materials-list">
-          @for (material of modalMaterials; track material.id) {
-            <div class="material-item" [class.completed]="material.completed">
-              <div class="material-status-icon">
-                @if (material.completed) {
-                  <span class="status-complete"><app-icon name="check-circle" [size]="20"></app-icon></span>
-                } @else {
-                  <span class="status-pending"><app-icon name="circle" [size]="20"></app-icon></span>
-                }
-              </div>
-              
-              <div class="material-order-badge">{{ material.order_number }}</div>
-              
-              <div class="material-details">
-                <h4>{{ material.title }}</h4>
-                @if (material.description) {
-                  <p class="material-desc">{{ material.description }}</p>
-                }
-                <div class="material-meta-row">
-                  <span class="material-meta-item">
-                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
-                    {{ material.file_name }}
-                  </span>
-                  @if (material.duration_minutes) {
-                    <span class="material-meta-item">
-                      <app-icon name="clock" [size]="13"></app-icon>
-                      {{ material.duration_minutes }} min
-                    </span>
-                  }
-                </div>
-              </div>
-
-              <div class="material-actions-modal">
-                <button class="material-view-btn" (click)="openMaterialPreview(material)">
-                  <app-icon name="eye" [size]="16"></app-icon>
-                  <span>View</span>
-                </button>
-                <button class="material-icon-btn edit" title="Edit" (click)="openResourcesEditModal(material)">
-                  <app-icon name="edit" [size]="16"></app-icon>
-                </button>
-                <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
-                  <app-icon name="trash" [size]="16"></app-icon>
-                </button>
-              </div>
-            </div>
-          }
-        </div>
       </div>
 
-      <div class="modal-footer progress-footer">
-        <div class="progress-summary">
-          <span class="progress-label">Mentee Progress:</span>
-          <div class="progress-bar-small">
-            <div 
-              class="progress-fill-small" 
-              [style.width.%]="modalProgressPercentage"
-              [style.background-color]="getResourceProgressColor(modalProgressPercentage)">
-            </div>
-          </div>
-          <span class="progress-text-small">{{ modalCompletedCount }} / {{ modalMaterials.length }} completed ({{ modalProgressPercentage }}%)</span>
-        </div>
-      </div>
     </div>
   </div>
 }

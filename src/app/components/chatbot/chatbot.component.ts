@@ -40,7 +40,7 @@ export class ChatbotComponent {
   constructor(private http: HttpClient) {
     this.conversationHistory.push({
       role: 'system',
-      content: `You are EdTech Assistant for "Learn, Connect, Grow" — an online mentoring platform. Be friendly, concise, and helpful. Keep answers short and conversational. Do NOT use markdown tables or headers.
+      content: `You are EdTech Assistant for "Edtech Mentoring" — an online mentoring platform. Be friendly, concise, and helpful. Keep answers short and conversational. Do NOT use markdown tables or headers.
 
 ROLES: Mentee (learner), Mentor (expert, must be approved by admin), Admin (approves mentors).
 

@@ -42,6 +42,21 @@
         }
       </div>
 
+      <!-- Full Name (auto-filled from Google or registration) -->
+      @if (!isGoogleUser) {
+        <div class="form-section">
+          <label class="field-label">Full Name</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="fullName"
+            name="fullName"
+            placeholder="Your full name"
+          >
+          <small class="field-hint">Pre-filled from your registration. You may edit if needed.</small>
+        </div>
+      }
+
       <!-- Job Position -->
       <div class="form-section">
         <label class="field-label">Job Position</label>
@@ -155,7 +170,6 @@
       <div class="form-section">
         <label class="field-label">Country</label>
         <select class="form-input" [(ngModel)]="country" name="country">
-          <option value="">Select country</option>
           @for (c of phoneLimits.countries; track c) {
             <option [value]="c">{{ c }}</option>
           }

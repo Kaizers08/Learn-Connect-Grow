@@ -6614,3 +6614,2461 @@ textarea.form-control {
   font-weight: 500;
   white-space: nowrap;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER / CATEGORY SYSTEM — Learning Materials
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Folder List (Mentor view) ────────────────────────────────────────────── */
+.res-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.res-folder-card {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.18s, border-color 0.18s;
+}
+
+.res-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 4px 16px rgba(4,162,215,0.10);
+}
+
+.res-folder-card.expanded {
+  border-color: #04A2D7;
+  box-shadow: 0 4px 20px rgba(4,162,215,0.13);
+}
+
+/* ── Folder Header Row ────────────────────────────────────────────────────── */
+.res-folder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  background: #fafafa;
+  transition: background 0.15s;
+}
+
+.res-folder-header:hover {
+  background: #f0f9ff;
+}
+
+.res-folder-header.no-hover {
+  cursor: default;
+  background: #f9fafb;
+}
+
+.res-folder-header.no-hover:hover {
+  background: #f9fafb;
+}
+
+.res-folder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: #e0f2fe;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.res-folder-icon.muted {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.res-folder-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.res-folder-name {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-folder-name.muted {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.res-folder-count {
+  font-size: 0.78rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Rename / Delete buttons inside folder header */
+.res-folder-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.res-folder-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.res-folder-action-btn:hover {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+.res-folder-action-btn.danger:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.res-folder-chevron {
+  display: flex;
+  align-items: center;
+  color: #9ca3af;
+  margin-left: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* ── Folder Body (materials inside) ──────────────────────────────────────── */
+.res-folder-body {
+  padding: 0.5rem 1rem 1rem;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.res-folder-empty {
+  padding: 1rem 0 0.5rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.88rem;
+}
+
+/* "Add Material" button inside folder */
+.res-btn-add-in-folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1.5px dashed #04A2D7;
+  background: transparent;
+  color: #04A2D7;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.res-btn-add-in-folder:hover {
+  background: #e0f2fe;
+}
+
+/* Uncategorized folder card — slightly muted look */
+.res-folder-uncategorized {
+  border-style: dashed;
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.res-folder-uncategorized:hover {
+  border-color: #9ca3af;
+  box-shadow: none;
+}
+
+/* ── confirm-icon blue variant (used for folder create/rename) ────────────── */
+.confirm-icon.blue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+/* ── Mentee Folder Cards Grid ─────────────────────────────────────────────── */
+.res-mentee-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.res-mentee-folder-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem 1rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.res-mentee-folder-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #04A2D7, #21AA3A);
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.res-mentee-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 8px 28px rgba(4,162,215,0.14);
+  transform: translateY(-2px);
+}
+
+.res-mentee-folder-card:hover::before {
+  opacity: 1;
+}
+
+.res-mfc-icon {
+  color: #04A2D7;
+  margin-bottom: 0.6rem;
+}
+
+.res-mfc-body {
+  flex: 1;
+  width: 100%;
+}
+
+.res-mfc-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-mfc-count {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0 0 0.1rem;
+}
+
+.res-mfc-progress {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0.35rem 0 0;
+}
+
+.res-mfc-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d1d5db;
+  transition: color 0.15s, right 0.15s;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+  right: 0.75rem;
+}
+
+/* ── Folder Detail Header (mentee — inside a folder) ─────────────────────── */
+.res-folder-detail-header {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.res-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: flex-start;
+}
+
+.res-back-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.res-folder-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #04A2D7;
+}
+
+.res-folder-detail-meta h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.res-folder-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.res-progress-bar.wide {
+  flex: 1;
+  max-width: 320px;
+}
+
+/* ── Mentee material complete button ──────────────────────────────────────── */
+.material-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.material-complete-btn:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+.material-complete-btn.is-completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+/* ── Mentor selector dropdown (mentee header) ─────────────────────────────── */
+.res-mentor-select {
+  padding: 0.45rem 0.9rem;
+  border-radius: 9px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  font-size: 0.88rem;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.res-mentor-select:focus {
+  border-color: #04A2D7;
+}
+
+/* ── Mentee materials list inside folder ──────────────────────────────────── */
+.materials-list.mentee-list .material-item {
+  cursor: default;
+}
+
+.materials-list.mentee-list .material-item.completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .res-folder-header {
+    padding: 0.75rem 0.85rem;
+    gap: 0.55rem;
+  }
+
+  .res-folder-actions {
+    gap: 0.2rem;
+  }
+
+  .res-folder-detail-meta h2 {
+    font-size: 1.1rem;
+  }
+
+  .res-progress-bar.wide {
+    max-width: 180px;
+  }
+}
+
+
+/* ── Folder create/rename modal input + button spacing fix ───────────────── */
+.folder-modal-input {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.folder-modal-input .form-control {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.folder-modal-actions {
+  margin-top: 1.25rem;
+}
+
+/* Make btn-submit work inside confirm-actions (same sizing as btn-cancel/btn-danger) */
+.confirm-actions .btn-submit {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, #04A2D7 0%, #0288b5 100%);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.confirm-actions .btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.confirm-actions .btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTEE SIDE — Mentor Profile Card + Improved Folder Cards
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Breadcrumb (folder detail header) ───────────────────────────────────── */
+.res-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.75);
+}
+
+.res-breadcrumb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.res-breadcrumb-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.res-breadcrumb-current {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── Folder progress banner (detail view) ────────────────────────────────── */
+.res-folder-progress-banner {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.res-fpb-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.res-fpb-pct {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.res-fpb-bar {
+  height: 12px !important;
+  border-radius: 999px !important;
+}
+
+/* ── Mentor Profile Card ──────────────────────────────────────────────────── */
+.res-mentor-profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1.4rem 1.75rem;
+  margin-bottom: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.res-mentor-profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #04A2D7, #21AA3A);
+}
+
+.res-mpc-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.res-mpc-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3px solid #e0f2fe;
+}
+
+.res-mpc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.res-mpc-avatar .res-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #04A2D7, #0288b5);
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.res-mpc-label {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #04A2D7;
+}
+
+.res-mpc-name {
+  margin: 0 0 0.15rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-mpc-role {
+  margin: 0;
+  font-size: 0.83rem;
+  color: #6b7280;
+}
+
+.res-mpc-right {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-shrink: 0;
+}
+
+.res-mpc-stat {
+  text-align: center;
+}
+
+.res-mpc-stat-value {
+  display: block;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.res-mpc-stat-label {
+  display: block;
+  font-size: 0.73rem;
+  color: #6b7280;
+  margin-top: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.res-mpc-progress-wrap {
+  min-width: 180px;
+}
+
+.res-mpc-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.4rem;
+}
+
+.res-mpc-progress-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.73rem;
+  color: #9ca3af;
+}
+
+/* ── Improved Folder Cards (Mentee) ──────────────────────────────────────── */
+.res-mentee-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.res-mentee-folder-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow: hidden;
+}
+
+.res-mentee-folder-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(4,162,215,0.04), rgba(33,170,58,0.04));
+  opacity: 0;
+  transition: opacity 0.18s;
+  pointer-events: none;
+}
+
+.res-mentee-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 8px 28px rgba(4,162,215,0.14);
+  transform: translateY(-3px);
+}
+
+.res-mentee-folder-card:hover::after {
+  opacity: 1;
+}
+
+.res-mfc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.res-mfc-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.res-mfc-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #16a34a;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.res-mfc-body {
+  flex: 1;
+}
+
+.res-mfc-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.2rem;
+}
+
+.res-mfc-count {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.res-mfc-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.res-mfc-bar {
+  height: 7px !important;
+  border-radius: 999px !important;
+}
+
+.res-mfc-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.res-mfc-progress {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.res-mfc-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.res-mfc-arrow {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  color: #d1d5db;
+  transition: color 0.15s, right 0.15s;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+  right: 0.75rem;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .res-mentor-profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.2rem 1.25rem;
+  }
+
+  .res-mpc-right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .res-mpc-progress-wrap {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .res-mpc-right {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTEE STATE 1 — Mentor Cards Grid
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mentee-mentor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.res-mentee-mentor-card {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.1rem 1.3rem;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+  overflow: hidden;
+}
+
+.res-mentee-mentor-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #04A2D7, #21AA3A);
+  border-radius: 4px 0 0 4px;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.res-mentee-mentor-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 6px 24px rgba(4,162,215,0.13);
+  transform: translateY(-2px);
+}
+
+.res-mentee-mentor-card:hover::before {
+  opacity: 1;
+}
+
+/* Avatar */
+.res-mmc-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2.5px solid #e0f2fe;
+}
+
+.res-mmc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.res-mmc-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #04A2D7, #0288b5);
+  color: white;
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+/* Info */
+.res-mmc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.res-mmc-name {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-mmc-role {
+  margin: 0 0 0.3rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.res-mmc-stats {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Progress */
+.res-mmc-progress {
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+.res-mmc-pct-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.res-mmc-pct {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.res-mmc-bar {
+  height: 8px !important;
+  border-radius: 999px !important;
+}
+
+/* Arrow */
+.res-mmc-arrow {
+  color: #d1d5db;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.res-mentee-mentor-card:hover .res-mmc-arrow {
+  color: #04A2D7;
+  transform: translateX(3px);
+}
+
+@media (max-width: 600px) {
+  .res-mmc-progress {
+    display: none;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   UI SPACING FIXES — Mentee Learning Resources
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Breadcrumb spacing ───────────────────────────────────────────────────── */
+.res-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.res-breadcrumb app-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.res-breadcrumb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.res-breadcrumb-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── Mentor profile card — right side layout fix ─────────────────────────── */
+.res-mpc-right {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-shrink: 0;
+}
+
+.res-mpc-progress-wrap {
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.res-mpc-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.res-mpc-progress-label .res-progress-value {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.res-mpc-progress-sub {
+  margin: 0;
+  font-size: 0.73rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ── Folder card footer spacing fix ──────────────────────────────────────── */
+.res-mfc-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-right: 1.5rem; /* leave room for the arrow */
+}
+
+.res-mfc-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.res-mfc-progress {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.res-mfc-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Arrow — position it so it doesn't overlap content */
+.res-mentee-folder-card {
+  padding-right: 2.25rem; /* extra right padding for the arrow */
+}
+
+.res-mfc-arrow {
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d1d5db;
+  transition: color 0.15s, right 0.15s;
+  pointer-events: none;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+  right: 0.65rem;
+}
+
+/* ── Mentor card (state 1) — progress section doesn't crowd on small widths ── */
+.res-mentee-mentor-card {
+  padding-right: 3rem; /* room for arrow */
+}
+
+.res-mmc-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d1d5db;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.res-mentee-mentor-card:hover .res-mmc-arrow {
+  color: #04A2D7;
+  transform: translateY(-50%) translateX(3px);
+}
+
+/* ── Responsive tweaks ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .res-mpc-right {
+    gap: 1.25rem;
+  }
+
+  .res-mpc-progress-wrap {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 700px) {
+  .res-mpc-right {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .res-mpc-progress-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .res-mmc-progress {
+    display: none;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER CARD — Complete Rewrite (no overlap, proper spacing)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mentee-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.res-mentee-folder-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.1rem 1.1rem 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+  /* NO absolute arrow overlapping — arrow is last in flex column */
+}
+
+.res-mentee-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 6px 24px rgba(4,162,215,0.13);
+  transform: translateY(-2px);
+}
+
+/* Top row: icon + done badge side by side */
+.res-mfc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.res-mfc-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.res-mfc-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #16a34a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Folder name + material count */
+.res-mfc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.res-mfc-name {
+  margin: 0;
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.res-mfc-count {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Progress bar + stats */
+.res-mfc-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.res-mfc-bar-wrap {
+  width: 100%;
+}
+
+.res-mfc-bar {
+  width: 100%;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.res-mfc-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.res-mfc-progress {
+  font-size: 0.73rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.res-mfc-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Arrow row at the bottom — not absolutely positioned */
+.res-mfc-arrow {
+  display: flex;
+  justify-content: flex-end;
+  color: #d1d5db;
+  margin-top: 0.1rem;
+  transition: color 0.15s;
+  /* remove any leftover position:absolute */
+  position: static;
+  transform: none;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER CARD — Professional Redesign (larger, cleaner, properly aligned)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mentee-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.1rem;
+  margin-top: 0.75rem;
+}
+
+.res-mentee-folder-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1.35rem 1.4rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.18s;
+}
+
+.res-mentee-folder-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #04A2D7, #21AA3A);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.res-mentee-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 8px 30px rgba(4,162,215,0.14);
+  transform: translateY(-3px);
+}
+
+.res-mentee-folder-card:hover::before {
+  opacity: 1;
+}
+
+/* ── Top row: icon + done badge ───────────────────────────────────────────── */
+.res-mfc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.res-mfc-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.res-mfc-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #16a34a;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ── Folder name + count ──────────────────────────────────────────────────── */
+.res-mfc-body {
+  margin-bottom: 1.1rem;
+}
+
+.res-mfc-name {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.res-mfc-count {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* ── Footer: progress bar + aligned stats ────────────────────────────────── */
+.res-mfc-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.res-mfc-bar-wrap {
+  width: 100%;
+}
+
+.res-mfc-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.res-mfc-bar .res-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Stats row: left-aligned text, right-aligned percentage — same baseline */
+.res-mfc-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.res-mfc-progress {
+  font-size: 0.78rem;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.res-mfc-pct {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+}
+
+/* ── Arrow at bottom-right ────────────────────────────────────────────────── */
+.res-mfc-arrow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+  color: #d1d5db;
+  transition: color 0.18s;
+  /* ensure no absolute positioning leftover */
+  position: static !important;
+  transform: none !important;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER CARD — Final clean layout (fixed icon, aligned progress + %)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mentee-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.res-mentee-folder-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1.4rem 1.4rem 1.3rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 175px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.18s;
+}
+
+.res-mentee-folder-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #04A2D7, #21AA3A);
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 18px 18px 0 0;
+}
+
+.res-mentee-folder-card:hover {
+  border-color: #04A2D7;
+  box-shadow: 0 8px 28px rgba(4,162,215,0.13);
+  transform: translateY(-3px);
+}
+
+.res-mentee-folder-card:hover::before {
+  opacity: 1;
+}
+
+/* Icon + done badge row */
+.res-mfc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.res-mfc-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.res-mfc-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #16a34a;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Folder name + count */
+.res-mfc-body {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.res-mfc-name {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.res-mfc-count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Progress footer — pinned to bottom */
+.res-mfc-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* Progress bar */
+.res-mfc-bar-wrap {
+  width: 100%;
+}
+
+.res-mfc-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
+}
+
+.res-mfc-bar .res-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  display: block;
+  transition: width 0.4s ease;
+}
+
+/* Stats row — perfectly aligned on one line */
+.res-mfc-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.res-mfc-progress {
+  font-size: 0.76rem;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+.res-mfc-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  line-height: 1.2;
+}
+
+/* Chevron arrow — now renders correctly as chevron (not circle) */
+.res-mfc-arrow {
+  position: static !important;
+  transform: none !important;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.65rem;
+  color: #d1d5db;
+  transition: color 0.18s;
+}
+
+.res-mentee-folder-card:hover .res-mfc-arrow {
+  color: #04A2D7;
+}
+
+@media (max-width: 600px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .res-mentee-folder-card {
+    min-height: 155px;
+    padding: 1.1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .res-mentee-folder-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER CARD FOOTER — Single-line layout: [bar] then [text · %] on one row
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mfc-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Full-width progress bar */
+.res-mfc-bar-wrap {
+  width: 100%;
+}
+
+.res-mfc-bar {
+  width: 100% !important;
+  height: 7px !important;
+  background: #e5e7eb !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.res-mfc-bar .res-progress-fill {
+  display: block !important;
+  height: 100% !important;
+  border-radius: 999px !important;
+}
+
+/* One line: "0/1 completed" on left, "0%" on right, no wrapping */
+.res-mfc-progress-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.4rem !important;
+  flex-wrap: nowrap !important;
+}
+
+.res-mfc-progress {
+  font-size: 0.75rem !important;
+  color: #6b7280 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1 !important;
+}
+
+.res-mfc-pct {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOLDER CARD v3 — Fresh isolated classes, no conflicts
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-mfc-bar {
+  width: 100%;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.75rem 0 0.4rem;
+  flex-shrink: 0;
+}
+
+.res-mfc-fill {
+  height: 7px;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.res-mfc-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.res-mfc-stats span {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.res-mfc-stats span:last-child {
+  font-weight: 700;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESOURCES HEADER — Remove blue box, match Mentors & Feedback design
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.res-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  margin-bottom: 1.5rem !important;
+  gap: 1rem !important;
+  padding: 0 !important;
+  background: none !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.res-header-content {
+  flex: 1;
+}
+
+.res-title {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  color: #043E92 !important;
+  margin: 0 0 0.3rem !important;
+  letter-spacing: 0 !important;
+}
+
+.res-subtitle {
+  font-size: 0.85rem !important;
+  color: #666 !important;
+  margin: 0 !important;
+}
+
+/* Breadcrumb — now on light background */
+.res-breadcrumb {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  margin-bottom: 0.4rem !important;
+  flex-wrap: wrap !important;
+}
+
+.res-breadcrumb-btn {
+  background: none !important;
+  border: none !important;
+  color: #6b7280 !important;
+  font-size: 0.8rem !important;
+  cursor: pointer !important;
+  padding: 0.1rem 0.25rem !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  transition: color 0.15s !important;
+}
+
+.res-breadcrumb-btn:hover {
+  color: #043E92 !important;
+}
+
+.res-breadcrumb-current {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: #043E92 !important;
+}
+
+.res-breadcrumb app-icon {
+  color: #9ca3af !important;
+}
+
+/* Back button — now on light background */
+.res-back-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.45rem 1rem !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #e5e7eb !important;
+  background: white !important;
+  color: #374151 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: border-color 0.15s, color 0.15s !important;
+  flex-shrink: 0 !important;
+  margin-top: 0.25rem !important;
+}
+
+.res-back-btn:hover {
+  border-color: #043E92 !important;
+  color: #043E92 !important;
+}
+
+/* Upload/New Folder button — stays colored but not inside a box */
+.res-btn-upload-main {
+  background: #04A2D7 !important;
+  color: white !important;
+  flex-shrink: 0 !important;
+}
+
+.res-btn-upload-main:hover {
+  background: #0288b5 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(4,162,215,0.25) !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTOR RESOURCES VIEW — Design consistency fixes
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Match section titles to site design (dark blue, not white) */
+.res-section-title {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #043E92 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding-bottom: 0.75rem !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  margin-bottom: 1rem !important;
+}
+
+.res-section-title app-icon {
+  color: #04A2D7 !important;
+}
+
+/* Folder name + count — dark text on light background */
+.res-folder-name {
+  font-size: 0.97rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+}
+
+.res-folder-count {
+  font-size: 0.78rem !important;
+  color: #6b7280 !important;
+}
+
+/* "No folders" hint bar */
+.res-no-folders-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem;
+  background: #fffbeb;
+  border: 1.5px dashed #fcd34d;
+  border-radius: 10px;
+  color: #92400e;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.res-no-folders-hint span {
+  flex: 1;
+}
+
+/* Stat cards — label text visible on white background */
+.res-stat-label {
+  font-size: 0.8rem !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+}
+
+.res-stat-value {
+  font-size: 1.55rem !important;
+  font-weight: 800 !important;
+  color: #1f2937 !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTEE PROGRESS MODAL — Folder-grouped view
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Overall progress bar below modal header */
+.mpm-overall-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mpm-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mpm-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.mpm-bar-pct {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Folder block */
+.mpm-folder {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+/* Folder header row */
+.mpm-folder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mpm-folder-header.mpm-uncategorized {
+  background: #fafafa;
+}
+
+.mpm-folder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.mpm-folder-icon.muted {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.mpm-folder-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #111827;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mpm-folder-name.muted {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.mpm-folder-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mini progress bar in folder header */
+.mpm-folder-bar {
+  width: 80px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mpm-folder-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.mpm-folder-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Materials list inside folder */
+.mpm-materials {
+  display: flex;
+  flex-direction: column;
+}
+
+.mpm-material-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.15s;
+}
+
+.mpm-material-row:last-child {
+  border-bottom: none;
+}
+
+.mpm-material-row:hover {
+  background: #f8fafc;
+}
+
+.mpm-material-row.mpm-done {
+  background: #f0fdf4;
+}
+
+.mpm-material-row.mpm-done:hover {
+  background: #dcfce7;
+}
+
+/* Status icon */
+.mpm-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: #d1d5db;
+}
+
+.mpm-material-row.mpm-done .mpm-status {
+  color: #16a34a;
+}
+
+/* Order badge */
+.mpm-order {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #04A2D7, #0288b5);
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* Material details */
+.mpm-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mpm-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mpm-material-row.mpm-done .mpm-title {
+  color: #15803d;
+}
+
+.mpm-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.73rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* View button */
+.mpm-view {
+  padding: 0.3rem 0.7rem !important;
+  font-size: 0.78rem !important;
+  flex-shrink: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODAL HEADER — Remove blue, match site design
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.modal-header {
+  background: #fff !important;
+  color: #111827 !important;
+  border-bottom: 1.5px solid #e5e7eb !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.modal-header h3,
+.modal-header-info h3 {
+  color: #043E92 !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+.modal-subtitle {
+  color: #6b7280 !important;
+  font-size: 0.83rem !important;
+  margin: 0.2rem 0 0 !important;
+}
+
+.btn-close {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1.5px solid #e5e7eb !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: background 0.15s, border-color 0.15s !important;
+}
+
+.btn-close:hover {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTEE PROGRESS MODAL — Accordion folder dropdown
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.mpm-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Accordion wrapper */
+.mpm-folder-accordion {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+
+.mpm-folder-accordion.mpm-open {
+  border-color: #04A2D7;
+}
+
+.mpm-folder-accordion.mpm-uncategorized-acc {
+  border-style: dashed;
+  border-color: #d1d5db;
+}
+
+/* Clickable folder row */
+.mpm-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem;
+  background: #f8fafc;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.mpm-folder-row:hover {
+  background: #f0f9ff;
+}
+
+.mpm-folder-accordion.mpm-open .mpm-folder-row {
+  background: #e0f2fe;
+  border-bottom: 1px solid #bae6fd;
+}
+
+/* Folder icon circle */
+.mpm-folder-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mpm-folder-icon-wrap.muted {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+/* Folder name */
+.mpm-folder-label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mpm-folder-label.muted {
+  color: #9ca3af;
+}
+
+/* Material count tag */
+.mpm-folder-tag {
+  font-size: 0.72rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mini progress bar */
+.mpm-folder-mini-bar {
+  width: 70px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mpm-folder-mini-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.mpm-folder-pct-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Chevron */
+.mpm-chevron {
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.mpm-folder-accordion.mpm-open .mpm-chevron {
+  color: #0284c7;
+}
+
+/* Dropdown content */
+.mpm-dropdown {
+  background: #fff;
+}
+
+/* Empty folder message */
+.mpm-empty-folder {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* Material row inside dropdown */
+.mpm-material-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 1.1rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.12s;
+}
+
+.mpm-material-row:last-child {
+  border-bottom: none;
+}
+
+.mpm-material-row:hover {
+  background: #f8fafc;
+}
+
+.mpm-material-row.mpm-done {
+  background: #f0fdf4;
+}
+
+.mpm-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: #d1d5db;
+}
+
+.mpm-material-row.mpm-done .mpm-status {
+  color: #16a34a;
+}
+
+.mpm-order {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #04A2D7, #0288b5);
+  padding: 0.18rem 0.4rem;
+  border-radius: 4px;
+  min-width: 26px;
+  text-align: center;
+}
+
+.mpm-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.mpm-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mpm-material-row.mpm-done .mpm-title {
+  color: #15803d;
+}
+
+.mpm-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.mpm-view {
+  padding: 0.28rem 0.65rem !important;
+  font-size: 0.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENTEE PROGRESS MODAL — Scrollable body, folders collapsed by default
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Modal overall max height */
+.modal-content.large {
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* Scrollable body only — header and progress bar stay fixed */
+.modal-body.scrollable {
+  overflow-y: auto !important;
+  flex: 1 !important;
+  padding: 1rem 1.25rem !important;
+  /* smooth scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar */
+.modal-body.scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-body.scrollable::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.modal-body.scrollable::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.modal-body.scrollable::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
