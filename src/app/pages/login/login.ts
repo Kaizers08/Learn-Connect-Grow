@@ -24,6 +24,9 @@ export class LoginComponent {
   forgotSent = false;
   forgotError = '';
 
+  showPrivacyModal = false;
+  showTermsModal = false;
+
   constructor(
     private router: Router,
     private supabase: SupabaseService,

@@ -91,13 +91,207 @@
 
     <!-- Footer links -->
     <div class="login-footer">
-      <a href="#">Privacy Policy</a>
+      <a class="login-legal-link" (click)="showPrivacyModal = true">Privacy Policy</a>
       <span>|</span>
-      <a href="#">Terms of Service</a>
+      <a class="login-legal-link" (click)="showTermsModal = true">Terms of Service</a>
     </div>
 
   </div>
 </div>
+
+<!-- ── PRIVACY POLICY MODAL ──────────────────────────────────────────────── -->
+@if (showPrivacyModal) {
+  <div class="legal-modal-backdrop" (click)="showPrivacyModal = false">
+    <div class="legal-modal" (click)="$event.stopPropagation()">
+      <div class="legal-modal-header">
+        <div class="legal-modal-title-wrap">
+          <span class="legal-modal-badge">Legal</span>
+          <h2 class="legal-modal-title">Privacy Policy</h2>
+          <p class="legal-modal-date">Last Updated: October 2026</p>
+        </div>
+        <button class="legal-modal-close" (click)="showPrivacyModal = false" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="legal-modal-body">
+        <p class="legal-modal-intro">
+          <strong>Edtech Mentoring</strong> ("the Platform", "we", "us") is an academic capstone project
+          developed to connect mentees with approved mentors in an online mentoring environment.
+          This Privacy Policy explains how we collect, use, and protect your information.
+        </p>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">01</div>
+          <div class="legal-modal-content">
+            <h3>Information We Collect</h3>
+            <ul class="legal-modal-list">
+              <li><strong>Account Information:</strong> First name, last name, email address, and password (or Google account details).</li>
+              <li><strong>Profile Information:</strong> Your role, university/company, job title, expertise, skills, photo, date of birth, country, phone number, and gender.</li>
+              <li><strong>Mentor Verification Documents:</strong> Certifications and diploma, used solely for admin approval.</li>
+              <li><strong>Communication Data:</strong> Messages via the chat feature and AI chatbot conversations.</li>
+              <li><strong>Usage Data:</strong> Session bookings, learning material progress, and feedback or ratings submitted.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">02</div>
+          <div class="legal-modal-content">
+            <h3>How We Use Your Information</h3>
+            <ul class="legal-modal-check">
+              <li>To create and manage your account.</li>
+              <li>To match mentees with suitable mentors based on shared interests and expertise.</li>
+              <li>To enable communication between mentors and mentees.</li>
+              <li>To track learning progress and display completion status.</li>
+              <li>To allow mentees to leave feedback and ratings for mentors.</li>
+              <li>To verify and approve mentor applications.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">03</div>
+          <div class="legal-modal-content">
+            <h3>Third-Party Services</h3>
+            <p>Our AI chatbot uses a third-party provider <strong>(Groq)</strong> to generate responses. Messages sent to the chatbot are transmitted to this service. We do not control how Groq processes data beyond generating the response.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">04</div>
+          <div class="legal-modal-content">
+            <h3>Data Storage and Security</h3>
+            <p>Your data is stored using <strong>Supabase</strong>, a secure database and authentication provider. We take reasonable measures to protect your information.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">05</div>
+          <div class="legal-modal-content">
+            <h3>Your Rights</h3>
+            <p>You may access, edit, or delete your profile information at any time through <strong>Settings</strong>. Account deletion removes your personal data from our system.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">06</div>
+          <div class="legal-modal-content">
+            <h3>Data Retention</h3>
+            <p>Data is retained while your account is active. Upon deletion, personal data is removed. Some anonymized data may be retained for academic evaluation purposes.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">07</div>
+          <div class="legal-modal-content">
+            <h3>Changes to This Policy</h3>
+            <p>We may update this Privacy Policy from time to time. Continued use of the platform constitutes acceptance of the updated policy.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">08</div>
+          <div class="legal-modal-content">
+            <h3>Contact Us</h3>
+            <p>Questions? Contact the development team at <a href="mailto:contact@edtechmentoring.com" class="legal-link-inline">contact&#64;edtechmentoring.com</a>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="legal-modal-footer">
+        <button class="legal-modal-btn-close" (click)="showPrivacyModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── TERMS OF SERVICE MODAL ─────────────────────────────────────────────── -->
+@if (showTermsModal) {
+  <div class="legal-modal-backdrop" (click)="showTermsModal = false">
+    <div class="legal-modal" (click)="$event.stopPropagation()">
+      <div class="legal-modal-header">
+        <div class="legal-modal-title-wrap">
+          <span class="legal-modal-badge">Legal</span>
+          <h2 class="legal-modal-title">Terms of Service</h2>
+          <p class="legal-modal-date">Last Updated: October 2026</p>
+        </div>
+        <button class="legal-modal-close" (click)="showTermsModal = false" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="legal-modal-body">
+        <p class="legal-modal-intro">
+          By registering for and using <strong>Edtech Mentoring</strong> ("the Platform"), you agree to
+          these Terms of Service. If you do not agree, please do not use the Platform.
+        </p>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">01</div>
+          <div class="legal-modal-content">
+            <h3>User Roles and Eligibility</h3>
+            <ul class="legal-modal-list">
+              <li><strong>Mentee:</strong> Any registered student seeking guidance in programming and related skills.</li>
+              <li><strong>Mentor:</strong> An experienced individual approved by the admin who provides guidance and materials.</li>
+              <li><strong>Admin:</strong> Oversees mentor approval and platform management.</li>
+            </ul>
+            <p class="legal-modal-note">Only users approved by the admin may act as mentors.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">02</div>
+          <div class="legal-modal-content">
+            <h3>User Responsibilities</h3>
+            <p>You agree to provide accurate and truthful information during registration. You agree not to misuse the platform, impersonate others, share account access, or engage in harassment or abusive behavior.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">03</div>
+          <div class="legal-modal-content">
+            <h3>Mentor Application and Approval</h3>
+            <p>Mentor applicants must submit required verification documents. The admin may approve or reject applications at their discretion. Approved mentors are responsible for the accuracy and quality of their materials.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">04</div>
+          <div class="legal-modal-content">
+            <h3>Content Ownership</h3>
+            <p>Materials uploaded by mentors remain their intellectual property. Mentees are granted view-only access and may not download, redistribute, or reproduce materials without the mentor's permission.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">05</div>
+          <div class="legal-modal-content">
+            <h3>Prohibited Conduct</h3>
+            <ul class="legal-modal-cross">
+              <li>Share false credentials or impersonate another person.</li>
+              <li>Harass, abuse, or threaten other users.</li>
+              <li>Upload harmful, offensive, or copyrighted material without permission.</li>
+              <li>Attempt to disrupt or exploit the platform's systems.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">06</div>
+          <div class="legal-modal-content">
+            <h3>AI Chatbot Disclaimer</h3>
+            <p>The platform includes an AI chatbot intended to help users navigate the website. Responses are generated by a third-party AI service and may not always be accurate. The chatbot is <strong>not a substitute</strong> for mentor guidance.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">07</div>
+          <div class="legal-modal-content">
+            <h3>Limitation of Liability</h3>
+            <p>This platform is an academic capstone project. We make no guarantees regarding uninterrupted access, error-free operation, or the quality of mentorship provided by individual mentors.</p>
+          </div>
+        </div>
+        <div class="legal-modal-section">
+          <div class="legal-modal-num">08</div>
+          <div class="legal-modal-content">
+            <h3>Contact Us</h3>
+            <p>Questions? Contact the development team at <a href="mailto:contact@edtechmentoring.com" class="legal-link-inline">contact&#64;edtechmentoring.com</a>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="legal-modal-footer">
+        <button class="legal-modal-btn-close" (click)="showTermsModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Forgot Password Modal -->
 @if (showForgotModal) {

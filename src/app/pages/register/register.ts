@@ -30,6 +30,9 @@ export class RegisterComponent implements OnInit {
   googleNameStep = false;
   loading = false;
 
+  showPrivacyModal = false;
+  showTermsModal = false;
+
   private platformId = inject(PLATFORM_ID);
   private route = inject(ActivatedRoute);
 

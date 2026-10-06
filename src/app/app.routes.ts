@@ -70,6 +70,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin').then(m => m.AdminComponent)
   },
   {
+    path: 'privacy-policy',
+    loadComponent: () => import('./pages/privacy-policy/privacy-policy').then(m => m.PrivacyPolicyComponent)
+  },
+  {
+    path: 'terms-of-service',
+    loadComponent: () => import('./pages/terms-of-service/terms-of-service').then(m => m.TermsOfServiceComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

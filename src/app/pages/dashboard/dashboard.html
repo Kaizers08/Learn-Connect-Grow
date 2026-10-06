@@ -1083,11 +1083,11 @@
           <div class="res-header">
             <div class="res-header-content">
               <h1 class="res-title">Learning Materials</h1>
-              <p class="res-subtitle">Manage your folders and track mentee progress</p>
+              <p class="res-subtitle">Manage your categories and track mentee progress</p>
             </div>
             <button class="res-btn-upload-main" (click)="openFolderCreateModal()">
               <app-icon name="plus" [size]="18"></app-icon>
-              <span>New Folder</span>
+              <span>New Category</span>
             </button>
           </div>
 
@@ -1097,7 +1097,7 @@
               <div class="res-stat-icon blue"><app-icon name="folder" [size]="22"></app-icon></div>
               <div class="res-stat-body">
                 <span class="res-stat-value">{{ resourceFolders.length }}</span>
-                <span class="res-stat-label">Folders</span>
+                <span class="res-stat-label">Categories</span>
               </div>
             </div>
             <div class="res-stat-card">
@@ -1130,7 +1130,7 @@
               <div class="res-section-head">
                 <h2 class="res-section-title no-border">
                   <app-icon name="folder" [size]="20"></app-icon>
-                  My Folders
+                  My Categories
                 </h2>
               </div>
 
@@ -1138,11 +1138,11 @@
                 <!-- Empty state: no folders and no materials at all -->
                 <div class="res-empty-state highlight">
                   <div class="res-empty-icon"><app-icon name="folder" [size]="44"></app-icon></div>
-                  <h3 class="res-empty-title">No folders yet</h3>
-                  <p>Create a folder first, then add learning materials inside it.</p>
+                  <h3 class="res-empty-title">No categories yet</h3>
+                  <p>Create a category first, then add learning materials inside it.</p>
                   <button class="res-btn-upload-main dark" (click)="openFolderCreateModal()">
                     <app-icon name="plus" [size]="18"></app-icon>
-                    <span>New Folder</span>
+                    <span>Create Category</span>
                   </button>
                 </div>
               } @else {
@@ -1245,7 +1245,7 @@
                           <span class="res-folder-name muted">Uncategorized</span>
                           <span class="res-folder-count">
                             {{ getUncategorizedMaterials().length }} material{{ getUncategorizedMaterials().length !== 1 ? 's' : '' }}
-                            — assign these to a folder via Edit
+                            — assign these to a category via Edit
                           </span>
                         </div>
                       </div>
@@ -1280,7 +1280,7 @@
                                   <app-icon name="eye" [size]="16"></app-icon>
                                   <span>View</span>
                                 </button>
-                                <button class="material-icon-btn edit" title="Edit (assign to folder)" (click)="openResourcesEditModal(material)">
+                                <button class="material-icon-btn edit" title="Edit (assign to category)" (click)="openResourcesEditModal(material)">
                                   <app-icon name="edit" [size]="16"></app-icon>
                                 </button>
                                 <button class="material-icon-btn delete" title="Delete" (click)="askDeleteResourceMaterial(material)">
@@ -1298,10 +1298,10 @@
                   @if (resourceFolders.length === 0 && getUncategorizedMaterials().length > 0) {
                     <div class="res-no-folders-hint">
                       <app-icon name="folder" [size]="18"></app-icon>
-                      <span>Create a folder then edit each material to assign it.</span>
+                      <span>Create a category then edit each material to assign it.</span>
                       <button class="res-btn-add-in-folder" (click)="openFolderCreateModal()">
                         <app-icon name="plus" [size]="14"></app-icon>
-                        New Folder
+                        New Category
                       </button>
                     </div>
                   }
@@ -1405,14 +1405,14 @@
               </div>
               <button class="res-back-btn" (click)="closeMenteeFolderDetail()">
                 <app-icon name="arrow-left" [size]="16"></app-icon>
-                <span>Back to Folders</span>
+                <span>Back to Categories</span>
               </button>
             </div>
 
             <!-- Folder progress banner -->
             <div class="res-folder-progress-banner">
               <div class="res-fpb-label">
-                <span>Folder Progress</span>
+                <span>Category Progress</span>
                 <span class="res-fpb-pct">{{ activeMenteeFolder.progressPercentage }}%</span>
               </div>
               <div class="res-progress-bar res-fpb-bar">
@@ -1427,7 +1427,7 @@
             @if (activeMenteeFolder.materials.length === 0) {
               <div class="res-empty-state">
                 <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
-                <p>No materials in this folder yet.</p>
+                <p>No materials in this category yet.</p>
               </div>
             } @else {
               <div class="materials-list mentee-list">
@@ -1491,7 +1491,7 @@
                   <span class="res-breadcrumb-current">{{ selectedMenteeViewMentor.full_name }}</span>
                 </div>
                 <h1 class="res-title">Learning Resources</h1>
-                <p class="res-subtitle">Browse folders from your mentor</p>
+                <p class="res-subtitle">Browse categories from your mentor</p>
               </div>
               <button class="res-back-btn" (click)="backToMentorCards()">
                 <app-icon name="arrow-left" [size]="16"></app-icon>
@@ -1518,7 +1518,7 @@
               <div class="res-mpc-right">
                 <div class="res-mpc-stat">
                   <span class="res-mpc-stat-value">{{ menteeFolders.length }}</span>
-                  <span class="res-mpc-stat-label">Folders</span>
+                  <span class="res-mpc-stat-label">Categories</span>
                 </div>
                 <div class="res-mpc-stat">
                   <span class="res-mpc-stat-value">{{ selectedMenteeViewMentor.total_materials || 0 }}</span>
@@ -1547,12 +1547,12 @@
             <div class="res-section">
               <h2 class="res-section-title">
                 <app-icon name="folder" [size]="20"></app-icon>
-                Learning Folders
+                Learning Categories
               </h2>
               @if (menteeFolders.length === 0) {
                 <div class="res-empty-state">
                   <div class="res-empty-icon subtle"><app-icon name="folder" [size]="40"></app-icon></div>
-                  <p>No folders yet. Your mentor hasn't organized materials into folders.</p>
+                  <p>No categories yet. Your mentor hasn't organized materials into categories.</p>
                 </div>
               } @else {
                 <div class="res-mentee-folder-grid">
@@ -2393,11 +2393,11 @@
       <div class="drawer-body">
         <!-- Folder selector -->
         <div class="form-group">
-          <label>Folder</label>
+          <label>Category</label>
           <select [(ngModel)]="resourceUploadFolderId" class="form-control">
-            <option value="">— No folder (Uncategorized) —</option>
+            <option value="">— No category (Uncategorized) —</option>
             @for (f of resourceFolders; track f.id) {
-              <option [value]="f.id">📁 {{ f.name }}</option>
+              <option [value]="f.id">📂 {{ f.name }}</option>
             }
           </select>
         </div>
@@ -2498,11 +2498,11 @@
       <div class="drawer-body">
         <!-- Folder selector -->
         <div class="form-group">
-          <label>Folder</label>
+          <label>Category</label>
           <select [(ngModel)]="resourceEditFolderId" class="form-control">
-            <option value="">— No folder (Uncategorized) —</option>
+            <option value="">— No category (Uncategorized) —</option>
             @for (f of resourceFolders; track f.id) {
-              <option [value]="f.id">📁 {{ f.name }}</option>
+              <option [value]="f.id">📂 {{ f.name }}</option>
             }
           </select>
         </div>
@@ -2595,13 +2595,13 @@
   <div class="modal-overlay" (click)="closeFolderCreateModal()">
     <div class="confirm-modal" (click)="$event.stopPropagation()">
       <div class="confirm-icon blue"><app-icon name="folder" [size]="26"></app-icon></div>
-      <h3 class="confirm-title">New Folder</h3>
-      <p class="confirm-text">Give this folder a name — e.g., "Introduction", "Week 1", "Advanced Topics"</p>
+      <h3 class="confirm-title">New Category</h3>
+      <p class="confirm-text">Give this category a name — e.g., "Introduction", "Week 1", "Advanced Topics"</p>
       <div class="form-group folder-modal-input">
         <input
           type="text"
           [(ngModel)]="newFolderName"
-          placeholder="Folder name"
+          placeholder="Category name"
           class="form-control"
           (keydown.enter)="createFolder()"
           maxlength="80">
@@ -2612,7 +2612,7 @@
           @if (isCreatingFolder) {
             <span class="btn-spinner"></span> Creating…
           } @else {
-            Create Folder
+            Create Category
           }
         </button>
       </div>
@@ -2625,13 +2625,13 @@
   <div class="modal-overlay" (click)="closeFolderRenameModal()">
     <div class="confirm-modal" (click)="$event.stopPropagation()">
       <div class="confirm-icon blue"><app-icon name="edit" [size]="26"></app-icon></div>
-      <h3 class="confirm-title">Rename Folder</h3>
+      <h3 class="confirm-title">Rename Category</h3>
       <p class="confirm-text">Enter a new name for "{{ renamingFolder.name }}"</p>
       <div class="form-group folder-modal-input">
         <input
           type="text"
           [(ngModel)]="renameFolderName"
-          placeholder="New folder name"
+          placeholder="New category name"
           class="form-control"
           (keydown.enter)="renameFolder()"
           maxlength="80">
@@ -2657,7 +2657,7 @@
       <div class="confirm-icon danger"><app-icon name="alert" [size]="26"></app-icon></div>
       <h3 class="confirm-title">Delete "{{ folderPendingDelete.name }}"?</h3>
       <p class="confirm-text">
-        The folder will be removed. Materials inside will become <strong>uncategorized</strong> — they won't be deleted.
+        The category will be removed. Materials inside will become <strong>uncategorized</strong> — they won't be deleted.
       </p>
       <div class="confirm-actions">
         <button class="btn-cancel" (click)="cancelDeleteFolder()" [disabled]="isDeletingFolder">Cancel</button>
@@ -2826,7 +2826,7 @@
                     @if (folder.totalCount === 0) {
                       <div class="mpm-empty-folder">
                         <app-icon name="folder" [size]="20"></app-icon>
-                        <span>No learning materials uploaded in this folder yet.</span>
+                        <span>No learning materials uploaded in this category yet.</span>
                       </div>
                     } @else {
                       @for (material of folder.materials; track material.id) {

@@ -1,0 +1,286 @@
+/* Shared with privacy-policy — same design system */
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.legal-page {
+  min-height: 100vh;
+  background: #f0f4f8;
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+  padding: 2rem 1rem 4rem;
+}
+
+.legal-bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blob-1 {
+  width: 500px;
+  height: 500px;
+  background: #043E92;
+  top: -120px;
+  left: -100px;
+}
+
+.blob-2 {
+  width: 400px;
+  height: 400px;
+  background: #04A2D7;
+  bottom: -80px;
+  right: -80px;
+}
+
+/* ── Container ────────────────────────────────────────────────────────────── */
+.legal-container {
+  position: relative;
+  z-index: 1;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* ── Back button ──────────────────────────────────────────────────────────── */
+.legal-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.legal-back-btn:hover {
+  border-color: #043E92;
+  color: #043E92;
+  box-shadow: 0 2px 8px rgba(4,62,146,0.12);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.legal-header {
+  margin-bottom: 2rem;
+}
+
+.legal-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #043E92, #04A2D7);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.legal-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #043E92;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.5px;
+}
+
+.legal-updated {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.legal-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+  padding: 2.5rem 2.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Intro */
+.legal-intro {
+  padding-bottom: 1.75rem;
+  border-bottom: 1.5px solid #f0f4f8;
+  margin-bottom: 0.25rem;
+}
+
+.legal-intro p {
+  font-size: 0.97rem;
+  line-height: 1.75;
+  color: #4b5563;
+  margin: 0;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.legal-section {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.75rem 0;
+  border-bottom: 1.5px solid #f0f4f8;
+}
+
+.legal-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.legal-section-number {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #043E92;
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+  height: fit-content;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+  min-width: 32px;
+  text-align: center;
+}
+
+.legal-section-body {
+  flex: 1;
+}
+
+.legal-section-body h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.75rem;
+}
+
+.legal-section-body p {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: #4b5563;
+  margin: 0 0 0.75rem;
+}
+
+.legal-section-body p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-section-sublabel {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.legal-note {
+  margin-top: 0.85rem !important;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border-left: 3px solid #04A2D7;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.88rem !important;
+  color: #0369a1 !important;
+}
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+.legal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.legal-list li {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #4b5563;
+  border-left: 3px solid #043E92;
+  padding-left: 0.875rem;
+}
+
+.legal-list-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #043E92;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+/* Check list */
+.legal-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.legal-check-list li {
+  font-size: 0.92rem;
+  color: #4b5563;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.legal-check-list li::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3C/svg%3E") center/contain no-repeat;
+  margin-top: 2px;
+}
+
+/* Link */
+.legal-link {
+  color: #043E92;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.legal-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.legal-footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.82rem;
+  color: #9ca3af;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .legal-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .legal-title {
+    font-size: 1.65rem;
+  }
+
+  .legal-section {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .legal-section-number {
+    align-self: flex-start;
+  }
+}
