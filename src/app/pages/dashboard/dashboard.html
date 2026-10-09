@@ -2453,11 +2453,10 @@
             <input 
               type="file" 
               (change)="onResourceFileSelected($event)"
-              class="file-dropzone-input"
-              accept="video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt">
+              class="file-dropzone-input">
             <app-icon name="upload" [size]="26"></app-icon>
             <span class="file-dropzone-title">Click to choose a file</span>
-            <span class="file-dropzone-hint">Video, PDF, Word, PowerPoint, Text — max 50 MB</span>
+            <span class="file-dropzone-hint">Any file type allowed — max 50 MB</span>
           </label>
           @if (resourceUploadFileName) {
             <div class="file-preview">
