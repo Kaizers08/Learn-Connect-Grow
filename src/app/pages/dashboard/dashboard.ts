@@ -28,6 +28,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   profilePicture: string | null = null;
   currentUserId = '';
   private lastSeenInterval: any;
+  private messagePollInterval: any;
+  private unreadInterval: any;
+  private messagesChannel: any = null;
   isLoading = true;
 
   get isMentor(): boolean { return this.userService.role() === 'mentor'; }
@@ -1300,6 +1303,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.currentUserId = await this.supabase.getCurrentUserId() || '';
     }
     await this.loadMessages(conv.id);
+    this.subscribeToMessages(conv.id);
     // Mark messages as seen when opening conversation
     if (this.currentUserId) {
       await this.supabase.markMessagesAsSeen(conv.id, this.currentUserId);
@@ -1911,15 +1915,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
       }, 120000);
 
-      // Frequent polling for messages tab (every 5 seconds when active)
-      setInterval(() => {
+      // Frequent polling for messages tab (every 5 seconds when active) — kept as fallback
+      this.messagePollInterval = setInterval(() => {
         if (this.activeNavItem === 'messages' && this.activeConversation) {
           this.checkForNewMessages();
         }
       }, 5000);
 
       // Update unread counts every 30 seconds
-      setInterval(() => {
+      this.unreadInterval = setInterval(() => {
         this.updateAllUnreadCounts();
       }, 30000);
     } finally {
@@ -1986,7 +1990,80 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngOnDestroy() {
     if (this.lastSeenInterval) clearInterval(this.lastSeenInterval);
     if (this.nowLineInterval) clearInterval(this.nowLineInterval);
+    if (this.messagePollInterval) clearInterval(this.messagePollInterval);
+    if (this.unreadInterval) clearInterval(this.unreadInterval);
+    this.unsubscribeFromMessages();
     this.setDashboardScrollLock(false);
+  }
+
+  private subscribeToMessages(otherUserId: string): void {
+    this.unsubscribeFromMessages(); // tear down any previous subscription
+    const myId = this.currentUserId;
+    if (!myId) return;
+
+    this.messagesChannel = this.supabase.getClient()
+      .channel(`messages_${myId}_${otherUserId}`)
+      .on(
+        'postgres_changes' as any,
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${myId}`
+        },
+        (payload: any) => {
+          const msg = payload.new;
+          // Only handle messages from the currently active conversation partner
+          if (msg.sender_id !== otherUserId) {
+            // Different conversation: bump unread count in sidebar
+            const conv = this.conversations.find(c => c.id === msg.sender_id);
+            if (conv) {
+              conv.unreadCount = (conv.unreadCount || 0) + 1;
+              conv.lastMessage = msg.message;
+              this.updateTotalUnreadCount();
+              this.refreshView();
+            }
+            return;
+          }
+          // Deduplicate
+          const existingIds = new Set(this.messages.map(m => String(m.id)));
+          if (existingIds.has(String(msg.id))) return;
+
+          this.zone.run(() => {
+            this.messages.push({
+              id: msg.id,
+              text: msg.message,
+              fromMe: false,
+              timestamp: msg.created_at,
+              status: msg.status,
+              attachmentUrl: msg.attachment_url || null,
+              attachmentName: msg.attachment_name || null,
+              attachmentType: msg.attachment_type || null
+            });
+            if (this.activeConversation) {
+              this.activeConversation.lastMessage = msg.message;
+            }
+            const conv = this.conversations.find(c => c.id === otherUserId);
+            if (conv) conv.lastMessage = msg.message;
+            // Mark as seen since the conversation is open
+            this.supabase.markMessagesAsSeen(otherUserId, myId);
+            this.scheduleMessagesScroll();
+            this.refreshView();
+          });
+        }
+      )
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime messages subscribed');
+        }
+      });
+  }
+
+  private unsubscribeFromMessages(): void {
+    if (this.messagesChannel) {
+      this.supabase.getClient().removeChannel(this.messagesChannel);
+      this.messagesChannel = null;
+    }
   }
 
   ngAfterViewChecked() {
