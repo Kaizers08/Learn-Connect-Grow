@@ -3092,6 +3092,19 @@ select.st-input {
   white-space: pre-wrap;
 }
 
+.cal-event-location-link {
+  color: #04A2D7;
+  text-decoration: none;
+  font-weight: 500;
+  word-break: break-all;
+  transition: color 0.2s ease;
+}
+
+.cal-event-location-link:hover {
+  color: #043E92;
+  text-decoration: underline;
+}
+
 .cal-event-mentor-card {
   display: flex;
   align-items: center;
@@ -4416,16 +4429,16 @@ textarea.form-control {
 .page-body.calendar-layout {
   display: flex;
   flex-direction: column;
-  padding: 0.65rem 1.25rem 0.75rem;
+  padding: 0.65rem 0.75rem 0.75rem 1.25rem;
   height: calc(100vh - 58px);
   max-height: calc(100vh - 58px);
   overflow: hidden;
   box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 
 .cal-wrapper {
   width: 100%;
-  max-width: 1400px;
   height: 100%;
   min-height: 0;
   display: flex;
@@ -4463,7 +4476,7 @@ textarea.form-control {
 
 .cal-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   gap: 1rem;
   align-items: stretch;
   flex: 1;
@@ -4484,6 +4497,7 @@ textarea.form-control {
   display: flex;
   flex-direction: column;
   height: 100%;
+  flex: 1;
 }
 
 .cal-toolbar {
@@ -4966,18 +4980,16 @@ textarea.form-control {
   min-width: 0;
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border-radius: 16px;
   z-index: 10;
   padding: 0;
-  max-height: calc(100vh - 160px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   transition: box-shadow 0.2s ease;
+  flex: 1;
 }
 
 .cal-new-event:hover {

@@ -1953,6 +1953,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
 
+  isValidUrl(str: string): boolean {
+    try {
+      const url = new URL(str);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      // If it doesn't start with http/https, check if it might be a URL-like string
+      return str.startsWith('http://') || str.startsWith('https://') || 
+             str.includes('meet.google.com') || str.includes('zoom.us') || 
+             str.includes('zoom.com');
+    }
+  }
+
   getMenteeTypeLabel(type: string): string {
     const map: Record<string, string> = {
       'student':              'Student',

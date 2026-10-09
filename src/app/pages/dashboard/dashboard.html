@@ -2964,7 +2964,13 @@
         @if (selectedCalendarEvent.place) {
           <div class="cal-event-note-box">
             <span class="cal-event-detail-label">Location</span>
-            <p>{{ selectedCalendarEvent.place }}</p>
+            @if (isValidUrl(selectedCalendarEvent.place)) {
+              <a [href]="selectedCalendarEvent.place" target="_blank" class="cal-event-location-link">
+                {{ selectedCalendarEvent.place }}
+              </a>
+            } @else {
+              <p>{{ selectedCalendarEvent.place }}</p>
+            }
           </div>
         }
 
