@@ -6033,7 +6033,7 @@ textarea.form-control {
 .material-preview-modal {
   background: white;
   border-radius: 18px;
-  width: 100%; max-width: 1100px;
+  width: 100%; max-width: 1500px;
   max-height: 95vh;
   display: flex; flex-direction: column;
   box-shadow: 0 24px 80px rgba(0,0,0,0.35);
