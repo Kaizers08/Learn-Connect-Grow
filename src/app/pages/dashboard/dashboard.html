@@ -627,14 +627,19 @@
                             <path d="M12 13V15M13 14H11" stroke="#D1D5DB" stroke-width="1.5" stroke-linecap="round"/>
                           </svg>
                         </div>
-                        <h3 class="cal-empty-title">No events scheduled</h3>
-                        <p class="cal-empty-subtitle">Start planning your week by creating your first event</p>
-                        <div class="cal-empty-hint">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
-                          </svg>
-                          <span>Use the form on the right to add events →</span>
-                        </div>
+                        @if (isMentor) {
+                          <h3 class="cal-empty-title">No events scheduled</h3>
+                          <p class="cal-empty-subtitle">Start planning your week by creating your first event</p>
+                          <div class="cal-empty-hint">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Use the form on the right to add events &#8594;</span>
+                          </div>
+                        } @else {
+                          <h3 class="cal-empty-title">No sessions scheduled yet</h3>
+                          <p class="cal-empty-subtitle">Your mentor hasn't added any sessions yet. Check back soon!</p>
+                        }
                       </div>
                     }
 
