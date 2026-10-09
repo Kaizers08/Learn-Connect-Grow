@@ -43,21 +43,6 @@
       </div>
 
       <!-- Full Name (auto-filled from Google or registration) -->
-      @if (!isGoogleUser) {
-        <div class="form-section">
-          <label class="field-label">Full Name</label>
-          <input
-            type="text"
-            class="form-input"
-            [(ngModel)]="fullName"
-            name="fullName"
-            placeholder="Your full name"
-            disabled
-          >
-          <small class="field-hint">Pre-filled from your registration. Cannot be changed.</small>
-        </div>
-      }
-
       <!-- I am a -->
       <div class="form-section">
         <label class="section-label">I am a ...</label>
