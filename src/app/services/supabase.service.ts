@@ -578,6 +578,23 @@ export class SupabaseService {
       this.getMentorProfiles()
     ]);
 
+    // Add email to each mentor from auth table via RPC if available
+    if (mentors.data && mentors.data.length > 0) {
+      for (let mentor of mentors.data) {
+        try {
+          // Try to get email from admin query (Supabase admin API)
+          const { data, error } = await this.client.auth.admin.getUserById(mentor.user_id);
+          if (data?.user?.email) {
+            mentor.email = data.user.email;
+          } else {
+            mentor.email = '—';
+          }
+        } catch (e) {
+          mentor.email = '—';
+        }
+      }
+    }
+
     return {
       mentees: mentees.data ?? [],
       mentors: mentors.data ?? [],

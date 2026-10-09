@@ -777,6 +777,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   showDeleteConfirm = false;
   deleteAccountPassword = '';
   isDeleting = false;
+  isGoogleUser = false;
 
   // ─── Find Mentors ──────────────────────────────────────────────────────────
   mentorSearchQuery = '';
@@ -3559,6 +3560,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async deleteAccount() {
+    // Check if user signed up with Google
+    const authUser = await this.supabase.getClient().auth.getUser();
+    const providers = authUser.data.user?.user_metadata?.['provider'] || authUser.data.user?.identities?.map((i: any) => i.provider) || [];
+    
+    this.isGoogleUser = (Array.isArray(providers) ? providers.includes('google') : false) || authUser.data.user?.user_metadata?.['provider'] === 'google';
     this.showDeleteConfirm = true;
   }
 
@@ -3568,27 +3574,42 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   async confirmDeleteAccount() {
-    if (!this.deleteAccountPassword) {
-      this.displayNotification('Please enter your password to confirm.', 'warning');
-      return;
-    }
+    // For email/password users, verify password first
+    if (!this.isGoogleUser) {
+      if (!this.deleteAccountPassword) {
+        this.displayNotification('Please enter your password to confirm.', 'warning');
+        return;
+      }
 
-    this.isDeleting = true;
-    this.refreshView();
+      this.isDeleting = true;
+      this.refreshView();
 
-    try {
-      // Step 1: Verify password
-      const authUser = await this.supabase.getClient().auth.getUser();
-      const email = authUser.data.user?.email || '';
+      try {
+        // Step 1: Verify password
+        const authUser = await this.supabase.getClient().auth.getUser();
+        const email = authUser.data.user?.email || '';
 
-      const { error: signInError } = await this.supabase.signIn(email, this.deleteAccountPassword);
-      if (signInError) {
-        this.displayNotification('Incorrect password. Please try again.', 'error');
+        const { error: signInError } = await this.supabase.signIn(email, this.deleteAccountPassword);
+        if (signInError) {
+          this.displayNotification('Incorrect password. Please try again.', 'error');
+          this.isDeleting = false;
+          this.refreshView();
+          return;
+        }
+      } catch (error: any) {
+        console.error('Password verification failed:', error);
+        this.displayNotification('Error verifying password. Please try again.', 'error');
         this.isDeleting = false;
         this.refreshView();
         return;
       }
+    } else {
+      // Google users don't need password verification
+      this.isDeleting = true;
+      this.refreshView();
+    }
 
+    try {
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) {
         this.displayNotification('Unable to identify your account. Please try again.', 'error');

@@ -9072,3 +9072,21 @@ textarea.form-control {
 .modal-body.scrollable::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+
+/* Google account notice */
+.dcm-google-notice {
+  background: #e8f5e9;
+  border: 1.5px solid #4caf50;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+.dcm-google-notice p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #2e7d32;
+  font-weight: 500;
+}

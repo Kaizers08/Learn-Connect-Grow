@@ -135,7 +135,7 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/complete-profile']);
+    this.router.navigate(['/complete-profile'], { replaceUrl: true });
   }
 
   async onContinueGoogleNames() {
@@ -163,7 +163,7 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/complete-profile']);
+    this.router.navigate(['/complete-profile'], { replaceUrl: true });
   }
 
   async onGoogleSignUp() {

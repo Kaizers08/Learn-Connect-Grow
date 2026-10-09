@@ -198,7 +198,7 @@ export class MentorProfileComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/mentor-documents']);
+    this.router.navigate(['/mentor-documents'], { replaceUrl: true });
   }
 
   private scrollToTop() {

@@ -234,6 +234,6 @@ export class JourneyComponent implements OnInit {
         .eq('user_id', userId);
     }
 
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/dashboard'], { replaceUrl: true });
   }
 }

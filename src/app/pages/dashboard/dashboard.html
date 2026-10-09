@@ -275,13 +275,13 @@
               @if (isMentor && mentor.type) {
                 <p class="mentor-type-badge">{{ getMenteeTypeLabel(mentor.type) }}</p>
               }
-              @if (!isMentor && mentor.reviews > 0) {
+              @if (!isMentor) {
                 <div class="mentor-rating">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                   </svg>
-                  <span class="rating-value">{{ mentor.rating }}</span>
-                  <span class="rating-count">({{ mentor.reviews }} {{ mentor.reviews === 1 ? 'review' : 'reviews' }})</span>
+                  <span class="rating-value">{{ mentor.reviews > 0 ? mentor.rating : '0.0' }}</span>
+                  <span class="rating-count">({{ mentor.reviews ?? 0 }} {{ (mentor.reviews ?? 0) === 1 ? 'review' : 'reviews' }})</span>
                 </div>
               }
 
@@ -490,13 +490,13 @@
                     @if (isMentor && mentor.type) {
                       <span class="fm-mentee-type-badge">{{ getMenteeTypeLabel(mentor.type) }}</span>
                     }
-                    @if (!isMentor && mentor.reviews > 0) {
+                    @if (!isMentor) {
                       <div class="fm-mentor-rating">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B">
                           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                         </svg>
-                        <span class="fm-rating-val">{{ mentor.rating }}</span>
-                        <span class="fm-rating-count">({{ mentor.reviews }} {{ mentor.reviews === 1 ? 'review' : 'reviews' }})</span>
+                        <span class="fm-rating-val">{{ mentor.reviews > 0 ? mentor.rating : '0.0' }}</span>
+                        <span class="fm-rating-count">({{ mentor.reviews ?? 0 }} {{ (mentor.reviews ?? 0) === 1 ? 'review' : 'reviews' }})</span>
                       </div>
                     }
                     <p class="fm-mentor-bio">{{ mentor.bio }}</p>
@@ -2133,16 +2133,22 @@
               <h2 class="dcm-title">Delete Account?</h2>
               <p class="dcm-warning">⚠️ This action cannot be undone. All your data will be permanently deleted.</p>
               
-              <div class="dcm-form">
-                <label class="dcm-label">Enter your password to confirm:</label>
-                <input 
-                  class="dcm-input" 
-                  [type]="'password'" 
-                  [(ngModel)]="deleteAccountPassword" 
-                  placeholder="Enter password"
-                  (keydown.enter)="confirmDeleteAccount()"
-                >
-              </div>
+              @if (!isGoogleUser) {
+                <div class="dcm-form">
+                  <label class="dcm-label">Enter your password to confirm:</label>
+                  <input 
+                    class="dcm-input" 
+                    [type]="'password'" 
+                    [(ngModel)]="deleteAccountPassword" 
+                    placeholder="Enter password"
+                    (keydown.enter)="confirmDeleteAccount()"
+                  >
+                </div>
+              } @else {
+                <div class="dcm-google-notice">
+                  <p>You signed up with Google. Click "Delete Account" below to proceed.</p>
+                </div>
+              }
 
               <div class="dcm-actions">
                 <button class="dcm-btn-cancel" (click)="closeDeleteConfirm()" [disabled]="isDeleting">

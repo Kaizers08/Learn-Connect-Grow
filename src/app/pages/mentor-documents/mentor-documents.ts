@@ -103,7 +103,7 @@ export class MentorDocumentsComponent {
       return;
     }
 
-    this.router.navigate(['/pending-approval']);
+    this.router.navigate(['/pending-approval'], { replaceUrl: true });
   }
 
   onPrevious() {

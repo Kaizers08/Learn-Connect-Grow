@@ -64,9 +64,9 @@ export class CompleteProfileComponent implements OnInit {
       this.userService.role.set(this.selectedRole);
 
       if (this.selectedRole === 'mentee') {
-        await this.router.navigate(['/mentee-profile']);
+        await this.router.navigate(['/mentee-profile'], { replaceUrl: true });
       } else if (this.selectedRole === 'mentor') {
-        await this.router.navigate(['/mentor-profile']);
+        await this.router.navigate(['/mentor-profile'], { replaceUrl: true });
       }
     } catch (error) {
       console.error('Error in onNext:', error);

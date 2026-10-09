@@ -328,6 +328,6 @@ export class MenteeProfileComponent implements OnInit {
       console.error('Failed to save mentee profile:', error);
     }
 
-    this.router.navigate(['/journey']);
+    this.router.navigate(['/journey'], { replaceUrl: true });
   }
 }
