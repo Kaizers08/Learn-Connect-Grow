@@ -319,6 +319,93 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       console.log('Final Calendar Events for Display:', this.calendarEvents);
 
+      // If no events are showing but we have user events, find the week of the first event and navigate there
+      if (this.calendarEvents.length === 0 && allEvents.length > 0) {
+        console.log('⚠️ No events in current week. Events exist:', allEvents.length);
+        
+        // Find the earliest event's date and navigate to that week
+        const firstEvent = allEvents.reduce((earliest: any, current: any) => {
+          if (!earliest) return current;
+          const earliestDate = new Date(earliest.event_date);
+          const currentDate = new Date(current.event_date);
+          return currentDate < earliestDate ? current : earliest;
+        });
+
+        if (firstEvent && firstEvent.event_date) {
+          const firstEventDate = this.parseEventDateTime(firstEvent.event_date, firstEvent.start_time);
+          
+          // Only update anchor if it's significantly different (not just a few hours off)
+          const timeDiff = Math.abs(firstEventDate.getTime() - this.getCalendarReferenceDate().getTime());
+          if (timeDiff > 86400000) { // More than 1 day difference
+            this.calendarAnchorDate = new Date(
+              firstEventDate.getFullYear(),
+              firstEventDate.getMonth(),
+              firstEventDate.getDate()
+            );
+            console.log('📅 Navigating to week containing first event:', firstEventDate);
+            
+            // Reload with the new anchor date
+            const newWeekStart = this.getWeekStart(this.getCalendarReferenceDate());
+            this.calendarEvents = allEvents.map((dbEvent: any) => {
+              const eventDateTime = this.parseEventDateTime(dbEvent.event_date, dbEvent.start_time);
+              const startHours = eventDateTime.getHours();
+
+              let durationHours = 1;
+              if (dbEvent.end_time) {
+                const [endHours, endMinutes] = String(dbEvent.end_time).split(':').map(Number);
+                const startTimeInMinutes = startHours * 60 + eventDateTime.getMinutes();
+                const endTimeInMinutes = endHours * 60 + endMinutes;
+                durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
+              }
+
+              const eventDayStart = new Date(
+                eventDateTime.getFullYear(),
+                eventDateTime.getMonth(),
+                eventDateTime.getDate()
+              );
+              const daysDiff = Math.round(
+                (eventDayStart.getTime() - newWeekStart.getTime()) / (1000 * 60 * 60 * 24)
+              );
+
+              const rawEventType = dbEvent.event_type || 'personal';
+              const eventType = (['mentorship', 'personal', 'reminder'].includes(rawEventType) 
+                ? rawEventType 
+                : 'personal') as 'mentorship' | 'personal' | 'reminder';
+
+              const badges: string[] = [];
+              if (dbEvent.place) badges.push('LOC');
+              if (dbEvent.notes) badges.push('NOTE');
+
+              return {
+                id: dbEvent.id,
+                day: daysDiff,
+                startHour: startHours,
+                durationHours: durationHours,
+                title: dbEvent.title,
+                color: dbEvent.isFromMentor && dbEvent.mentorColor 
+                  ? dbEvent.mentorColor 
+                  : dbEvent.color,
+                badges: badges,
+                avatars: dbEvent.members?.length || 1,
+                compact: durationHours <= 1,
+                place: dbEvent.place,
+                notes: dbEvent.notes,
+                date: dbEvent.event_date,
+                startTime: dbEvent.start_time,
+                endTime: dbEvent.end_time,
+                isFromMentor: dbEvent.isFromMentor || false,
+                ownerId: dbEvent.user_id,
+                eventType: eventType,
+                mentorName: dbEvent.mentorName,
+                mentorProfilePicture: dbEvent.mentorProfilePicture
+              };
+            }).filter((event: any) => event.day >= 0 && event.day <= 6);
+            
+            console.log('✅ Refiltered events for new week:', this.calendarEvents.length);
+          }
+        }
+      }
+
       // Load upcoming sessions for the sidebar
       this.loadUpcomingSessions(allEvents);
       this.refreshView();
@@ -621,6 +708,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    // Validate date format (should be YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.newEvent.date)) {
+      this.displayNotification('Invalid date format. Please use the date picker.', 'warning');
+      return;
+    }
+
+    // Validate time format (should be HH:MM)
+    if (!/^\d{2}:\d{2}$/.test(this.newEvent.startTime)) {
+      this.displayNotification('Invalid start time format', 'warning');
+      return;
+    }
+
+    if (this.newEvent.endTime && !/^\d{2}:\d{2}$/.test(this.newEvent.endTime)) {
+      this.displayNotification('Invalid end time format', 'warning');
+      return;
+    }
+
     const eventDate = this.parseEventDateTime(this.newEvent.date, this.newEvent.startTime);
     const [startHours, startMinutes] = this.newEvent.startTime.split(':').map(Number);
     let durationHours = 1;
@@ -669,9 +773,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       });
 
       if (error) {
+        console.error('❌ Error creating session:', error);
         this.displayNotification('Failed to create session', 'error');
         return;
       }
+
+      console.log('✅ Session created successfully:', {
+        title: this.newEvent.title,
+        date: this.newEvent.date,
+        startTime: this.newEvent.startTime,
+        endTime: this.newEvent.endTime
+      });
 
       if (daysDiff < 0 || daysDiff > 6) {
         this.calendarAnchorDate = new Date(
@@ -1345,15 +1457,40 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   // File preview modal
   showMaterialPreview = false;
   previewingMaterial: any = null;
+  imageZoom = 1;
 
   openMaterialPreview(material: any) {
     this.previewingMaterial = material;
     this.showMaterialPreview = true;
+    this.imageZoom = 1;
   }
 
   closeMaterialPreview() {
     this.showMaterialPreview = false;
     this.previewingMaterial = null;
+    this.imageZoom = 1;
+  }
+
+  increaseImageZoom() {
+    if (this.imageZoom < 3) {
+      this.imageZoom = Math.min(this.imageZoom + 0.2, 3);
+    }
+  }
+
+  decreaseImageZoom() {
+    if (this.imageZoom > 0.5) {
+      this.imageZoom = Math.max(this.imageZoom - 0.2, 0.5);
+    }
+  }
+
+  resetImageZoom() {
+    this.imageZoom = 1;
+  }
+
+  onImageWheel(event: WheelEvent) {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.2 : 0.2;
+    this.imageZoom = Math.max(0.5, Math.min(3, this.imageZoom + delta));
   }
 
   getMaterialPreviewUrl(material: any): string {
@@ -1656,14 +1793,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     try {
       await this.loadUserProfile();
 
+      // Initialize calendar with current week FIRST
+      this.initializeCurrentWeek();
+
       await Promise.all([
         this.loadMatchedUsers(),
         this.loadConnections(),
         this.loadCalendarEvents()
       ]);
-
-      // Initialize calendar with current week
-      this.initializeCurrentWeek();
 
       // Initialize and update calendar "now" line
       this.updateCalendarNowLine(false); // Don't scroll on init, will scroll when tab is opened

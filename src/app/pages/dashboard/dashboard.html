@@ -3100,10 +3100,20 @@
             Your browser does not support the video tag.
           </video>
         } @else if (previewingMaterial.file_type === 'image') {
-          <img
-            class="material-preview-img"
-            [src]="previewingMaterial.file_url"
-            [alt]="previewingMaterial.title">
+          <div class="material-preview-image-container">
+            <img
+              class="material-preview-img"
+              [src]="previewingMaterial.file_url"
+              [alt]="previewingMaterial.title"
+              [style.transform]="'scale(' + imageZoom + ')'"
+              (wheel)="onImageWheel($event)">
+            <div class="image-zoom-controls">
+              <button class="zoom-btn" (click)="decreaseImageZoom()" [disabled]="imageZoom <= 0.5">−</button>
+              <span class="zoom-level">{{ (imageZoom * 100).toFixed(0) }}%</span>
+              <button class="zoom-btn" (click)="increaseImageZoom()" [disabled]="imageZoom >= 3">+</button>
+              <button class="zoom-btn reset" (click)="resetImageZoom()">Reset</button>
+            </div>
+          </div>
         } @else if (previewingMaterial.file_type === 'pdf') {
           <iframe
             class="material-preview-iframe"

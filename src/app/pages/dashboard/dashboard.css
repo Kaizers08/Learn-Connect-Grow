@@ -6090,6 +6090,91 @@ textarea.form-control {
 }
 
 .material-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+  cursor: grab;
+}
+
+.material-preview-img:active {
+  cursor: grabbing;
+}
+
+.material-preview-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  position: relative;
+  background: #f5f5f5;
+}
+
+.image-zoom-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: #04A2D7;
+  color: white;
+  border-color: #04A2D7;
+}
+
+.zoom-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-btn.reset {
+  border-color: #04A2D7;
+  color: #04A2D7;
+  font-size: 12px;
+}
+
+.zoom-btn.reset:hover:not(:disabled) {
+  background: #04A2D7;
+  color: white;
+}
+
+.zoom-level {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: center;
+  color: #333;
+}
+
+.material-preview-img {
   max-width: 100%; max-height: 720px;
   object-fit: contain;
 }
