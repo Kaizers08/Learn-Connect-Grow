@@ -1202,10 +1202,6 @@
                                       <p class="material-desc">{{ material.description }}</p>
                                     }
                                     <div class="material-meta-row">
-                                      <span class="material-meta-item">
-                                        <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
-                                        {{ material.file_name }}
-                                      </span>
                                       @if (material.duration_minutes) {
                                         <span class="material-meta-item">
                                           <app-icon name="clock" [size]="13"></app-icon>
@@ -1268,10 +1264,6 @@
                                   <p class="material-desc">{{ material.description }}</p>
                                 }
                                 <div class="material-meta-row">
-                                  <span class="material-meta-item">
-                                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
-                                    {{ material.file_name }}
-                                  </span>
                                   @if (material.duration_minutes) {
                                     <span class="material-meta-item">
                                       <app-icon name="clock" [size]="13"></app-icon>
@@ -1448,10 +1440,6 @@
                         <p class="material-desc">{{ material.description }}</p>
                       }
                       <div class="material-meta-row">
-                        <span class="material-meta-item">
-                          <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
-                          {{ material.file_name }}
-                        </span>
                         @if (material.duration_minutes) {
                           <span class="material-meta-item">
                             <app-icon name="clock" [size]="13"></app-icon>
@@ -2724,10 +2712,6 @@
                   <p class="material-desc">{{ material.description }}</p>
                 }
                 <div class="material-meta-row">
-                  <span class="material-meta-item">
-                    <app-icon [name]="getResourceFileIconName(material.file_type)" [size]="13"></app-icon>
-                    {{ material.file_name }}
-                  </span>
                   @if (material.duration_minutes) {
                     <span class="material-meta-item">
                       <app-icon name="clock" [size]="13"></app-icon>
@@ -3084,7 +3068,6 @@
           </div>
           <div>
             <h3 class="material-preview-title">{{ previewingMaterial.title }}</h3>
-            <p class="material-preview-sub">{{ previewingMaterial.file_name }}</p>
           </div>
         </div>
         <button class="material-preview-close" (click)="closeMaterialPreview()">
