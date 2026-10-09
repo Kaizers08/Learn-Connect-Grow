@@ -4665,6 +4665,22 @@ textarea.form-control {
   color: #6B7A99;
 }
 
+.cal-day-label-today {
+  background: linear-gradient(135deg, #33A1FF 0%, #5CB3FF 100%);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.cal-day-label-today .cal-day-name {
+  color: #FFFFFF;
+}
+
+.cal-day-label-today .cal-day-num {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .cal-grid-scroll {
   overflow-y: auto;
   overflow-x: hidden;

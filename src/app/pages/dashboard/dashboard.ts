@@ -65,13 +65,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   searchQuery = '';
 
   // ─── Activity Calendar (static UI) ──────────────────────────────────────────
-  calendarViewMode: 'day' | 'week' = 'week';
+  calendarViewMode: 'day' | 'week' | 'month' = 'week';
   calendarWeekLabel = '';
   calendarHours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
   calendarDays: Array<{ name: string; short: string; date: number }> = [];
   calendarAnchorDate = new Date();
   /** Demo “now” line around 15:15 as % of 09–21 day span */
   readonly calendarSlotCount = 24;
+  todayDate = new Date().getDate(); // Track today's date for highlighting
+  private isInitialCalendarLoad = true; // Only auto-navigate on initial load, not on manual navigation
   calendarNowPercent = 0;
   private nowLineInterval: any;
   private shouldScrollCalendar = false;
@@ -103,7 +105,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** Only events the current user owns can be deleted (not a mentor's shared events). */
   canDeleteCalendarEvent(event: any): boolean {
     if (!event) return false;
-    return !event.isFromMentor;
+    // Can only delete events that you created (where ownerId matches current user)
+    return event.ownerId === this.currentUserId;
   }
 
   askDeleteCalendarEvent(event: any) {
@@ -164,6 +167,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       const userId = await this.supabase.getCurrentUserId();
       if (!userId) return;
 
+      // Ensure currentUserId is always set for delete checks
+      this.currentUserId = userId;
+
       console.log('=== Loading Calendar Events ===');
       console.log('Current User ID:', userId);
       console.log('Is Mentor:', this.isMentor);
@@ -218,7 +224,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           console.log('ALL Calendar Events in DB:', allEventsCheck);
         }
         
-        const { data: mentorEvents, error: mentorError } = await this.supabase.getConnectedMentorsCalendarEvents(userId);
+        const { data: mentorEvents, error: mentorError } = await this.supabase.getApprovedMentorsCalendarEvents(userId);
         
         console.log('Mentor Events Result:', mentorEvents);
         console.log('Mentor Events Error:', mentorError);
@@ -272,13 +278,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
         }
 
+        // Calculate day difference more accurately by using floor division
         const eventDayStart = new Date(
           eventDateTime.getFullYear(),
           eventDateTime.getMonth(),
           eventDateTime.getDate()
         );
-        const daysDiff = Math.round(
-          (eventDayStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)
+        eventDayStart.setHours(0, 0, 0, 0);
+        
+        const weekStartMidnight = new Date(weekStart);
+        weekStartMidnight.setHours(0, 0, 0, 0);
+        
+        const daysDiff = Math.floor(
+          (eventDayStart.getTime() - weekStartMidnight.getTime()) / (1000 * 60 * 60 * 24)
         );
 
         // Type-safe event type
@@ -315,95 +327,84 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           mentorName: dbEvent.mentorName,
           mentorProfilePicture: dbEvent.mentorProfilePicture
         };
-      }).filter((event: any) => event.day >= 0 && event.day <= 6); // Only show events in current week
+      }).filter((event: any) => {
+        // Filter based on current view mode
+        if (this.calendarViewMode === 'week') {
+          // Week view: only show events in current week (day 0-6)
+          if (event.day < 0 || event.day > 6) return false;
+        } else if (this.calendarViewMode === 'month') {
+          // Month view: show all events in current month
+          const eventDate = new Date(event.date);
+          const currentAnchor = this.getCalendarReferenceDate();
+          if (eventDate.getMonth() !== currentAnchor.getMonth() || 
+              eventDate.getFullYear() !== currentAnchor.getFullYear()) {
+            return false;
+          }
+        }
+        // Day view handled differently, show if it's today
+        
+        // Don't show expired events (event has ended)
+        const now = new Date();
+        const eventDateTime = this.parseEventDateTime(event.date, event.startTime);
+        const eventEndTime = new Date(eventDateTime);
+        
+        // Add duration to get end time
+        if (event.endTime) {
+          const [endHours, endMinutes] = String(event.endTime).split(':').map(Number);
+          eventEndTime.setHours(endHours, endMinutes, 0, 0);
+        } else {
+          // If no end time, assume 1 hour duration
+          eventEndTime.setHours(eventEndTime.getHours() + 1);
+        }
+        
+        return eventEndTime > now;
+      });
 
       console.log('Final Calendar Events for Display:', this.calendarEvents);
 
-      // If no events are showing but we have user events, find the week of the first event and navigate there
-      if (this.calendarEvents.length === 0 && allEvents.length > 0) {
-        console.log('⚠️ No events in current week. Events exist:', allEvents.length);
+      // If no events are showing but we have events, find the week of the first event and navigate there
+      // Only do this on initial load, not during manual navigation
+      if (this.isInitialCalendarLoad && this.calendarEvents.length === 0 && allEvents.length > 0) {
+        console.log('⚠️ No events in current week on initial load. Auto-navigating to first event.');
         
-        // Find the earliest event's date and navigate to that week
-        const firstEvent = allEvents.reduce((earliest: any, current: any) => {
-          if (!earliest) return current;
-          const earliestDate = new Date(earliest.event_date);
-          const currentDate = new Date(current.event_date);
-          return currentDate < earliestDate ? current : earliest;
+        // Find the earliest upcoming event's date and navigate to that week
+        const now = new Date();
+        const upcomingEvents = allEvents.filter((e: any) => {
+          const eventDate = this.parseEventDateTime(e.event_date, e.start_time);
+          return eventDate > now;
         });
 
-        if (firstEvent && firstEvent.event_date) {
-          const firstEventDate = this.parseEventDateTime(firstEvent.event_date, firstEvent.start_time);
-          
-          // Only update anchor if it's significantly different (not just a few hours off)
-          const timeDiff = Math.abs(firstEventDate.getTime() - this.getCalendarReferenceDate().getTime());
-          if (timeDiff > 86400000) { // More than 1 day difference
-            this.calendarAnchorDate = new Date(
-              firstEventDate.getFullYear(),
-              firstEventDate.getMonth(),
-              firstEventDate.getDate()
-            );
-            console.log('📅 Navigating to week containing first event:', firstEventDate);
+        if (upcomingEvents.length > 0) {
+          const firstEvent = upcomingEvents.reduce((earliest: any, current: any) => {
+            const earliestDate = new Date(earliest.event_date);
+            const currentDate = new Date(current.event_date);
+            return currentDate < earliestDate ? current : earliest;
+          });
+
+          if (firstEvent && firstEvent.event_date) {
+            const firstEventDate = this.parseEventDateTime(firstEvent.event_date, firstEvent.start_time);
             
-            // Reload with the new anchor date
-            const newWeekStart = this.getWeekStart(this.getCalendarReferenceDate());
-            this.calendarEvents = allEvents.map((dbEvent: any) => {
-              const eventDateTime = this.parseEventDateTime(dbEvent.event_date, dbEvent.start_time);
-              const startHours = eventDateTime.getHours();
-
-              let durationHours = 1;
-              if (dbEvent.end_time) {
-                const [endHours, endMinutes] = String(dbEvent.end_time).split(':').map(Number);
-                const startTimeInMinutes = startHours * 60 + eventDateTime.getMinutes();
-                const endTimeInMinutes = endHours * 60 + endMinutes;
-                durationHours = (endTimeInMinutes - startTimeInMinutes) / 60;
-              }
-
-              const eventDayStart = new Date(
-                eventDateTime.getFullYear(),
-                eventDateTime.getMonth(),
-                eventDateTime.getDate()
+            // Only update anchor if it's significantly different (not just a few hours off)
+            const timeDiff = Math.abs(firstEventDate.getTime() - this.getCalendarReferenceDate().getTime());
+            if (timeDiff > 86400000) { // More than 1 day difference
+              this.calendarAnchorDate = new Date(
+                firstEventDate.getFullYear(),
+                firstEventDate.getMonth(),
+                firstEventDate.getDate()
               );
-              const daysDiff = Math.round(
-                (eventDayStart.getTime() - newWeekStart.getTime()) / (1000 * 60 * 60 * 24)
-              );
-
-              const rawEventType = dbEvent.event_type || 'personal';
-              const eventType = (['mentorship', 'personal', 'reminder'].includes(rawEventType) 
-                ? rawEventType 
-                : 'personal') as 'mentorship' | 'personal' | 'reminder';
-
-              const badges: string[] = [];
-              if (dbEvent.place) badges.push('LOC');
-              if (dbEvent.notes) badges.push('NOTE');
-
-              return {
-                id: dbEvent.id,
-                day: daysDiff,
-                startHour: startHours,
-                durationHours: durationHours,
-                title: dbEvent.title,
-                color: dbEvent.isFromMentor && dbEvent.mentorColor 
-                  ? dbEvent.mentorColor 
-                  : dbEvent.color,
-                badges: badges,
-                avatars: dbEvent.members?.length || 1,
-                compact: durationHours <= 1,
-                place: dbEvent.place,
-                notes: dbEvent.notes,
-                date: dbEvent.event_date,
-                startTime: dbEvent.start_time,
-                endTime: dbEvent.end_time,
-                isFromMentor: dbEvent.isFromMentor || false,
-                ownerId: dbEvent.user_id,
-                eventType: eventType,
-                mentorName: dbEvent.mentorName,
-                mentorProfilePicture: dbEvent.mentorProfilePicture
-              };
-            }).filter((event: any) => event.day >= 0 && event.day <= 6);
-            
-            console.log('✅ Refiltered events for new week:', this.calendarEvents.length);
+              console.log('📅 Navigating to week containing first event:', firstEventDate);
+              
+              // Reinitialize the calendar view to show the week containing the earliest event
+              this.initializeCurrentWeek();
+            }
           }
         }
+      }
+
+      // Mark initial load as complete - disable auto-navigation for subsequent navigation
+      if (this.isInitialCalendarLoad) {
+        this.isInitialCalendarLoad = false;
+        console.log('✓ Initial calendar load complete. Auto-navigation disabled for manual navigation.');
       }
 
       // Load upcoming sessions for the sidebar
@@ -443,21 +444,50 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Load upcoming sessions from calendar events (real now + this week)
   loadUpcomingSessions(events: any[]) {
     const now = new Date();
-    const weekStart = this.getWeekStart(now);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 7);
 
-    const thisWeekUpcoming = events
+    // Filter events based on user role
+    let eventsToShow = events;
+    if (!this.isMentor) {
+      // Mentees: show own events + connected mentor sessions
+      eventsToShow = events.filter((event: any) => {
+        // Show own events
+        if (event.user_id === this.currentUserId) return true;
+        // Show events from connected mentors only
+        return event.isFromMentor && this.myConnectionIds.has(event.user_id);
+      });
+    } else {
+      // Mentors: only show their own sessions
+      eventsToShow = events.filter((event: any) => event.user_id === this.currentUserId);
+    }
+
+    // Get upcoming events (next 30 days or further)
+    const upcomingEvents = eventsToShow
       .map((event: any) => ({
         event,
         at: this.parseEventDateTime(event.event_date, event.start_time)
       }))
-      .filter(({ at }) => at > now && at < weekEnd)
+      .filter(({ at }) => at > now)
       .sort((a, b) => a.at.getTime() - b.at.getTime())
       .map(({ event }) => event);
 
-    // Convert to upcoming sessions format (limit to 3 soonest this week)
-    this.upcomingSessions = thisWeekUpcoming.slice(0, 3).map((event: any) => {
+    console.log('Upcoming Sessions Debug:', {
+      isMentor: this.isMentor,
+      currentUserId: this.currentUserId,
+      totalEvents: events.length,
+      filteredEvents: eventsToShow.length,
+      connectedMentorIds: Array.from(this.myConnectionIds),
+      upcomingTotal: upcomingEvents.length,
+      eventsToShowDetails: eventsToShow.map((e: any) => ({
+        title: e.title,
+        userId: e.user_id,
+        isFromMentor: e.isFromMentor,
+        date: e.event_date
+      })),
+      upcomingEvents
+    });
+
+    // Convert to upcoming sessions format (limit to 3 soonest)
+    this.upcomingSessions = upcomingEvents.slice(0, 3).map((event: any) => {
       const eventDate = this.parseEventDateTime(event.event_date);
       const dateOptions: Intl.DateTimeFormatOptions = { 
         year: 'numeric', 
@@ -496,7 +526,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       };
     });
 
-    this.upcomingSessionsCount = thisWeekUpcoming.length;
+    this.upcomingSessionsCount = upcomingEvents.length;
   }
 
   // Notification/Toast system
@@ -581,6 +611,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   initializeCurrentWeek(): void {
+    // Update today's date for highlighting
+    this.todayDate = new Date().getDate();
+    
     const weekStart = this.getWeekStart(this.getCalendarReferenceDate());
     
     const weekEnd = new Date(weekStart);
@@ -748,8 +781,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       eventDate.getMonth(),
       eventDate.getDate()
     );
-    const daysDiff = Math.round(
-      (eventDayStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)
+    eventDayStart.setHours(0, 0, 0, 0);
+    
+    const weekStartMidnight = new Date(weekStart);
+    weekStartMidnight.setHours(0, 0, 0, 0);
+    
+    const daysDiff = Math.floor(
+      (eventDayStart.getTime() - weekStartMidnight.getTime()) / (1000 * 60 * 60 * 24)
     );
 
     try {
@@ -791,6 +829,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           eventDate.getMonth(),
           eventDate.getDate()
         );
+        // Reinitialize the calendar view to show the week containing the new event
+        this.initializeCurrentWeek();
       }
 
       this.newEvent = {
@@ -818,7 +858,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     return (index / this.calendarSlotCount) * 100;
   }
 
-  setCalendarView(mode: 'day' | 'week') {
+  setCalendarView(mode: 'day' | 'week' | 'month') {
     this.calendarViewMode = mode;
     this.renderCalendarView();
   }
@@ -842,6 +882,48 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       short: dayShorts[dayIndex],
       date: date
     }];
+  }
+
+  initializeCurrentMonth(): void {
+    // Update today's date for highlighting
+    this.todayDate = new Date().getDate();
+
+    const now = this.getCalendarReferenceDate();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayShorts = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const monthName = monthNames[month];
+    
+    this.calendarWeekLabel = `${monthName} ${year}`;
+    
+    // Get first day of month and number of days in month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    this.calendarDays = [];
+    
+    // Add empty days for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      this.calendarDays.push({
+        name: dayShorts[i],
+        short: dayShorts[i],
+        date: 0 // 0 means it's from previous month
+      });
+    }
+    
+    // Add all days of current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const currentDate = new Date(year, month, i);
+      this.calendarDays.push({
+        name: dayShorts[currentDate.getDay()],
+        short: dayShorts[currentDate.getDay()],
+        date: i
+      });
+    }
   }
 
   calendarRange(n: number): number[] {
@@ -956,6 +1038,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   private renderCalendarView(): void {
     if (this.calendarViewMode === 'day') {
       this.initializeCurrentDay();
+    } else if (this.calendarViewMode === 'month') {
+      this.initializeCurrentMonth();
     } else {
       this.initializeCurrentWeek();
     }
@@ -966,6 +1050,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const anchor = this.getCalendarReferenceDate();
     if (this.calendarViewMode === 'day') {
       anchor.setDate(anchor.getDate() - 1);
+    } else if (this.calendarViewMode === 'month') {
+      anchor.setMonth(anchor.getMonth() - 1);
     } else {
       anchor.setDate(anchor.getDate() - 7);
     }
@@ -977,6 +1063,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     const anchor = this.getCalendarReferenceDate();
     if (this.calendarViewMode === 'day') {
       anchor.setDate(anchor.getDate() + 1);
+    } else if (this.calendarViewMode === 'month') {
+      anchor.setMonth(anchor.getMonth() + 1);
     } else {
       anchor.setDate(anchor.getDate() + 7);
     }
@@ -1796,9 +1884,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       // Initialize calendar with current week FIRST
       this.initializeCurrentWeek();
 
+      // Load connections FIRST so myConnectionIds is populated
+      await this.loadConnections();
+
       await Promise.all([
         this.loadMatchedUsers(),
-        this.loadConnections(),
         this.loadCalendarEvents()
       ]);
 

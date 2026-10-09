@@ -878,6 +878,54 @@ export class SupabaseService {
     return { data, error: null };
   }
 
+  async getApprovedMentorsCalendarEvents(menteeUserId: string) {
+    console.log('=== Getting Approved Mentors Calendar Events ===');
+    console.log('Mentee User ID:', menteeUserId);
+    
+    // First, get all approved mentors (status === 'approved')
+    const { data: mentors, error: mentorError } = await this.client
+      .from('mentor_profiles')
+      .select('user_id')
+      .eq('status', 'approved');
+
+    console.log('Approved Mentors Query Result:', mentors);
+    console.log('Approved Mentors Query Error:', mentorError);
+
+    if (mentorError || !mentors || mentors.length === 0) {
+      console.log('No approved mentors found or error occurred');
+      return { data: [], error: mentorError };
+    }
+
+    // Extract mentor user IDs (exclude the mentee themselves if they are also a mentor)
+    const mentorIds = mentors
+      .map((m: any) => m.user_id)
+      .filter((id: string) => id !== menteeUserId);
+    
+    console.log('Approved Mentor IDs:', mentorIds);
+
+    if (mentorIds.length === 0) {
+      console.log('No other approved mentors found');
+      return { data: [], error: null };
+    }
+
+    // Get all calendar events from these approved mentors
+    const { data, error } = await this.client
+      .from('calendar_events')
+      .select('*')
+      .in('user_id', mentorIds)
+      .order('event_date', { ascending: true });
+
+    console.log('Calendar Events from Approved Mentors:', data);
+    console.log('Calendar Events Query Error:', error);
+
+    if (error) {
+      this.logError('getApprovedMentorsCalendarEvents', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
   /**
    * Delete a calendar event
    */

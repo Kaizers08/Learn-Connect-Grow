@@ -581,7 +581,7 @@
                   </svg>
                 </div>
                 @for (day of calendarDays; track day.date) {
-                  <div class="cal-day-label">
+                  <div class="cal-day-label" [class.cal-day-label-today]="day.date === todayDate">
                     <span class="cal-day-name">{{ day.short }}</span>
                     <span class="cal-day-num">{{ day.date }}</span>
                   </div>
