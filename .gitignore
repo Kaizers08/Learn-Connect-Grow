@@ -8,6 +8,7 @@
 
 # Node
 /node_modules
+scanner/node_modules
 npm-debug.log
 yarn-error.log
 
@@ -46,6 +47,7 @@ Thumbs.db
 # Secrets
 .env
 .env.*
+!scanner/.env.example
 seed-admin.ts
 seed-admin.js
 0

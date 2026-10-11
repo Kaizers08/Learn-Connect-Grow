@@ -1,0 +1,32 @@
+# Learning-materials virus scanner (ClamAV) — Render.com blueprint
+# https://render.com/docs/blueprint-spec
+#
+# Deploy: push this repo to GitHub, then Render Dashboard → New → Blueprint →
+# pick this repo. Everything below is created automatically.
+
+services:
+  - type: web
+    name: lcg-virus-scanner
+    runtime: docker
+    dockerfilePath: ./scanner/Dockerfile
+    dockerContext: ./scanner
+    plan: starter          # free tier spins down when idle; starter keeps it warm
+    region: singapore      # pinakamalapit sa PH — mas mababa ang latency
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # Render provides PORT automatically; the scanner honours it.
+      - key: CLAMD_HOST
+        value: 127.0.0.1
+      - key: CLAMD_PORT
+        value: "3310"
+      - key: MAX_SCAN_BYTES
+        value: "67108864"
+      - key: CLAMD_TIMEOUT_MS
+        value: "120000"
+      # Set these two in the Render dashboard (marked sync:false so they are
+      # never committed). The SAME SCAN_API_KEY goes into the Supabase
+      # function secret CLAMAV_SCAN_KEY.
+      - key: SCAN_API_KEY
+        generateValue: true
+        sync: false

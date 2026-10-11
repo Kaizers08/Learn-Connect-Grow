@@ -8,7 +8,12 @@
     "build:vercel": "node scripts/set-env.mjs && ng build && node scripts/prepare-vercel.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:Edtech-Mentoring": "node dist/Edtech-Mentoring/server/server.mjs"
+    "serve:ssr:Edtech-Mentoring": "node dist/Edtech-Mentoring/server/server.mjs",
+    "scanner": "npm --prefix scanner start",
+    "scanner:test": "powershell -ExecutionPolicy Bypass -File ./scripts/test-clamav-scan.ps1",
+    "scanner:tunnel": "\"C:\\Program Files (x86)\\cloudflared\\cloudflared.exe\" tunnel --url http://127.0.0.1:3030 --no-autoupdate",
+    "verify:scan": "node scripts/verify-scan-chain.cjs",
+    "scanner:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-clamav.ps1"
   },
   "private": true,
   "packageManager": "npm@11.9.0",

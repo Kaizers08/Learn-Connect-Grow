@@ -9203,3 +9203,77 @@ textarea.form-control {
   color: #2e7d32;
   font-weight: 500;
 }
+
+
+/* -- ClamAV virus scan (learning materials) ---------------------------------- */
+.scan-note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.scan-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1e40af;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.scan-error {
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid #bfdbfe;
+  border-top-color: #1e40af;
+  border-radius: 50%;
+  display: inline-block;
+  animation: scan-spin 0.8s linear infinite;
+}
+
+@keyframes scan-spin {
+  to { transform: rotate(360deg); }
+}
+
+.missing-fields {
+  margin-right: auto;
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+}
+
+.scan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.scan-badge-trusted { color: #166534; }
+.scan-badge-blocked { color: #991b1b; }
+.scan-badge-unscanned { color: #64748b; }
