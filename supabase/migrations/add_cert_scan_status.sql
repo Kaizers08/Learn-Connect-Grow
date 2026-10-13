@@ -1,13 +1,20 @@
--- Migration: Add scan_status columns for mentor documents
+-- Migration: Add scan_status columns for mentor profile picture and documents
 -- Run this in Supabase SQL Editor
 
--- Diploma and certifications can carry a VirusTotal verdict.
--- 'unscanned' = never scanned, 'trusted' = clean, 'blocked' = infected.
+-- Profile picture (Sightengine AI-generated + moderation scan)
 alter table public.mentor_profiles
-  add column if not exists diploma_scan_status text default 'unscanned';
+  add column if not exists profile_picture_scan_status text default 'unscanned';
 
 alter table public.mentor_profiles
-  add column if not exists certifications_scan_status text default 'unscanned';
+  drop constraint if exists mentor_profiles_profile_picture_scan_status_check;
+
+alter table public.mentor_profiles
+  add constraint mentor_profiles_profile_picture_scan_status_check
+  check (profile_picture_scan_status in ('trusted', 'blocked', 'unscanned'));
+
+-- Diploma (VirusTotal scan)
+alter table public.mentor_profiles
+  add column if not exists diploma_scan_status text default 'unscanned';
 
 alter table public.mentor_profiles
   drop constraint if exists mentor_profiles_diploma_scan_status_check;
@@ -15,6 +22,10 @@ alter table public.mentor_profiles
 alter table public.mentor_profiles
   add constraint mentor_profiles_diploma_scan_status_check
   check (diploma_scan_status in ('trusted', 'blocked', 'unscanned'));
+
+-- Certifications (VirusTotal scan)
+alter table public.mentor_profiles
+  add column if not exists certifications_scan_status text default 'unscanned';
 
 alter table public.mentor_profiles
   drop constraint if exists mentor_profiles_certifications_scan_status_check;

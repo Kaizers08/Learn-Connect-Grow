@@ -34,6 +34,7 @@ export interface MentorProfile {
   bio?: string;
   skills?: string[];
   profile_picture?: string;
+  profile_picture_scan_status?: string;
   phone_number?: string;
   country?: string;
   gender?: string;
@@ -44,7 +45,9 @@ export interface MentorProfile {
   looking_for_mentee?: boolean;
   status?: string;
   diploma?: string;
+  diploma_scan_status?: string;
   certifications?: string[];
+  certifications_scan_status?: string;
   created_at?: string;
 }
 
@@ -564,6 +567,46 @@ export class SupabaseService {
           ? 'Could not reach the file scanner. Please try again in a moment.'
           : raw
       };
+    }
+  }
+
+  /**
+   * Scans a mentor profile picture or certification image with Sightengine
+   * via the `scan-mentor-documents` Edge Function. Returns 'trusted',
+   * 'blocked', or 'unscanned'.
+   */
+  async scanMentorDocument(
+    url: string,
+    type: 'profile_picture' | 'certification'
+  ): Promise<{ status: string; scores?: any; error?: string }> {
+    const { data: sessionData } = await this.client.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      return { status: 'unscanned', error: 'No access token — sign in again.' };
+    }
+
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/functions/v1/scan-mentor-documents`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url, type }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { status: 'unscanned', error: data.error || 'Scan failed' };
+      }
+      return { status: data.status, scores: data.scores };
+    } catch (err: any) {
+      console.error('Error calling document scanner:', err);
+      return { status: 'unscanned', error: 'Could not reach the moderator.' };
     }
   }
 

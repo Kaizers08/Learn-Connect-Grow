@@ -167,9 +167,18 @@ export class MentorProfileComponent implements OnInit {
 
     // Upload photo to Storage if selected
     let pictureUrl: string | undefined = undefined;
+    let profilePictureScanStatus = 'unscanned';
     if (this.profileFile) {
       const url = await this.supabase.uploadProfilePicture(userId!, this.profileFile);
-      if (url) pictureUrl = url;
+      if (url) {
+        pictureUrl = url;
+        // Scan the profile picture for AI-generated / inappropriate content
+        const scan = await this.supabase.scanMentorDocument(url, 'profile_picture');
+        profilePictureScanStatus = scan.status || 'unscanned';
+        if (scan.error) {
+          console.warn('Profile picture scan error:', scan.error);
+        }
+      }
     }
 
     const { error } = await this.supabase.saveMentorProfile({
@@ -181,6 +190,7 @@ export class MentorProfileComponent implements OnInit {
       years_experience: this.yearsExperience!,
       bio:              this.bio             || undefined,
       profile_picture:  pictureUrl,
+      profile_picture_scan_status: profilePictureScanStatus,
       skills:           this.skills,
       phone_number:     this.phoneNumber     || undefined,
       gender:           this.gender          || undefined,

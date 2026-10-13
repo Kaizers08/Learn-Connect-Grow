@@ -55,6 +55,7 @@ create table if not exists public.mentor_profiles (
   diploma_scan_status text default 'unscanned',
   certifications text[],
   certifications_scan_status text default 'unscanned',
+  profile_picture_scan_status text default 'unscanned',
   phone_number text,
   country text,
   gender text,

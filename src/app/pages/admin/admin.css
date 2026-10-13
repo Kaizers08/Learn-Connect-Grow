@@ -958,6 +958,15 @@
 .admin-res-trust.admin-trust-blocked   { background: #fff5f5; color: #c53030; border-color: #fcc8c8; }
 .admin-res-trust.admin-trust-unscanned { background: #f7fafc; color: #718096; border-color: #e2e8f0; }
 
+/* Profile picture badge overlay in the admin modal */
+.admin-trust-badge-sm {
+  position: absolute;
+  bottom: -4px; right: -4px;
+  font-size: 0.7rem; padding: 0.15rem 0.4rem;
+  border-radius: 50px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
 .admin-res-filename {
   font-size: 0.72rem; color: #aaa;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;

@@ -1028,6 +1028,11 @@
           } @else {
             {{ getInitials(selectedMentor.full_name) }}
           }
+          @if (selectedMentor.profile_picture) {
+            <span class="admin-res-trust admin-trust-badge-sm" [class]="'admin-trust-' + (selectedMentor.profile_picture_scan_status || 'unscanned')">
+              @if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'trusted') { 🛡️ } @else if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'blocked') { 🚫 } @else { ⚠️ }
+            </span>
+          }
         </div>
         <div class="admin-modal-title-info">
           <h2 class="admin-modal-name">{{ selectedMentor.full_name || 'Unknown' }}</h2>
