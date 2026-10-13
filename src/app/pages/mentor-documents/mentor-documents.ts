@@ -76,16 +76,50 @@ export class MentorDocumentsComponent {
 
     // Upload diploma to Storage (optional)
     let diplomaUrl: string | undefined;
+    let diplomaScanStatus = 'unscanned';
     if (this.diplomaFile) {
-      const url = await this.supabase.uploadDocument(userId, this.diplomaFile, 'diploma');
-      if (url) diplomaUrl = url;
+      const staged = await this.supabase.stageLearningMaterial(userId, this.diplomaFile);
+      if ('error' in staged) {
+        this.errorMsg = staged.error;
+        this.submitting = false;
+        return;
+      }
+      const scan = await this.supabase.scanLearningMaterial(
+        staged.path,
+        this.diplomaFile.type || 'application/octet-stream'
+      );
+      if (scan.error) {
+        this.errorMsg = scan.error;
+        this.submitting = false;
+        return;
+      }
+      diplomaUrl = scan.publicUrl;
+      diplomaScanStatus = scan.clean ? 'trusted' : 'blocked';
     }
 
-    // Upload all certifications to Storage
+    // Upload all certifications to Storage and scan each one
     const certUrls: string[] = [];
+    let certificationsScanStatus = 'trusted'; // clean unless any file is blocked
     for (const cert of this.certFiles) {
-      const url = await this.supabase.uploadDocument(userId, cert.file, 'certifications');
-      if (url) certUrls.push(url);
+      const staged = await this.supabase.stageLearningMaterial(userId, cert.file);
+      if ('error' in staged) {
+        this.errorMsg = staged.error;
+        this.submitting = false;
+        return;
+      }
+      const scan = await this.supabase.scanLearningMaterial(
+        staged.path,
+        cert.file.type || 'application/octet-stream'
+      );
+      if (scan.error) {
+        this.errorMsg = scan.error;
+        this.submitting = false;
+        return;
+      }
+      if (!scan.clean) {
+        certificationsScanStatus = 'blocked';
+      }
+      if (scan.publicUrl) certUrls.push(scan.publicUrl);
     }
 
     if (certUrls.length === 0) {
@@ -94,7 +128,12 @@ export class MentorDocumentsComponent {
       return;
     }
 
-    const { error } = await this.supabase.submitMentorDocuments(diplomaUrl, certUrls);
+    const { error } = await this.supabase.submitMentorDocuments(
+      diplomaUrl,
+      certUrls,
+      diplomaScanStatus,
+      certificationsScanStatus
+    );
     this.submitting = false;
 
     if (error) {

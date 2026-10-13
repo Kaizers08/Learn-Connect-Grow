@@ -372,13 +372,24 @@ export class SupabaseService {
   }
 
   // Mentor uploads diploma + certifications for admin approval.
-  async submitMentorDocuments(diploma: string | undefined, certifications: string[] | undefined) {
+  async submitMentorDocuments(
+    diploma: string | undefined,
+    certifications: string[] | undefined,
+    diplomaScanStatus = 'unscanned',
+    certificationsScanStatus = 'unscanned'
+  ) {
     const userId = await this.getCurrentUserId();
     if (!userId) return { data: null, error: { message: 'Not authenticated.' } };
 
     const { error } = await this.client
       .from('mentor_profiles')
-      .update({ diploma, certifications, status: 'pending' })
+      .update({
+        diploma,
+        certifications,
+        diploma_scan_status: diplomaScanStatus,
+        certifications_scan_status: certificationsScanStatus,
+        status: 'pending'
+      })
       .eq('user_id', userId);
 
     if (error) this.logError('submitMentorDocuments', error);

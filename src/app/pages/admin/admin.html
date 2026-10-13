@@ -1120,6 +1120,9 @@
                 } @else {
                   <a [href]="selectedMentor.diploma" target="_blank" class="admin-doc-link">Open File</a>
                 }
+                <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.diploma_scan_status || 'unscanned')">
+                  @if ((selectedMentor.diploma_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ selectedMentor.diploma_scan_status || 'Unscanned' }} }
+                </span>
               } @else {
                 <span class="admin-doc-none">Not provided</span>
               }
@@ -1136,6 +1139,9 @@
                     }
                   }
                 </div>
+                <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.certifications_scan_status || 'unscanned')">
+                  @if ((selectedMentor.certifications_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ selectedMentor.certifications_scan_status || 'Unscanned' }} }
+                </span>
               } @else {
                 <span class="admin-doc-none">Not provided</span>
               }
