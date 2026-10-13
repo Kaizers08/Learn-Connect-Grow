@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -219,7 +219,7 @@ export class AdminComponent implements OnInit {
       const { data, error } = await this.supabase.getAllFeedback();
 
       if (error) {
-        // RLS blocked â€” fall back to per-mentor queries
+        // RLS blocked — fall back to per-mentor queries
         console.warn('[Admin:Feedback] Bulk query blocked, trying per-mentor fallback:', (error as any).message);
         await this.loadFeedbackPerMentor(mentorProfiles);
         return;
@@ -395,7 +395,7 @@ export class AdminComponent implements OnInit {
       // Fetch materials
       const { data: matData, error: matError } = await this.supabase.getClient()
         .from('learning_materials')
-        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id, scan_status')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id')
         .in('mentor_user_id', mentorIds)
         .order('order_number', { ascending: true });
 
@@ -430,7 +430,7 @@ export class AdminComponent implements OnInit {
     for (const mentor of mentorProfiles) {
       const { data: matData } = await this.supabase.getClient()
         .from('learning_materials')
-        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id, scan_status')
+        .select('id, mentor_user_id, title, description, order_number, file_url, file_type, file_name, duration_minutes, created_at, folder_id')
         .eq('mentor_user_id', mentor.user_id)
         .order('order_number', { ascending: true });
 
@@ -647,9 +647,9 @@ export class AdminComponent implements OnInit {
   }
 
   getAdminRankMedal(rank: number): string {
-    if (rank === 1) return 'ðŸ¥‡';
-    if (rank === 2) return 'ðŸ¥ˆ';
-    if (rank === 3) return 'ðŸ¥‰';
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
     return `#${rank}`;
   }
 
@@ -675,4 +675,3 @@ export class AdminComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 }
-

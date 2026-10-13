@@ -946,18 +946,6 @@
 .admin-res-meta-chip[data-type="document"] { background: #f0f8ff; color: #2563eb; border-color: #c8dcf5; }
 .admin-res-meta-chip[data-type="image"]    { background: #f0fff4; color: #21AA3A; border-color: #c8f0d0; }
 
-/* Security-scan verdict shown next to each mentor's learning material */
-.admin-res-trust {
-  font-size: 0.62rem; font-weight: 700;
-  padding: 0.1rem 0.45rem; border-radius: 50px;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.admin-res-trust.admin-trust-trusted   { background: #f0fff4; color: #21AA3A; border-color: #c8f0d0; }
-.admin-res-trust.admin-trust-blocked   { background: #fff5f5; color: #c53030; border-color: #fcc8c8; }
-.admin-res-trust.admin-trust-unscanned { background: #f7fafc; color: #718096; border-color: #e2e8f0; }
-
 .admin-res-filename {
   font-size: 0.72rem; color: #aaa;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;

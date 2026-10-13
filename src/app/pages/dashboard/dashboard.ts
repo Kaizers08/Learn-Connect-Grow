@@ -1530,11 +1530,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
   resourceUploadFileSize = 0;
   resourceUploadDuration: number | null = null;
   isResourceUploading = false;
-
-  // ClamAV virus-scan state (mentor learning-material uploads)
-  resourceUploadStage: 'idle' | 'staging' | 'scanning' | 'saving' = 'idle';
-  resourceScanMessage = '';
-  resourceScanError = '';
   private resourceSetupWarningShown = false;
   
   // Edit modal
@@ -3140,35 +3135,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.resourceUploadFileName = '';
     this.resourceUploadFileSize = 0;
     this.resourceUploadDuration = null;
-    this.resourceUploadStage = 'idle';
-    this.resourceScanMessage = '';
-    this.resourceScanError = '';
   }
 
   closeResourcesUploadModal() {
     this.showResourcesUploadModal = false;
     this.resourceUploadFile = null;
-    this.resourceUploadStage = 'idle';
-    this.resourceScanMessage = '';
-    this.resourceScanError = '';
-  }
-
-  /** Badge text for a material's ClamAV verdict. */
-  getResourceScanStatusLabel(material: any): string {
-    switch (material?.scan_status) {
-      case 'trusted': return 'Trusted';
-      case 'blocked': return 'Blocked';
-      default: return 'Unscanned';
-    }
-  }
-
-  /** Names the required fields still blocking the Upload button. */
-  getResourceMissingFields(): string[] {
-    const missing: string[] = [];
-    if (!this.resourceUploadOrderNumber) missing.push('Order Number');
-    if (!this.resourceUploadTitle) missing.push('Title');
-    if (!this.resourceUploadFile) missing.push('File');
-    return missing;
   }
 
   onResourceFileSelected(event: Event) {
@@ -3184,8 +3155,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.resourceUploadFile = file;
       this.resourceUploadFileName = file.name;
       this.resourceUploadFileSize = file.size;
-      this.resourceUploadStage = 'idle';
-      this.resourceScanError = '';
     }
   }
 
@@ -3222,11 +3191,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.isResourceUploading = true;
-    this.resourceScanError = '';
     this.refreshView();
 
     const fileToUpload = this.resourceUploadFile;
-    let stagedPath = '';
 
     try {
       const userId = this.currentUserId || await this.supabase.getCurrentUserId();
@@ -3237,19 +3204,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
 
-      // ── 1. Stage in the PRIVATE quarantine path (never public yet) ──────────
-      this.resourceUploadStage = 'staging';
-      this.resourceScanMessage = 'Uploading file securely...';
-      this.refreshView();
-
-      stagedPath = `quarantine/${userId}/${fileName}`;
-
-      const { error: stageError } = await this.withTimeout(
+      const { error: uploadError } = await this.withTimeout(
         this.supabase.getClient()
           .storage
           .from('learning-materials')
-          .upload(stagedPath, fileToUpload, {
+          .upload(filePath, fileToUpload, {
             upsert: false,
             contentType: fileToUpload.type || undefined
           }),
@@ -3257,46 +3218,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
         'Upload'
       );
 
-      if (stageError) throw stageError;
+      if (uploadError) throw uploadError;
 
-      // ── 2. Scan with ClamAV (the function publishes only clean files) ──────
-      this.resourceUploadStage = 'scanning';
-      this.resourceScanMessage = 'Scanning...';
-      this.refreshView();
-
-      const scan = await this.withTimeout(
-        this.supabase.scanLearningMaterial(
-          stagedPath,
-          fileToUpload.type || 'application/octet-stream'
-        ),
-        150000,
-        'File scan'
-      );
-
-      if (!scan.clean) {
-        // The Edge Function already deleted an infected file from quarantine.
-        // The detected signature name is only logged server-side on purpose:
-        // telling an uploader which signature matched would help them craft a
-        // bypass, so the UI only says the file was rejected.
-        await this.supabase.removeStagedMaterial(stagedPath);
-
-        this.resourceScanError = scan.error
-          || 'Malicious file detected. The upload was rejected and the file was removed.';
-
-        this.displayNotification(this.resourceScanError, 'error');
-        return;
-      }
-
-      // ── 3. Only now: save the material row ────────────────────────────────
-      this.resourceUploadStage = 'saving';
-      this.resourceScanMessage = 'Saving material...';
-      this.refreshView();
-
-      const publishedPath = scan.path || `${userId}/${fileName}`;
       const { data: urlData } = this.supabase.getClient()
         .storage
         .from('learning-materials')
-        .getPublicUrl(publishedPath);
+        .getPublicUrl(filePath);
 
       const fileType = this.getResourceFileType(fileExt || '');
 
@@ -3312,9 +3239,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
             file_url: urlData.publicUrl,
             file_type: fileType,
             file_name: fileToUpload.name,
-            duration_minutes: this.resourceUploadDuration,
-            // ClamAV verdict — only clean files reach this point.
-            scan_status: 'trusted'
+            duration_minutes: this.resourceUploadDuration
           })
           .select('*')
           .single(),
@@ -3339,26 +3264,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewChecked {
           }
         }
       }
-      this.resourceScanMessage = 'Scan passed - marked Trusted.';
+      this.isResourceUploading = false;
       this.closeResourcesUploadModal();
-      this.displayNotification('Material scanned and uploaded - marked Trusted', 'success');
+      this.displayNotification('Material uploaded successfully', 'success');
       this.refreshView();
 
       void this.loadResourceMenteesProgress();
     } catch (error) {
       console.error('Error uploading material:', error);
-
-      // Staged copy is still in quarantine — clean it up so nothing lingers.
-      if (stagedPath) await this.supabase.removeStagedMaterial(stagedPath);
-
-      this.resourceScanError = error instanceof Error ? error.message : 'Failed to upload material. Please try again.';
       if (!this.handleResourceSetupError(error)) {
-        this.displayNotification(this.resourceScanError, 'error');
+        const message = (error as any)?.message?.includes('timed out')
+          ? (error as any).message
+          : 'Failed to upload material. Please try again.';
+        this.displayNotification(message, 'error');
       }
     } finally {
       this.isResourceUploading = false;
-      this.resourceUploadStage = 'idle';
-      this.resourceScanMessage = '';
       this.refreshView();
     }
   }

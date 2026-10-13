@@ -16,8 +16,6 @@ interface LearningMaterial {
   duration_minutes: number;
   created_at: string;
   completed?: boolean; // For mentee view
-  /** ClamAV scan verdict: 'trusted' passed, 'blocked' rejected, 'unscanned' legacy. */
-  scan_status?: 'trusted' | 'blocked' | 'unscanned' | string;
 }
 
 interface MenteeProgress {
@@ -55,11 +53,6 @@ export class LearningMaterialsComponent implements OnInit {
   uploadFileSize = 0; // File size in bytes
   uploadDuration: number | null = null;
   isUploading = false;
-
-  // ClamAV virus scan state (mentor uploads only)
-  uploadStage: 'idle' | 'uploading' | 'scanning' | 'saving' = 'idle';
-  scanMessage = '';
-  scanError = '';
   
   // Edit modal
   showEditModal = false;
@@ -234,45 +227,11 @@ export class LearningMaterialsComponent implements OnInit {
     this.uploadFileName = '';
     this.uploadFileSize = 0;
     this.uploadDuration = null;
-    this.resetScanState();
   }
 
   closeUploadModal() {
     this.showUploadModal = false;
     this.uploadFile = null;
-    this.resetScanState();
-  }
-
-  resetScanState() {
-    this.uploadStage = 'idle';
-    this.scanMessage = '';
-    this.scanError = '';
-  }
-
-  /** Label of the Upload modal's submit button (reflects the current stage). */
-  getUploadButtonLabel(): string {
-    if (!this.isUploading) return 'Upload';
-    if (this.uploadStage === 'scanning') return 'Scanning...';
-    if (this.uploadStage === 'saving') return 'Saving...';
-    return 'Uploading...';
-  }
-
-  /** Names the fields still blocking the Upload button, so it is never a mystery. */
-  getMissingFields(): string[] {
-    const missing: string[] = [];
-    if (!this.uploadOrderNumber) missing.push('Order Number');
-    if (!this.uploadTitle) missing.push('Title');
-    if (!this.uploadFile) missing.push('File');
-    return missing;
-  }
-
-  /** Badge text for a material's virus-scan result. */
-  getScanStatusLabel(material: LearningMaterial): string {
-    switch (material.scan_status) {
-      case 'trusted': return 'Trusted';
-      case 'blocked': return 'Blocked';
-      default: return 'Unscanned';
-    }
   }
 
   onFileSelected(event: Event) {
@@ -289,7 +248,6 @@ export class LearningMaterialsComponent implements OnInit {
       this.uploadFile = file;
       this.uploadFileName = file.name;
       this.uploadFileSize = file.size;
-      this.resetScanState();
     }
   }
 
@@ -319,71 +277,30 @@ export class LearningMaterialsComponent implements OnInit {
     }
 
     this.isUploading = true;
-    this.resetScanState();
-
-    let stagedPath = '';
 
     try {
-      // ── 1. Stage the file in the PRIVATE quarantine bucket ──────────────
-      // Never uploaded straight to the public bucket — an infected file must
-      // not be downloadable before the scan verdict is in.
-      this.uploadStage = 'uploading';
-      this.scanMessage = 'Uploading file securely...';
-
-      const staged = await this.supabase.stageLearningMaterial(this.currentUserId, this.uploadFile);
-      if ('error' in staged) {
-        // The most common cause is a missing storage policy: the upload needs the
-        // "quarantine/<user-id>/..." path allowed in supabase/clamav-storage-setup.sql.
-        const detail = staged.error || '';
-        if (/row-level security|policy|permission|not allowed/i.test(detail)) {
-          throw new Error(
-            'Upload blocked by a storage permission rule.\n\n' +
-            'Ask an administrator to apply the storage policies for this feature.\n\n' +
-            `Details: ${detail}`
-          );
-        }
-        throw new Error(detail || 'Could not upload the file.');
-      }
-      stagedPath = staged.path;
-
-      // ── 2. Scan with ClamAV (Edge Function publishes only clean files) ──
-      this.uploadStage = 'scanning';
-      this.scanMessage = 'Scanning...';
-
-      const scan = await this.supabase.scanLearningMaterial(
-        stagedPath,
-        this.uploadFile.type || 'application/octet-stream'
-      );
-
-      if (!scan.clean) {
-        // Infected or scanner error. The Edge Function already deleted the
-        // infected copy from quarantine; this is a safety-net cleanup.
-        if (stagedPath) await this.supabase.removeStagedMaterial(stagedPath);
-
-        // Generic message on purpose: the matched signature is only in the
-        // scanner logs, never shown to the uploader.
-        this.scanError = scan.error
-          || 'Malicious file detected. The upload was rejected and the file was removed.';
-
-        alert(`🛡️ ${this.scanError}`);
-        return;
-      }
-
-      // ── 3. Only now: store the material record ──────────────────────────
-      this.uploadStage = 'saving';
-      this.scanMessage = 'Saving material...';
-
-      let fileUrl = scan.publicUrl || '';
-      if (!fileUrl && scan.path) {
-        const { data } = this.supabase.getClient()
-          .storage
-          .from('learning-materials')
-          .getPublicUrl(scan.path);
-        fileUrl = data.publicUrl;
-      }
+      // Upload file to Supabase Storage
       const fileExt = this.uploadFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `learning-materials/${this.currentUserId}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await this.supabase.getClient()
+        .storage
+        .from('learning-materials')
+        .upload(filePath, this.uploadFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = this.supabase.getClient()
+        .storage
+        .from('learning-materials')
+        .getPublicUrl(filePath);
+
+      // Determine file type
       const fileType = this.getFileType(fileExt || '');
 
+      // Save material record
       const { error: insertError } = await this.supabase.getClient()
         .from('learning_materials')
         .insert({
@@ -391,33 +308,23 @@ export class LearningMaterialsComponent implements OnInit {
           title: this.uploadTitle,
           description: this.uploadDescription,
           order_number: this.uploadOrderNumber,
-          file_url: fileUrl,
+          file_url: urlData.publicUrl,
           file_type: fileType,
           file_name: this.uploadFile.name,
-          duration_minutes: this.uploadDuration,
-          // Only clean files reach this point; the Column defaults as a safety net.
-          scan_status: 'trusted'
+          duration_minutes: this.uploadDuration
         });
 
       if (insertError) throw insertError;
 
-      this.scanMessage = 'Scan passed - marked Trusted.';
-      alert('✅ Material scanned and uploaded - marked Trusted.');
+      alert('✅ Material uploaded successfully!');
       this.closeUploadModal();
       await this.loadMaterials();
       await this.loadMenteesProgress();
     } catch (error) {
       console.error('Error uploading material:', error);
-
-      // Staged copy is still sitting in the private bucket — clean it up.
-      if (stagedPath) await this.supabase.removeStagedMaterial(stagedPath);
-
-      this.scanError = error instanceof Error ? error.message : 'Failed to upload material. Please try again.';
-      alert(`❌ ${this.scanError}`);
+      alert('❌ Failed to upload material. Please try again.');
     } finally {
       this.isUploading = false;
-      this.uploadStage = 'idle';
-      this.scanMessage = '';
     }
   }
 

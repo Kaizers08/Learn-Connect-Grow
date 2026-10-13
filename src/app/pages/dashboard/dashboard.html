@@ -1208,9 +1208,6 @@
                                           {{ material.duration_minutes }} min
                                         </span>
                                       }
-                                      <span class="material-meta-item scan-badge" [class]="'scan-badge-' + (material.scan_status || 'unscanned')">
-                                        @if ((material.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ getResourceScanStatusLabel(material) }} }
-                                      </span>
                                     </div>
                                   </div>
                                   <div class="material-actions-modal">
@@ -1266,17 +1263,14 @@
                                 @if (material.description) {
                                   <p class="material-desc">{{ material.description }}</p>
                                 }
-                       <div class="material-meta-row">
-                         @if (material.duration_minutes) {
-                           <span class="material-meta-item">
-                             <app-icon name="clock" [size]="13"></app-icon>
-                             {{ material.duration_minutes }} min
-                           </span>
-                         }
-                         <span class="material-meta-item scan-badge" [class]="'scan-badge-' + (material.scan_status || 'unscanned')">
-                           @if ((material.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ getResourceScanStatusLabel(material) }} }
-                         </span>
-                       </div>
+                                <div class="material-meta-row">
+                                  @if (material.duration_minutes) {
+                                    <span class="material-meta-item">
+                                      <app-icon name="clock" [size]="13"></app-icon>
+                                      {{ material.duration_minutes }} min
+                                    </span>
+                                  }
+                                </div>
                               </div>
                               <div class="material-actions-modal">
                                 <button class="material-view-btn" (click)="openMaterialPreview(material)">
@@ -1445,17 +1439,14 @@
                       @if (material.description) {
                         <p class="material-desc">{{ material.description }}</p>
                       }
-                       <div class="material-meta-row">
-                         @if (material.duration_minutes) {
-                           <span class="material-meta-item">
-                             <app-icon name="clock" [size]="13"></app-icon>
-                             {{ material.duration_minutes }} min
-                           </span>
-                         }
-                         <span class="material-meta-item scan-badge" [class]="'scan-badge-' + (material.scan_status || 'unscanned')">
-                           @if ((material.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ getResourceScanStatusLabel(material) }} }
-                         </span>
-                       </div>
+                      <div class="material-meta-row">
+                        @if (material.duration_minutes) {
+                          <span class="material-meta-item">
+                            <app-icon name="clock" [size]="13"></app-icon>
+                            {{ material.duration_minutes }} min
+                          </span>
+                        }
+                      </div>
                     </div>
                     <div class="material-actions-modal">
                       <button class="material-view-btn" (click)="openMaterialPreview(material)">
@@ -2452,8 +2443,8 @@
         <div class="form-group">
           <label>File *</label>
           <label class="file-dropzone">
-            <input
-              type="file"
+            <input 
+              type="file" 
               (change)="onResourceFileSelected($event)"
               class="file-dropzone-input">
             <app-icon name="upload" [size]="26"></app-icon>
@@ -2467,35 +2458,17 @@
               <span class="file-size">{{ getResourceFileSizeLabel(resourceUploadFileSize) }}</span>
             </div>
           }
-          <small class="scan-note">🛡️ This file is security-scanned before it is published.</small>
         </div>
-
-        @if (isResourceUploading) {
-          <div class="scan-status">
-            <span class="spinner"></span> {{ resourceScanMessage }}
-          </div>
-        }
-        @if (resourceScanError) {
-          <div class="scan-error">{{ resourceScanError }}</div>
-        }
       </div>
 
       <div class="drawer-footer">
-        @if (getResourceMissingFields().length > 0) {
-          <small class="missing-fields">
-            Missing: {{ getResourceMissingFields().join(', ') }}
-          </small>
-        }
         <button class="btn-cancel" (click)="closeResourcesUploadModal()">Cancel</button>
-        <button
-          class="btn-submit"
+        <button 
+          class="btn-submit" 
           (click)="uploadResourceMaterial()"
           [disabled]="isResourceUploading || !resourceUploadTitle || !resourceUploadFile || !resourceUploadOrderNumber">
           @if (isResourceUploading) {
-            <span class="btn-spinner"></span>
-            @if (resourceUploadStage === 'scanning') { Scanning... }
-            @else if (resourceUploadStage === 'saving') { Saving... }
-            @else { Uploading... }
+            <span class="btn-spinner"></span> Uploading…
           } @else {
             <app-icon name="upload" [size]="16"></app-icon> Upload Material
           }

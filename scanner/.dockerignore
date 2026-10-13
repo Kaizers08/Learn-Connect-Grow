@@ -1,9 +1,0 @@
-# Keep the Docker build context small and, more importantly, keep secrets out
-# of the image. scanner/.env holds SCAN_API_KEY and must never be COPYed in.
-.env
-.env.*
-node_modules
-npm-debug.log
-Dockerfile
-.dockerignore
-README.md

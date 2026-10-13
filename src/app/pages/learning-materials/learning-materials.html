@@ -65,17 +65,6 @@
               }
               <span class="file-name">📎 {{ material.file_name }}</span>
             </div>
-
-            <div class="material-trust">
-              <span class="trust-badge" [class]="'trust-' + (material.scan_status || 'unscanned')">
-                @if ((material.scan_status || 'unscanned') === 'trusted') {
-                  🛡️ {{ getScanStatusLabel(material) }}
-                } @else {
-                  ⚠️ {{ getScanStatusLabel(material) }}
-                }
-              </span>
-              <small class="trust-hint">Security scan</small>
-            </div>
           </div>
 
           <div class="material-actions">
@@ -249,31 +238,16 @@
               <span class="file-size">{{ getFileSizeLabel(uploadFileSize) }}</span>
             </div>
           }
-          <small class="scan-note">🛡️ This file is security-scanned before it is published.</small>
         </div>
-
-        @if (isUploading) {
-          <div class="scan-status">
-            <span class="spinner"></span> {{ scanMessage }}
-          </div>
-        }
-        @if (scanError) {
-          <div class="scan-error">{{ scanError }}</div>
-        }
       </div>
 
       <div class="modal-footer">
-        @if (getMissingFields().length > 0) {
-          <small class="missing-fields">
-            Missing: {{ getMissingFields().join(', ') }}
-          </small>
-        }
         <button class="btn-cancel" (click)="closeUploadModal()">Cancel</button>
         <button 
           class="btn-submit" 
           (click)="uploadMaterial()"
-          [disabled]="isUploading || getMissingFields().length > 0">
-          {{ getUploadButtonLabel() }}
+          [disabled]="isUploading || !uploadTitle || !uploadFile || !uploadOrderNumber">
+          {{ isUploading ? 'Uploading...' : 'Upload' }}
         </button>
       </div>
     </div>
