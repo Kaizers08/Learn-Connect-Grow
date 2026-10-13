@@ -1030,7 +1030,9 @@
           }
           @if (selectedMentor.profile_picture) {
             <span class="admin-res-trust admin-trust-badge-sm" [class]="'admin-trust-' + (selectedMentor.profile_picture_scan_status || 'unscanned')">
-              @if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'trusted') { 🛡️ } @else if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'blocked') { 🚫 } @else { ⚠️ }
+              @if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted }
+              @else if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'blocked') { 🤖 AI Generated }
+              @else { ⚠️ Unscanned }
             </span>
           }
         </div>

@@ -958,6 +958,11 @@
 .admin-res-trust.admin-trust-blocked   { background: #fff5f5; color: #c53030; border-color: #fcc8c8; }
 .admin-res-trust.admin-trust-unscanned { background: #f7fafc; color: #718096; border-color: #e2e8f0; }
 
+/* AI-generated badge on profile picture - purple, distinct from VT blocked */
+.admin-trust-badge-sm.admin-trust-blocked {
+  background: #f5f0ff; color: #7c3aed; border-color: #d4bcf0;
+}
+
 /* Profile picture badge overlay in the admin modal */
 .admin-trust-badge-sm {
   position: absolute;
