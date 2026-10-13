@@ -119,7 +119,16 @@ export class MentorDocumentsComponent {
       if (!scan.clean) {
         certificationsScanStatus = 'blocked';
       }
-      if (scan.publicUrl) certUrls.push(scan.publicUrl);
+      if (scan.publicUrl) {
+        // Also run Sightengine AI detection on image certs
+        if (cert.file.type.startsWith('image/')) {
+          const seScan = await this.supabase.scanMentorDocument(scan.publicUrl, 'certification');
+          if (seScan.status === 'blocked') {
+            certificationsScanStatus = 'blocked';
+          }
+        }
+        certUrls.push(scan.publicUrl);
+      }
     }
 
     if (certUrls.length === 0) {

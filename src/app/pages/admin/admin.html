@@ -925,7 +925,7 @@
                             <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
                             <span class="admin-res-filename">{{ mat.file_name }}</span>
                             <span class="admin-res-trust" [class]="'admin-trust-' + (mat.scan_status || 'unscanned')">
-                              @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ mat.scan_status || 'Unscanned' }} }
+                              @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((mat.scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
                             </span>
                             @if (mat.duration_minutes) {
                               <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
@@ -981,9 +981,9 @@
                        <div class="admin-res-meta">
                          <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
                          <span class="admin-res-filename">{{ mat.file_name }}</span>
-                         <span class="admin-res-trust" [class]="'admin-trust-' + (mat.scan_status || 'unscanned')">
-                           @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ mat.scan_status || 'Unscanned' }} }
-                         </span>
+<span class="admin-res-trust" [class]="'admin-trust-' + (mat.scan_status || 'unscanned')">
+                            @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((mat.scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
+                          </span>
                          @if (mat.duration_minutes) {
                            <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
                          }
@@ -1031,7 +1031,7 @@
           @if (selectedMentor.profile_picture) {
             <span class="admin-res-trust admin-trust-badge-sm" [class]="'admin-trust-' + (selectedMentor.profile_picture_scan_status || 'unscanned')">
               @if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted }
-              @else if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'blocked') { 🤖 AI Generated }
+              @else if ((selectedMentor.profile_picture_scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated }
               @else { ⚠️ Unscanned }
             </span>
           }
@@ -1128,7 +1128,7 @@
                   <a [href]="selectedMentor.diploma" target="_blank" class="admin-doc-link">Open File</a>
                 }
                 <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.diploma_scan_status || 'unscanned')">
-                  @if ((selectedMentor.diploma_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ selectedMentor.diploma_scan_status || 'Unscanned' }} }
+                  @if ((selectedMentor.diploma_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((selectedMentor.diploma_scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
                 </span>
               } @else {
                 <span class="admin-doc-none">Not provided</span>
@@ -1147,7 +1147,7 @@
                   }
                 </div>
                 <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.certifications_scan_status || 'unscanned')">
-                  @if ((selectedMentor.certifications_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ selectedMentor.certifications_scan_status || 'Unscanned' }} }
+                  @if ((selectedMentor.certifications_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((selectedMentor.certifications_scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
                 </span>
               } @else {
                 <span class="admin-doc-none">Not provided</span>
