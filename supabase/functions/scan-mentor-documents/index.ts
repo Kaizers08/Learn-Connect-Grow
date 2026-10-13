@@ -33,11 +33,26 @@ const NUDITY_THRESHOLD = 0.5
 const GORE_THRESHOLD = 0.5
 
 function json(body: unknown, status = 200): Response {
-  return Response.json(body, { status })
+  return Response.json(body, { status, headers: CORS_HEADERS })
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+// CORS headers — Supabase Edge Functions don't set these by default for
+// cross-origin calls from our Vercel frontend.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
 }
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS })
+    }
+
     if (req.method !== 'POST') {
       return json({ error: 'Use POST' }, 405)
     }

@@ -45,8 +45,14 @@ const PROJECT_URL = Deno.env.get('SUPABASE_URL') ?? ''
 /** `quarantine/<user-id>/<file-name>` - url-safe names only. */
 const STAGED_PATH_RE = /^quarantine\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
 function json(body: unknown, status = 200): Response {
-  return Response.json(body, { status })
+  return Response.json(body, { status, headers: CORS_HEADERS })
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -60,6 +66,10 @@ async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS })
+    }
+
     if (req.method !== 'POST') {
       return json({ error: 'Use POST' }, 405)
     }
