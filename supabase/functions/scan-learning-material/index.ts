@@ -106,9 +106,6 @@ export default {
         .maybeSingle()
 
       if (!mentor) return json({ error: 'Mentor profile not found' }, 403)
-      if (mentor.status === 'pending' || mentor.status === 'rejected') {
-        return json({ error: 'Mentor account is not approved' }, 403)
-      }
 
       // ── Read the staged file ───────────────────────────────────────────────
       const { data: signed, error: signError } = await ctx.supabase.storage
