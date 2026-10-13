@@ -11,19 +11,20 @@ natugma, para hindi mailang ng uploader kung paano ito lalabanin.
 
 ---
 
-## Ano ang nangyayari sa 3 hosting
+## What the three hosts do
 
 ```
-Vercel (Angular app)  ──────►  Supabase Edge Function  ──────►  ClamAV scanner
-  front-end lang,              (nasa Supabase cloud)            (Docker sa Render
-  walang AV engine                                          /Railway/VPS, o PC mo)
+Vercel (Angular app)  ----->  Supabase Edge Function  ----->  ClamAV scanner
+  front-end only,              (in Supabase cloud)            (Docker on Railway
+  no AV engine                                               /Render/VPS, or your PC)
 ```
 
-- **Vercel** — static Angular app. Walang server code na tumatakbo doon, kaya
-  walang ClamAV na puwedeng ilagay. Hindi na ito binabago.
-- **Supabase (free plan)** — database, storage, at ang `scan-learning-material`
-  Edge Function. Ang app mo ay kausap na nito mula sa browser, gayun pa man.
-- **Scanner** — bagong hiwalay na service. Ito lang ang bagong ide-deploy.
+- **Vercel** - static Angular app. There is no server code running there, so
+  there is nowhere to put ClamAV. This does not change.
+- **Supabase (free plan)** - database, storage, and the `scan-learning-material`
+  Edge Function. Your app already talks to it from the browser.
+- **Scanner** - a separate always-on service. This is the only new thing to
+  deploy, and it needs **2GB+ of RAM** (see Step 2).
 
 Mahalaga: ang nasa Vercel ay HTML/JS/CSS lang. Lahat ng data (upload, rows) ay
 pumupunta sa Supabase, kaya walang nahihiwalay sa "hosting".
@@ -66,49 +67,73 @@ Dapat `public = true` ang bucket, at may policies na nagsasabing:
 
 ---
 
-## Step 2 — I-deploy ang scanner
+## Step 2 - Deploy the scanner
 
-### Opsyon A: Render.com (recommended, may free tier)
+The scanner needs its own always-on host. It cannot run on Vercel: Vercel
+serverless functions have no persistent process (clamd is a daemon), a
+read-only filesystem (signatures cannot be updated), a 250MB bundle cap (the
+virus database alone is ~108MB), and at most 3GB of RAM.
 
-Ang repo ay may `render.yaml` na. Steps:
+### Memory requirement (measured)
 
-1. I-push ang repo sa GitHub
-2. Render Dashboard → **New → Blueprint** → piliin ang repo
-3. Awtomatiko itong gagawa ng `lcg-virus-scanner` service (Docker)
-4. Set ang `SCAN_API_KEY` sa Render dashboard → **Manual deploy**
-5. Kopyahin ang URL (hal. `https://lcg-virus-scanner.onrender.com`)
+With a fully loaded signature database, `clamd` measures **~980MB RSS**:
 
-> Sa free tier, nag-i-*spin down* ang Render kapag walang request ng ~15 min.
-> Ang unang scan pagkatapos ay puwedeng tumagal ng 30–60s. Kung kailangan mo
-> ng palaging mabilis, `plan: starter` ($7/buwan) na nasa `render.yaml`.
+```
+clamd pid 944: working set 0MB, private 980MB
+database: main.cvd 84.9MB + daily.cvd 22.4MB + bytecode.cvd 0.3MB
+```
 
-### Opsyon B: Railway / Fly.io
+So a 512MB plan is not enough - the container gets OOM-killed. Use 2GB or more.
 
-Pareho ang idea: i-deploy ang `scanner/` ( may `Dockerfile` at
-`docker-compose.yml`) at i-expose ang port 3030.
+### Option A: Railway (recommended, about $5/mo)
 
-### Opsyon C: Sariling PC (libre, pero kailangang bukas ang PC)
+`railway.json` is already in the repo, so Railway detects the scanner
+automatically.
+
+1. Railway Dashboard -> **New Project** -> **Deploy from GitHub repo**
+2. Railway finds `railway.json` and builds `scanner/Dockerfile`
+3. **Variables** -> add `SCAN_API_KEY` (a long random string)
+4. **Settings -> Networking -> Generate Domain**
+5. Use that URL as `CLAMAV_SCAN_URL`
+
+### Option B: Render
+
+`render.yaml` is in the repo (blueprint uses the `standard` 2GB plan, because
+512MB is OOM-killed).
+
+1. Render Dashboard -> **New -> Blueprint** -> pick the repo
+2. Set `SCAN_API_KEY` in the service dashboard
+3. Copy the service URL (e.g. `https://lcg-virus-scanner.onrender.com`)
+
+### Option C: Fly.io or any VPS
+
+Same idea: deploy `scanner/` (it has a `Dockerfile`) and expose port 3030.
+The container installs ClamAV, downloads signatures at build time, then
+refreshes them incrementally on every start.
+
+### Option D: your own PC (free, but the PC must stay on)
 
 ```powershell
 .\scripts\setup-clamav.ps1 -StartDaemon
 cd scanner
 Copy-Item .env.example .env
-notepad .env          # ilagay ang SCAN_API_KEY
+notepad .env          # set SCAN_API_KEY
 npm install
 npm start
 ```
 
-Kung local pa ang PC mo, kailangan ng tunnel para maabot ng Supabase:
+Expose it with a tunnel (the URL changes on every restart, so the Supabase
+secret must be updated each time):
 
 ```powershell
-# Cloudflare Tunnel (libre)
-cloudflared tunnel --url http://localhost:3030
+npm run scanner:tunnel     # cloudflared
 ```
 
-Gamitin ang `https://...trycloudflare.com` URL na ibibigay nito bilang
-`CLAMAV_SCAN_URL`.
+Whichever option you pick, the scanner must be reachable over HTTPS by the
+Supabase Edge Function.
 
 ---
+
 
 ## Step 3 — Supabase secrets
 

@@ -1,0 +1,25 @@
+// Railway definition for the ClamAV scanner. Railway bills by usage and
+// includes enough RAM (~8GB) that the loaded signature database never OOMs.
+//
+// Deploy: Railway Dashboard -> New Project -> Deploy from GitHub repo ->
+// Railway detects this file and creates one service. Then set SCAN_API_KEY in
+// the service Variables and add a public domain (Settings -> Networking).
+//
+// Do NOT use a 512MB plan: clamd measures about 980MB RSS with a fully loaded
+// signature database and gets OOM-killed below that.
+
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "scanner/Dockerfile",
+    "watchPaths": ["scanner/**"]
+  },
+  "deploy": {
+    "startCommand": "/usr/local/bin/docker-entrypoint.sh",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}

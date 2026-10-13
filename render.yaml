@@ -1,8 +1,15 @@
-# Learning-materials virus scanner (ClamAV) — Render.com blueprint
+# Learning-materials virus scanner (ClamAV) - Render.com blueprint
 # https://render.com/docs/blueprint-spec
 #
-# Deploy: push this repo to GitHub, then Render Dashboard → New → Blueprint →
-# pick this repo. Everything below is created automatically.
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Everything below is created automatically.
+#
+# MEMORY: measured with a fully loaded signature database, clamd needs ~980MB
+# RSS. Render's `free` and `starter` plans only give 512MB and the container is
+# OOM-killed, so this blueprint uses `standard` (2GB).
+#
+# Cheaper alternative with plenty of headroom: Railway (about $5/mo, 8GB RAM).
+# See docs/CLAMAV_SETUP.md, section "Deploy the scanner".
 
 services:
   - type: web
@@ -10,11 +17,8 @@ services:
     runtime: docker
     dockerfilePath: ./scanner/Dockerfile
     dockerContext: ./scanner
-    # Free spins the service down after ~15 min idle, so the first scan after a
-    # quiet period can take ~60s. Use `starter` (~$7/mo) if you want it always
-    # warm - the Edge Function timeout (120s) already tolerates the free tier.
-    plan: free
-    region: singapore      # pinakamalapit sa PH — mas mababa ang latency
+    plan: standard         # 2GB - required, 512MB plans get OOM-killed by clamd
+    region: singapore      # closest to the Philippines - lower latency
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
