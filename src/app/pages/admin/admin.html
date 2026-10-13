@@ -924,6 +924,9 @@
                           <div class="admin-res-meta">
                             <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
                             <span class="admin-res-filename">{{ mat.file_name }}</span>
+                            <span class="admin-res-trust" [class]="'admin-trust-' + (mat.scan_status || 'unscanned')">
+                              @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ mat.scan_status || 'Unscanned' }} }
+                            </span>
                             @if (mat.duration_minutes) {
                               <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
                             }
@@ -970,19 +973,22 @@
                         }
                       </div>
                     </div>
-                    <div class="admin-res-item-body">
-                      <span class="admin-res-title">{{ mat.title }}</span>
-                      @if (mat.description) {
-                        <span class="admin-res-desc">{{ mat.description }}</span>
-                      }
-                      <div class="admin-res-meta">
-                        <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
-                        <span class="admin-res-filename">{{ mat.file_name }}</span>
-                        @if (mat.duration_minutes) {
-                          <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
-                        }
-                      </div>
-                    </div>
+                     <div class="admin-res-item-body">
+                       <span class="admin-res-title">{{ mat.title }}</span>
+                       @if (mat.description) {
+                         <span class="admin-res-desc">{{ mat.description }}</span>
+                       }
+                       <div class="admin-res-meta">
+                         <span class="admin-res-meta-chip" [attr.data-type]="mat.file_type">{{ getFileTypeLabel(mat.file_type) }}</span>
+                         <span class="admin-res-filename">{{ mat.file_name }}</span>
+                         <span class="admin-res-trust" [class]="'admin-trust-' + (mat.scan_status || 'unscanned')">
+                           @if ((mat.scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else { ⚠️ {{ mat.scan_status || 'Unscanned' }} }
+                         </span>
+                         @if (mat.duration_minutes) {
+                           <span class="admin-res-duration">⏱ {{ mat.duration_minutes }} min</span>
+                         }
+                       </div>
+                     </div>
                     <button class="admin-res-view-btn" (click)="openFilePreview(mat); $event.stopPropagation()">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>

@@ -453,6 +453,109 @@ export class SupabaseService {
     };
   }
 
+  // ── Learning materials virus scan (ClamAV) ─────────────────────────────────
+  // Mentor uploads are staged under a "quarantine/" prefix of the SAME
+  // `learning-materials` bucket and are not publicly readable there. The
+  // `scan-learning-material` Edge Function streams them to ClamAV; a clean file
+  // is renamed to its published path, an infected one is deleted.
+  // See supabase/clamav-storage-setup.sql.
+
+  private readonly materialsBucket = 'learning-materials';
+  private readonly quarantinePrefix = 'quarantine';
+
+  /** Stages a mentor file in the private quarantine prefix (before scanning). */
+  async stageLearningMaterial(userId: string, file: File): Promise<{ path: string } | { error: string }> {
+    const ext = file.name.split('.').pop() ?? 'bin';
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const path = `${this.quarantinePrefix}/${userId}/${fileName}`;
+
+    const { error } = await this.client.storage
+      .from(this.materialsBucket)
+      .upload(path, file, {
+        upsert: false,
+        contentType: file.type || 'application/octet-stream'
+      });
+
+    if (error) {
+      this.logError('stageLearningMaterial', error);
+      return { error: error.message };
+    }
+
+    return { path };
+  }
+
+  /** Removes a staged file from quarantine (cleanup path after a failed scan). */
+  async removeStagedMaterial(path: string): Promise<void> {
+    await this.client.storage.from(this.materialsBucket).remove([path]);
+  }
+
+  /**
+   * Scans a staged file with ClamAV via the `scan-learning-material` Edge
+   * Function. Clean files are published automatically; infected files are
+   * deleted from quarantine. The matched signature is never sent to the
+   * browser — only a generic rejection message (it is logged server-side).
+   */
+  async scanLearningMaterial(
+    path: string,
+    contentType: string
+  ): Promise<{
+    clean: boolean;
+    path?: string;
+    publicUrl?: string;
+    error?: string;
+  }> {
+    const { data: sessionData } = await this.client.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      return { clean: false, error: 'No access token — sign in again.' };
+    }
+
+    try {
+      const response = await fetch(
+        `${this.supabaseUrl}/functions/v1/scan-learning-material`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path, contentType }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        // The scanner returns a generic message for infected files on purpose;
+        // the matched signature is only in the function logs.
+        return {
+          clean: false,
+          error: data.error || 'File scan failed'
+        };
+      }
+
+      return {
+        clean: true,
+        path: data.path as string | undefined,
+        publicUrl: data.publicUrl as string | undefined
+      };
+    } catch (err: any) {
+      console.error('Error calling scan function:', err);
+      // A rejected fetch is usually a CORS/network failure rather than a
+      // scanner verdict, so give an actionable message instead of the raw
+      // browser "Failed to fetch".
+      const raw = err instanceof Error ? err.message : String(err);
+      const isNetworkFailure = /failed to fetch|networkerror|load failed|err_/i.test(raw);
+      return {
+        clean: false,
+        error: isNetworkFailure
+          ? 'Could not reach the file scanner. Please try again in a moment.'
+          : raw
+      };
+    }
+  }
+
   // ── Messages ────────────────────────────────────────────────────────────────
   async sendMessage(receiverId: string, message: string, attachmentUrl?: string, attachmentName?: string, attachmentType?: string) {
     const { data, error } = await this.client
