@@ -86,7 +86,7 @@ clamd pid 944: private 980MB
 database: main.cvd 84.9MB + daily.cvd 22.4MB + bytecode.cvd 0.3MB
 ```
 
-So a 512MB plan is not enough - clamd gets OOM-killed. **Use 1GB or more.**
+So a 512MB plan is not enough - clamd gets OOM-killed. **Use 2GB or more.**
 The container honours the platform `PORT` and exposes `/health`, so it runs
 unchanged on any of the hosts below.
 
@@ -94,18 +94,23 @@ unchanged on any of the hosts below.
 
 **Option A - Google Cloud Run (free, recommended for a student project)**
 
-Free tier: 2M requests/month, 360,000 GiB-seconds of memory, 2M requests.
-At 1GB that is roughly **100 hours of runtime per month**, and it scales to
-zero when idle, so unused time costs nothing.
+Free tier: 2M requests/month, 360,000 GiB-seconds of memory. At 2Gi that is
+roughly **50 hours of runtime per month**, and it scales to zero when idle, so
+unused time costs nothing.
 
 ```bash
 gcloud run deploy lcg-virus-scanner \
   --source scanner \
   --region asia-southeast1 \
-  --memory 1Gi \
+  --memory 2Gi \
   --timeout 300s \
   --set-env-vars "SCAN_API_KEY=<your key>,CLAMD_HOST=127.0.0.1,CLAMD_PORT=3310"
 ```
+
+Why 2Gi and not 1Gi: clamd alone measures 980MB, and node/express adds
+roughly another 60-80MB, so 1Gi (1024MB) leaves no headroom and the container
+would be killed on a large scan. 2Gi is safe. At 2Gi the 360,000 free
+GiB-seconds still come to about 50 hours of runtime per month.
 
 Trade-off: Cloud Run scales to zero, so the first scan after an idle period
 pays a cold start while clamd loads ~108MB of signatures (~30-60s). The
