@@ -92,11 +92,15 @@ unchanged on any of the hosts below.
 
 ### Free options
 
-**Option A - Google Cloud Run (free, recommended for a student project)**
+Verified against each provider's own docs, October 2026. The blocker for most
+"free" PaaS tiers is RAM: clamd needs **980MB**, and Cloud Run scales to zero
+so idle time is free.
 
-Free tier: 2M requests/month, 360,000 GiB-seconds of memory. At 2Gi that is
-roughly **50 hours of runtime per month**, and it scales to zero when idle, so
-unused time costs nothing.
+**Option A - Google Cloud Run free tier (works, needs a card to sign up)**
+
+Free tier: 2M requests/month and 360,000 GiB-seconds of memory. At 2Gi that
+is roughly **50 hours of runtime per month**, and Cloud Run scales to zero,
+so nothing is charged when nobody uploads.
 
 ```bash
 gcloud run deploy lcg-virus-scanner \
@@ -107,38 +111,43 @@ gcloud run deploy lcg-virus-scanner \
   --set-env-vars "SCAN_API_KEY=<your key>,CLAMD_HOST=127.0.0.1,CLAMD_PORT=3310"
 ```
 
-Why 2Gi and not 1Gi: clamd alone measures 980MB, and node/express adds
-roughly another 60-80MB, so 1Gi (1024MB) leaves no headroom and the container
-would be killed on a large scan. 2Gi is safe. At 2Gi the 360,000 free
-GiB-seconds still come to about 50 hours of runtime per month.
+Why 2Gi: clamd alone measures 980MB and node adds ~60-80MB, so 1Gi leaves no
+headroom and a large scan OOM-kills the container.
 
-Trade-off: Cloud Run scales to zero, so the first scan after an idle period
-pays a cold start while clamd loads ~108MB of signatures (~30-60s). The
-Edge Function timeout (120s) already tolerates this. Add `--min-instances 1`
-only if you move to a paid tier.
+Trade-off: the first scan after an idle period pays a cold start while clamd
+loads ~108MB of signatures (~30-60s). The Edge Function timeout (120s)
+already tolerates this.
 
-**Option B - your own PC (free, working today)**
+**Option B - Oracle Cloud Always Free (works, permanent, needs a card)**
+
+2 OCPU and 12GB RAM, free for the life of the account. Plenty for clamd.
+Oracle cut this from 4 OCPU / 24GB in June 2026 without announcing it, so the
+current allowance is 2 OCPU / 12GB - still comfortable. You manage the VM
+yourself: create an Ampere A1 instance, open the port, then install and run
+ClamAV exactly as on your own PC.
+
+**Option C - your own PC (free, no card, works today)**
 
 ```powershell
-.\scripts\setup-clamav.ps1 -StartDaemon
-cd scanner
-Copy-Item .env.example .env
-notepad .env          # set SCAN_API_KEY
-npm install
-npm start
-npm run scanner:tunnel    # cloudflared - prints a public https URL
+npm run scanner:start      # clamd + scanner + public tunnel
 ```
 
-Use the printed URL as `CLAMAV_SCAN_URL`. The PC must stay on, and the
-tunnel URL changes on each restart, so the Supabase secret must be updated.
-This is the fastest way to test the whole flow right now.
+The PC must stay on, and the tunnel URL rotates on each restart so the
+Supabase secret must be updated. Fastest to get running and there is no cold
+start, which makes it the best choice for a live capstone demo.
 
-**Option C - Oracle Cloud Always Free (free, permanent)**
+### Free tiers that do NOT work for this
 
-Now 2 OCPU / 12GB RAM for free-tier accounts (Oracle cut this from
-4 OCPU / 24GB in June 2026). Plenty for clamd, but you manage the VM
-yourself: create an Ampere A1 instance, open the port, then install and run
-the scanner exactly like on your PC. Needs a card for signup.
+| Provider | Why it fails |
+|---|---|
+| Render free | 512MB RAM - clamd needs 980MB, so the container is OOM-killed |
+| Koyeb free | 512MB RAM and 0.1 vCPU - same OOM problem |
+| Hugging Face Spaces (Docker) | Docker Spaces now require a PRO plan; only Static Spaces are free |
+| Fly.io | No free tier since 2024; $5/month minimum, card required |
+| Netlify / Vercel / Cloudflare Workers | serverless, no daemon and no writable filesystem |
+
+There is no always-on cloud host with 2GB+ that is free without a card. The
+choice is: a card + Cloud Run/Oracle free tier, or no card + your own PC.
 
 ### Paid option (easiest, cheapest that always stays warm)
 
