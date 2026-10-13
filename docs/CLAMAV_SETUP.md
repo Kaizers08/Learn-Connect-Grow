@@ -69,49 +69,50 @@ Dapat `public = true` ang bucket, at may policies na nagsasabing:
 
 ## Step 2 - Deploy the scanner
 
-The scanner needs its own always-on host. It cannot run on Vercel: Vercel
-serverless functions have no persistent process (clamd is a daemon), a
-read-only filesystem (signatures cannot be updated), a 250MB bundle cap (the
-virus database alone is ~108MB), and at most 3GB of RAM.
+The scanner needs its own always-on host. It **cannot run on Vercel**, and
+this is a hard technical limit, not a preference:
 
-### Memory requirement (measured)
+| ClamAV needs | Vercel gives |
+|---|---|
+| a persistent daemon (`clamd`) | none - every request gets a fresh container |
+| signatures updated on disk | read-only filesystem (except `/tmp`) |
+| ~108MB virus database | 250MB bundle cap per function |
+| **980MB RAM** (measured) | 1GB (Hobby) / 3GB (Pro) |
 
-With a fully loaded signature database, `clamd` measures **~980MB RSS**:
+Measured on the local daemon with a full signature database:
 
 ```
-clamd pid 944: working set 0MB, private 980MB
+clamd pid 944: private 980MB
 database: main.cvd 84.9MB + daily.cvd 22.4MB + bytecode.cvd 0.3MB
 ```
 
-So a 512MB plan is not enough - the container gets OOM-killed. Use 2GB or more.
+So a 512MB plan is not enough - clamd gets OOM-killed. **Use 1GB or more.**
+The container honours the platform `PORT` and exposes `/health`, so it runs
+unchanged on any of the hosts below.
 
-### Option A: Railway (recommended, about $5/mo)
+### Free options
 
-`railway.json` is already in the repo, so Railway detects the scanner
-automatically.
+**Option A - Google Cloud Run (free, recommended for a student project)**
 
-1. Railway Dashboard -> **New Project** -> **Deploy from GitHub repo**
-2. Railway finds `railway.json` and builds `scanner/Dockerfile`
-3. **Variables** -> add `SCAN_API_KEY` (a long random string)
-4. **Settings -> Networking -> Generate Domain**
-5. Use that URL as `CLAMAV_SCAN_URL`
+Free tier: 2M requests/month, 360,000 GiB-seconds of memory, 2M requests.
+At 1GB that is roughly **100 hours of runtime per month**, and it scales to
+zero when idle, so unused time costs nothing.
 
-### Option B: Render
+```bash
+gcloud run deploy lcg-virus-scanner \
+  --source scanner \
+  --region asia-southeast1 \
+  --memory 1Gi \
+  --timeout 300s \
+  --set-env-vars "SCAN_API_KEY=<your key>,CLAMD_HOST=127.0.0.1,CLAMD_PORT=3310"
+```
 
-`render.yaml` is in the repo (blueprint uses the `standard` 2GB plan, because
-512MB is OOM-killed).
+Trade-off: Cloud Run scales to zero, so the first scan after an idle period
+pays a cold start while clamd loads ~108MB of signatures (~30-60s). The
+Edge Function timeout (120s) already tolerates this. Add `--min-instances 1`
+only if you move to a paid tier.
 
-1. Render Dashboard -> **New -> Blueprint** -> pick the repo
-2. Set `SCAN_API_KEY` in the service dashboard
-3. Copy the service URL (e.g. `https://lcg-virus-scanner.onrender.com`)
-
-### Option C: Fly.io or any VPS
-
-Same idea: deploy `scanner/` (it has a `Dockerfile`) and expose port 3030.
-The container installs ClamAV, downloads signatures at build time, then
-refreshes them incrementally on every start.
-
-### Option D: your own PC (free, but the PC must stay on)
+**Option B - your own PC (free, working today)**
 
 ```powershell
 .\scripts\setup-clamav.ps1 -StartDaemon
@@ -120,20 +121,38 @@ Copy-Item .env.example .env
 notepad .env          # set SCAN_API_KEY
 npm install
 npm start
+npm run scanner:tunnel    # cloudflared - prints a public https URL
 ```
 
-Expose it with a tunnel (the URL changes on every restart, so the Supabase
-secret must be updated each time):
+Use the printed URL as `CLAMAV_SCAN_URL`. The PC must stay on, and the
+tunnel URL changes on each restart, so the Supabase secret must be updated.
+This is the fastest way to test the whole flow right now.
 
-```powershell
-npm run scanner:tunnel     # cloudflared
-```
+**Option C - Oracle Cloud Always Free (free, permanent)**
 
-Whichever option you pick, the scanner must be reachable over HTTPS by the
+Now 2 OCPU / 12GB RAM for free-tier accounts (Oracle cut this from
+4 OCPU / 24GB in June 2026). Plenty for clamd, but you manage the VM
+yourself: create an Ampere A1 instance, open the port, then install and run
+the scanner exactly like on your PC. Needs a card for signup.
+
+### Paid option (easiest, cheapest that always stays warm)
+
+**Railway (~$5/mo)** - `railway.json` is in the repo, so Railway detects the
+scanner automatically. ~8GB RAM, about $5/mo.
+
+1. Railway Dashboard -> **New Project** -> **Deploy from GitHub repo**
+2. Railway finds `railway.json` and builds `scanner/Dockerfile`
+3. **Variables** -> add `SCAN_API_KEY` (a long random string)
+4. **Settings -> Networking -> Generate Domain**
+5. Use that URL as `CLAMAV_SCAN_URL`
+
+**Render** - `render.yaml` is in the repo and uses the `standard` 2GB plan
+(512MB plans are OOM-killed). About $25/mo.
+
+Whichever you pick, the scanner must be reachable over HTTPS from the
 Supabase Edge Function.
 
 ---
-
 
 ## Step 3 — Supabase secrets
 
