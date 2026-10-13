@@ -32,11 +32,13 @@ const VT_ANALYSES_URL = 'https://www.virustotal.com/api/v3/analyses'
 
 // Public API limits: 4 requests/min and a 32MB upload cap.
 const VT_MAX_BYTES = 32 * 1024 * 1024
-// Poll every 5s. A public-API analysis of a PDF usually finishes in 10-30s.
+// Poll every 5s. Free-tier VT queues submissions; an analysis can take
+// 60-90s. We cap polling at 90s so the function stays within the
+// 120s Edge Function hard timeout.
 const POLL_INTERVAL_MS = 5000
-const POLL_MAX_ATTEMPTS = 12
+const POLL_MAX_ATTEMPTS = 18
 const SIGNED_URL_TTL = 300
-const REQUEST_TIMEOUT_MS = 120000
+const REQUEST_TIMEOUT_MS = 100000
 
 const PROJECT_URL = Deno.env.get('SUPABASE_URL') ?? ''
 
@@ -48,6 +50,13 @@ function json(body: unknown, status = 200): Response {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
@@ -133,50 +142,9 @@ export default {
       }
 
       const fileName = segments[2]
+      const fileHash = await sha256Hex(bytes)
 
-      // ── Submit to VirusTotal ───────────────────────────────────────────────
-      let analysisId: string
-      try {
-        const form = new FormData()
-        form.append(
-          'file',
-          new Blob([bytes], { type: contentType }),
-          fileName
-        )
-
-        const submit = await fetch(VT_FILES_URL, {
-          method: 'POST',
-          headers: { 'x-apikey': VT_API_KEY },
-          body: form,
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-        })
-
-        if (submit.status === 429) {
-          // Public API: 4 requests/min. Fail closed - never treat as a pass.
-          console.error('VirusTotal rate limit hit')
-          return json(
-            { error: 'Scanner is busy, please try again in a minute' },
-            429
-          )
-        }
-
-        if (!submit.ok) {
-          const details = await submit.text()
-          throw new Error(`submission failed ${submit.status}: ${details}`)
-        }
-
-        const submitted = await submit.json()
-        analysisId = submitted?.data?.id
-        if (!analysisId) throw new Error('no analysis id returned')
-      } catch (error) {
-        console.error('VirusTotal submission failed:', error)
-        return json(
-          { error: 'File scanner unavailable, please try again later' },
-          503
-        )
-      }
-
-      // ── Poll for the verdict ───────────────────────────────────────────────
+      // ── Step 1: Check by hash first (instant, no upload) ──────────────────
       let stats: {
         malicious?: number
         suspicious?: number
@@ -184,51 +152,109 @@ export default {
         undetected?: number
       } | null = null
 
-      try {
-        for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-          if (attempt > 0) await sleep(POLL_INTERVAL_MS)
+      const hashRes = await fetch(`${VT_FILES_URL}/${fileHash}`, {
+        headers: { 'x-apikey': VT_API_KEY },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      })
 
-          const poll = await fetch(`${VT_ANALYSES_URL}/${analysisId}`, {
+      if (hashRes.ok) {
+        const hashData = await hashRes.json()
+        const lastStats = hashData?.data?.attributes?.last_analysis_stats
+        if (lastStats) {
+          stats = lastStats
+          console.log(`Hash match — using cached VT verdict for ${fileHash}`)
+        }
+      }
+
+      // ── Step 2: Hash not cached → upload + poll ───────────────────────────
+      if (!stats) {
+        let analysisId: string
+        try {
+          const form = new FormData()
+          form.append(
+            'file',
+            new Blob([bytes], { type: contentType }),
+            fileName
+          )
+
+          const submit = await fetch(VT_FILES_URL, {
+            method: 'POST',
             headers: { 'x-apikey': VT_API_KEY },
+            body: form,
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
           })
 
-          if (poll.status === 429) {
+          if (submit.status === 429) {
+            // Public API: 4 requests/min. Fail closed - never treat as a pass.
+            console.error('VirusTotal rate limit hit')
             return json(
               { error: 'Scanner is busy, please try again in a minute' },
               429
             )
           }
 
-          if (!poll.ok) {
-            const details = await poll.text()
-            throw new Error(`poll failed ${poll.status}: ${details}`)
+          if (!submit.ok) {
+            const details = await submit.text()
+            throw new Error(`submission failed ${submit.status}: ${details}`)
           }
 
-          const report = await poll.json()
-          const attributes = report?.data?.attributes
-
-          if (attributes?.status === 'completed') {
-            stats = attributes.stats ?? {}
-            break
-          }
+          const submitted = await submit.json()
+          analysisId = submitted?.data?.id
+          if (!analysisId) throw new Error('no analysis id returned')
+        } catch (error) {
+          console.error('VirusTotal submission failed:', error)
+          return json(
+            { error: 'File scanner unavailable, please try again later' },
+            503
+          )
         }
-      } catch (error) {
-        console.error('VirusTotal polling failed:', error)
-        return json(
-          { error: 'File scanner unavailable, please try again later' },
-          503
-        )
-      }
 
-      if (!stats) {
-        return json(
-          {
-            error:
-              'Scan did not finish in time. The file was not published - please retry.'
-          },
-          504
-        )
+        try {
+          for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+            if (attempt > 0) await sleep(POLL_INTERVAL_MS)
+
+            const poll = await fetch(`${VT_ANALYSES_URL}/${analysisId}`, {
+              headers: { 'x-apikey': VT_API_KEY },
+              signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+            })
+
+            if (poll.status === 429) {
+              return json(
+                { error: 'Scanner is busy, please try again in a minute' },
+                429
+              )
+            }
+
+            if (!poll.ok) {
+              const details = await poll.text()
+              throw new Error(`poll failed ${poll.status}: ${details}`)
+            }
+
+            const report = await poll.json()
+            const attributes = report?.data?.attributes
+
+            if (attributes?.status === 'completed') {
+              stats = attributes.stats ?? {}
+              break
+            }
+          }
+        } catch (error) {
+          console.error('VirusTotal polling failed:', error)
+          return json(
+            { error: 'File scanner unavailable, please try again later' },
+            503
+          )
+        }
+
+        if (!stats) {
+          return json(
+            {
+              error:
+                'Scan did not finish in time. The file was not published - please retry.'
+            },
+            504
+          )
+        }
       }
 
       const detections = (stats.malicious ?? 0) + (stats.suspicious ?? 0)
