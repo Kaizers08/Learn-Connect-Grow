@@ -265,6 +265,25 @@
   flex-shrink: 0;
 }
 
+/* ID Preview - different sizes based on type */
+.id-preview-landscape {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.id-preview-portrait {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
 .doc-trust-badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -274,4 +293,74 @@
   color: #718096;
   border: 1px solid #e2e8f0;
   white-space: nowrap;
+}
+
+/* Valid ID Styles */
+.form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #444;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.form-select:hover {
+  border-color: #04A2D7;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #04A2D7;
+  box-shadow: 0 0 0 3px rgba(4, 162, 215, 0.1);
+}
+
+.form-select option {
+  padding: 0.5rem;
+}
+
+.id-type-selector {
+  margin-bottom: 1rem;
+}
+
+.id-format-hint {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fcff;
+  border: 1.5px solid #d4edfa;
+  border-radius: 10px;
+}
+
+.id-format-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.id-format-text {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.id-upload-row {
+  margin-bottom: 1rem;
+}
+
+.id-upload-row:last-child {
+  margin-bottom: 0;
 }

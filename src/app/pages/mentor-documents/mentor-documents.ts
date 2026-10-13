@@ -16,6 +16,15 @@ export class MentorDocumentsComponent {
   diplomaName = '';
   diplomaPreview: string | null = null;
 
+  // Valid ID — required
+  idType = '';
+  idFrontFile: File | null = null;
+  idFrontName = '';
+  idFrontPreview: string | null = null;
+  idBackFile: File | null = null;
+  idBackName = '';
+  idBackPreview: string | null = null;
+
   // Certifications — at least 1 required
   certFiles: { file: File; name: string; preview: string }[] = [];
 
@@ -44,6 +53,40 @@ export class MentorDocumentsComponent {
     this.diplomaPreview = null;
   }
 
+  onIdFrontChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.idFrontFile = file;
+    this.idFrontName = file.name;
+    this.idFrontPreview = file.type.startsWith('image/')
+      ? URL.createObjectURL(file)
+      : null;
+  }
+
+  removeIdFront() {
+    if (this.idFrontPreview) URL.revokeObjectURL(this.idFrontPreview);
+    this.idFrontFile = null;
+    this.idFrontName = '';
+    this.idFrontPreview = null;
+  }
+
+  onIdBackChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.idBackFile = file;
+    this.idBackName = file.name;
+    this.idBackPreview = file.type.startsWith('image/')
+      ? URL.createObjectURL(file)
+      : null;
+  }
+
+  removeIdBack() {
+    if (this.idBackPreview) URL.revokeObjectURL(this.idBackPreview);
+    this.idBackFile = null;
+    this.idBackName = '';
+    this.idBackPreview = null;
+  }
+
   onCertificationChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -62,6 +105,21 @@ export class MentorDocumentsComponent {
 
     if (this.certFiles.length === 0) {
       this.errorMsg = 'At least one certification is required.';
+      return;
+    }
+
+    if (!this.idType) {
+      this.errorMsg = 'Please select a valid ID type.';
+      return;
+    }
+
+    if (!this.idFrontFile) {
+      this.errorMsg = 'Please upload the front side of your ID.';
+      return;
+    }
+
+    if (!this.idBackFile) {
+      this.errorMsg = 'Please upload the back side of your ID.';
       return;
     }
 
@@ -137,11 +195,78 @@ export class MentorDocumentsComponent {
       return;
     }
 
+    // Upload Valid ID Front and scan
+    let idFrontUrl: string | undefined;
+    let idFrontScanStatus = 'unscanned';
+    if (this.idFrontFile) {
+      const staged = await this.supabase.stageLearningMaterial(userId, this.idFrontFile);
+      if ('error' in staged) {
+        this.errorMsg = staged.error;
+        this.submitting = false;
+        return;
+      }
+      const scan = await this.supabase.scanLearningMaterial(
+        staged.path,
+        this.idFrontFile.type || 'application/octet-stream'
+      );
+      if (scan.error) {
+        this.errorMsg = scan.error;
+        this.submitting = false;
+        return;
+      }
+      idFrontUrl = scan.publicUrl;
+      idFrontScanStatus = scan.clean ? 'trusted' : 'blocked';
+      
+      // Also run Sightengine AI detection on the ID front
+      if (scan.publicUrl && this.idFrontFile.type.startsWith('image/')) {
+        const seScan = await this.supabase.scanMentorDocument(scan.publicUrl, 'valid_id');
+        if (seScan.status === 'blocked') {
+          idFrontScanStatus = 'blocked';
+        }
+      }
+    }
+
+    // Upload Valid ID Back and scan
+    let idBackUrl: string | undefined;
+    let idBackScanStatus = 'unscanned';
+    if (this.idBackFile) {
+      const staged = await this.supabase.stageLearningMaterial(userId, this.idBackFile);
+      if ('error' in staged) {
+        this.errorMsg = staged.error;
+        this.submitting = false;
+        return;
+      }
+      const scan = await this.supabase.scanLearningMaterial(
+        staged.path,
+        this.idBackFile.type || 'application/octet-stream'
+      );
+      if (scan.error) {
+        this.errorMsg = scan.error;
+        this.submitting = false;
+        return;
+      }
+      idBackUrl = scan.publicUrl;
+      idBackScanStatus = scan.clean ? 'trusted' : 'blocked';
+      
+      // Also run Sightengine AI detection on the ID back
+      if (scan.publicUrl && this.idBackFile.type.startsWith('image/')) {
+        const seScan = await this.supabase.scanMentorDocument(scan.publicUrl, 'valid_id');
+        if (seScan.status === 'blocked') {
+          idBackScanStatus = 'blocked';
+        }
+      }
+    }
+
     const { error } = await this.supabase.submitMentorDocuments(
       diplomaUrl,
       certUrls,
       diplomaScanStatus,
-      certificationsScanStatus
+      certificationsScanStatus,
+      this.idType,
+      idFrontUrl,
+      idBackUrl,
+      idFrontScanStatus,
+      idBackScanStatus
     );
     this.submitting = false;
 

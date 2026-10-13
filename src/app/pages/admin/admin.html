@@ -1153,6 +1153,48 @@
                 <span class="admin-doc-none">Not provided</span>
               }
             </div>
+            <div class="admin-doc-item">
+              <span class="admin-doc-label">Valid ID</span>
+              @if (selectedMentor.valid_id_front || selectedMentor.valid_id_back) {
+                <div class="admin-id-type">
+                  @if (selectedMentor.valid_id_type === 'drivers_license') { Driver's License }
+                  @else if (selectedMentor.valid_id_type === 'national_id') { National ID }
+                  @else if (selectedMentor.valid_id_type === 'passport') { Passport }
+                  @else if (selectedMentor.valid_id_type === 'other') { Other Government ID }
+                  @else { Unknown ID Type }
+                </div>
+                <div class="admin-id-grid">
+                  @if (selectedMentor.valid_id_front) {
+                    <div class="admin-id-side">
+                      <span class="admin-id-side-label">Front</span>
+                      @if (isImage(selectedMentor.valid_id_front)) {
+                        <img [src]="selectedMentor.valid_id_front" class="admin-doc-img" alt="ID Front">
+                      } @else {
+                        <a [href]="selectedMentor.valid_id_front" target="_blank" class="admin-doc-link">Open File</a>
+                      }
+                      <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.valid_id_front_scan_status || 'unscanned')">
+                        @if ((selectedMentor.valid_id_front_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((selectedMentor.valid_id_front_scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
+                      </span>
+                    </div>
+                  }
+                  @if (selectedMentor.valid_id_back) {
+                    <div class="admin-id-side">
+                      <span class="admin-id-side-label">Back</span>
+                      @if (isImage(selectedMentor.valid_id_back)) {
+                        <img [src]="selectedMentor.valid_id_back" class="admin-doc-img" alt="ID Back">
+                      } @else {
+                        <a [href]="selectedMentor.valid_id_back" target="_blank" class="admin-doc-link">Open File</a>
+                      }
+                      <span class="admin-res-trust" [class]="'admin-trust-' + (selectedMentor.valid_id_back_scan_status || 'unscanned')">
+                        @if ((selectedMentor.valid_id_back_scan_status || 'unscanned') === 'trusted') { 🛡️ Trusted } @else if ((selectedMentor.valid_id_back_scan_status || 'unscanned') === 'blocked') { ⚠️ AI Generated } @else { ⚠️ Unscanned }
+                      </span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <span class="admin-doc-none">Not provided</span>
+              }
+            </div>
           </div>
         </div>
       </div>

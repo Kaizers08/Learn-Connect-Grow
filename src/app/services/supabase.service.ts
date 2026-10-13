@@ -379,7 +379,12 @@ export class SupabaseService {
     diploma: string | undefined,
     certifications: string[] | undefined,
     diplomaScanStatus = 'unscanned',
-    certificationsScanStatus = 'unscanned'
+    certificationsScanStatus = 'unscanned',
+    idType?: string,
+    idFront?: string,
+    idBack?: string,
+    idFrontScanStatus = 'unscanned',
+    idBackScanStatus = 'unscanned'
   ) {
     const userId = await this.getCurrentUserId();
     if (!userId) return { data: null, error: { message: 'Not authenticated.' } };
@@ -391,6 +396,11 @@ export class SupabaseService {
         certifications,
         diploma_scan_status: diplomaScanStatus,
         certifications_scan_status: certificationsScanStatus,
+        valid_id_type: idType,
+        valid_id_front: idFront,
+        valid_id_back: idBack,
+        valid_id_front_scan_status: idFrontScanStatus,
+        valid_id_back_scan_status: idBackScanStatus,
         status: 'pending'
       })
       .eq('user_id', userId);
@@ -577,7 +587,7 @@ export class SupabaseService {
    */
   async scanMentorDocument(
     url: string,
-    type: 'profile_picture' | 'certification'
+    type: 'profile_picture' | 'certification' | 'valid_id'
   ): Promise<{ status: string; scores?: any; error?: string }> {
     const { data: sessionData } = await this.client.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
