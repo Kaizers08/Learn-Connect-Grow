@@ -39,8 +39,8 @@
   object-fit: contain;
 }
 
-.admin-logo-collapsed { width: 62px; height: 62px; left: 14px; top: 0; opacity: 1; }
-.admin-logo-expanded  { width: 140px; height: auto; left: 2.1rem; top: 10px; opacity: 0; }
+.admin-logo-collapsed { width: 62px; height: 62px; left: 14px; top: 15px; opacity: 1; }
+.admin-logo-expanded  { width: 140px; height: auto; left: 2.1rem; top: 30px; opacity: 0; }
 .admin-sidebar:hover .admin-logo-collapsed { opacity: 0; }
 .admin-sidebar:hover .admin-logo-expanded  { opacity: 1; }
 

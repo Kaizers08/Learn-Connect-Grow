@@ -145,7 +145,7 @@
 .chat-header-info {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+
 }
 
 .chat-bot-name-wrapper {
