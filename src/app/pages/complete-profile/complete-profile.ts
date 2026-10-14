@@ -11,9 +11,11 @@ import { SupabaseService } from '../../services/supabase.service';
   styleUrls: ['./complete-profile.css']
 })
 export class CompleteProfileComponent implements OnInit {
-  selectedRole: 'mentee' | 'mentor' | null = null;
-  isLoading = false;
-  errorMsg = '';
+   selectedRole: 'mentee' | 'mentor' | null = null;
+   isLoading = false;
+   errorMsg = '';
+   showTermsModal = false;
+   termsChecked = false;
 
   private platformId = inject(PLATFORM_ID);
 
@@ -42,37 +44,54 @@ export class CompleteProfileComponent implements OnInit {
     this.errorMsg = '';
   }
 
-  async onNext() {
-    if (!this.selectedRole) {
-      this.errorMsg = 'Please select a role first.';
-      return;
-    }
-
-    this.isLoading = true;
-    this.errorMsg = '';
-
-    try {
-      const { error } = await this.supabase.updateUserMeta({ role: this.selectedRole });
-
-      if (error) {
-        console.error('Failed to update user metadata:', error);
-        this.errorMsg = 'Failed to save your role. Please try again.';
-        this.isLoading = false;
+    async onNext() {
+      if (!this.selectedRole) {
+        this.errorMsg = 'Please select a role first.';
         return;
       }
-
-      this.userService.role.set(this.selectedRole);
-
-      if (this.selectedRole === 'mentee') {
-        await this.router.navigate(['/mentee-profile'], { replaceUrl: true });
-      } else if (this.selectedRole === 'mentor') {
-        await this.router.navigate(['/mentor-profile'], { replaceUrl: true });
-      }
-    } catch (error) {
-      console.error('Error in onNext:', error);
-      this.errorMsg = 'An unexpected error occurred. Please try again.';
-    } finally {
-      this.isLoading = false;
+      // Show Terms of Use modal before proceeding
+      this.showTermsModal = true;
     }
-  }
+
+    cancelTerms() {
+      this.showTermsModal = false;
+    }
+
+    async acceptTerms() {
+      if (!this.selectedRole) {
+        this.errorMsg = 'Please select a role first.';
+        return;
+      }
+      if (!this.termsChecked) {
+        this.errorMsg = 'Please check the box to agree to the Terms of Use.';
+        return;
+      }
+      this.showTermsModal = false;
+      this.isLoading = true;
+      this.errorMsg = '';
+
+      try {
+        const { error } = await this.supabase.updateUserMeta({ role: this.selectedRole });
+
+        if (error) {
+          console.error('Failed to update user metadata:', error);
+          this.errorMsg = 'Failed to save your role. Please try again.';
+          this.isLoading = false;
+          return;
+        }
+
+        this.userService.role.set(this.selectedRole);
+
+        if (this.selectedRole === 'mentee') {
+          await this.router.navigate(['/mentee-profile'], { replaceUrl: true });
+        } else if (this.selectedRole === 'mentor') {
+          await this.router.navigate(['/mentor-profile'], { replaceUrl: true });
+        }
+      } catch (error) {
+        console.error('Error in acceptTerms:', error);
+        this.errorMsg = 'An unexpected error occurred. Please try again.';
+      } finally {
+        this.isLoading = false;
+      }
+    }
 }

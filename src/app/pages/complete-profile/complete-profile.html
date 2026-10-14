@@ -7,7 +7,7 @@
 
     <!-- Logo -->
     <div class="profile-logo">
-      <img src="/landing page logo.png" alt="EdTech Logo" class="profile-logo-img" width="200" height="60" loading="lazy">
+      <img src="/MentDev landing page logo.png" alt="EdTech Logo" class="profile-logo-img" width="200" height="60" loading="lazy">
     </div>
 
     <!-- Title -->
@@ -86,15 +86,199 @@
       <div class="error-message">{{ errorMsg }}</div>
     }
 
-    <!-- Next Button -->
-    <button
-      class="btn-next"
-      [class.active]="selectedRole !== null"
-      [disabled]="isLoading || selectedRole === null"
-      (click)="onNext()"
-    >
-      {{ isLoading ? 'Loading...' : 'Next' }}
-    </button>
+     <!-- Next Button -->
+     <button
+       class="btn-next"
+       [class.active]="selectedRole !== null"
+       [disabled]="isLoading || selectedRole === null"
+       (click)="onNext()"
+     >
+       {{ isLoading ? 'Loading...' : 'Next' }}
+     </button>
+
+     <!-- ── TERMS OF USE MODAL ─────────────────────────────────────────── -->
+     @if (showTermsModal) {
+       <div class="terms-modal-backdrop" (click)="cancelTerms()">
+         <div class="terms-modal" (click)="$event.stopPropagation()">
+           <div class="terms-modal-header">
+             <div class="terms-modal-badge-wrap">
+               <span class="terms-modal-badge">Legal</span>
+               <span class="terms-modal-role-badge" [class.mentee]="selectedRole === 'mentee'" [class.mentor]="selectedRole === 'mentor'">
+                 {{ selectedRole === 'mentee' ? 'MENTEE' : 'MENTOR' }}
+               </span>
+             </div>
+             <h2 class="terms-modal-title">Terms of Use</h2>
+             <p class="terms-modal-date">Last Updated: October 2026</p>
+             <button class="terms-modal-close" (click)="cancelTerms()" aria-label="Close">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+               </svg>
+             </button>
+           </div>
+
+           <div class="terms-modal-body">
+
+             @if (selectedRole === 'mentee') {
+               <!-- MENTEE TERMS -->
+               <p class="terms-modal-intro">
+                 By continuing as a <strong>Mentee</strong> on MentDev Mentoring, you agree to the following terms:
+               </p>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">01</div>
+                 <div class="terms-modal-content">
+                   <h3>What to Expect</h3>
+                   <p>You will be matched with approved mentors based on shared skills and interests. Mentors provide guidance, learning materials, and optional session bookings.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">02</div>
+                 <div class="terms-modal-content">
+                   <h3>Your Responsibilities</h3>
+                   <ul class="terms-modal-check">
+                     <li>Provide accurate information during registration.</li>
+                     <li>Communicate respectfully with your mentor.</li>
+                     <li>Attend scheduled sessions or cancel if unable to attend.</li>
+                     <li>Do not share your account with others.</li>
+                   </ul>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">03</div>
+                 <div class="terms-modal-content">
+                   <h3>Learning Materials</h3>
+                   <p>Mentors may upload materials for your learning. These are for your personal use only. You may not download, redistribute, or reproduce them without the mentor's permission.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">04</div>
+                 <div class="terms-modal-content">
+                   <h3>Feedback and Ratings</h3>
+                   <p>You may leave star ratings and written feedback for mentors you've connected with. Feedback must be honest and related to your mentoring experience.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">05</div>
+                 <div class="terms-modal-content">
+                   <h3>Prohibited Conduct</h3>
+                   <ul class="terms-modal-cross">
+                     <li>Impersonating others or sharing false information.</li>
+                     <li>Harassing, abusing, or threatening your mentor or other users.</li>
+                     <li>Attempting to bypass platform restrictions.</li>
+                   </ul>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">06</div>
+                 <div class="terms-modal-content">
+                   <h3>AI Chatbot</h3>
+                   <p>An AI assistant is available to help you navigate the platform. It is not a substitute for mentor guidance and may not always be accurate.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">07</div>
+                 <div class="terms-modal-content">
+                   <h3>Changes to These Terms</h3>
+                   <p>We may update these terms from time to time. Continued use of the platform constitutes acceptance of the updated terms.</p>
+                 </div>
+               </div>
+             }
+
+             @if (selectedRole === 'mentor') {
+               <!-- MENTOR TERMS -->
+               <p class="terms-modal-intro">
+                 By continuing as a <strong>Mentor</strong> on MentDev Mentoring, you agree to the following terms:
+               </p>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">01</div>
+                 <div class="terms-modal-content">
+                   <h3>Approval Process</h3>
+                   <p>You must submit verification documents (certifications and optionally a diploma). The admin reviews all applications and may approve or reject at their discretion. Approval is not guaranteed.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">02</div>
+                 <div class="terms-modal-content">
+                   <h3>Content You Upload</h3>
+                   <p>You retain intellectual property of materials you upload. You grant mentees view-only access. You are responsible for the accuracy and appropriateness of all content you share.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">03</div>
+                 <div class="terms-modal-content">
+                   <h3>Security Screening</h3>
+                   <p>All uploaded documents and materials are automatically screened before publication. Screening checks for prohibited content. The specific screening methods are confidential security information and are not disclosed. Files that fail screening are rejected.</p>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">04</div>
+                 <div class="terms-modal-content">
+                   <h3>Your Responsibilities</h3>
+                   <ul class="terms-modal-check">
+                     <li>Provide accurate credentials and profile information.</li>
+                     <li>Communicate respectfully with mentees.</li>
+                     <li>Attend scheduled sessions or cancel if unable to attend.</li>
+                     <li>Do not share your account with others.</li>
+                   </ul>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">05</div>
+                 <div class="terms-modal-content">
+                   <h3>Prohibited Conduct</h3>
+                   <ul class="terms-modal-cross">
+                     <li>Uploading harmful, offensive, or copyrighted material without permission.</li>
+                     <li>Impersonating others or sharing false credentials.</li>
+                     <li>Harassing, abusing, or threatening mentees or other users.</li>
+                     <li>Attempting to bypass platform restrictions.</li>
+                   </ul>
+                 </div>
+               </div>
+
+               <div class="terms-modal-section">
+                 <div class="terms-modal-num">06</div>
+                 <div class="terms-modal-content">
+                   <h3>AI Chatbot</h3>
+                   <p>An AI assistant is available to help you navigate the platform. It is not a substitute for your mentorship and may not always be accurate.</p>
+                 </div>
+               </div>
+
+<div class="terms-modal-section">
+                  <div class="terms-modal-num">07</div>
+                  <div class="terms-modal-content">
+                    <h3>Changes to These Terms</h3>
+                    <p>We may update these terms from time to time. Continued use of the platform constitutes acceptance of the updated terms.</p>
+                  </div>
+                </div>
+              }
+
+            </div>
+
+            <div class="terms-modal-checkbox-label">
+              <input type="checkbox" [checked]="termsChecked" (change)="termsChecked = $event.target.checked">
+              <span>I have read and agree to the Terms of Use</span>
+            </div>
+
+            <div class="terms-modal-footer">
+              <button class="terms-modal-btn-cancel" (click)="cancelTerms()">Cancel</button>
+              <button class="terms-modal-btn-accept" [disabled]="!termsChecked" (click)="acceptTerms()">
+                I Agree &amp; Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
   </div>
 </div>

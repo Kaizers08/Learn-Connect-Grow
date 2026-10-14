@@ -36,7 +36,7 @@
 .profile-container {
   width: 100%;
   max-width: 580px;
-  text-align: center;
+  text-align: left;
   position: relative;
   z-index: 1;
 }
@@ -60,12 +60,14 @@
   font-weight: 700;
   color: #333;
   margin: 0 0 0.4rem 0;
+  text-align: center;
 }
 
 .profile-subtitle {
   font-size: 0.9rem;
   color: #888;
   margin: 0 0 1.75rem 0;
+  text-align: center;
 }
 
 /* Role Card */
@@ -82,12 +84,14 @@
   font-weight: 700;
   color: #333;
   margin: 0 0 0.4rem 0;
+  text-align: center;
 }
 
 .role-card-subtitle {
   font-size: 0.875rem;
   color: #888;
   margin: 0 0 1.75rem 0;
+  text-align: center;
 }
 
 /* Role Options */
@@ -130,6 +134,7 @@
   font-weight: 700;
   color: #333;
   margin: 0 0 0.4rem 0;
+  text-align: center;
 }
 
 .role-description {
@@ -137,6 +142,7 @@
   color: #888;
   line-height: 1.5;
   margin: 0;
+  text-align: center;
 }
 
 .role-check {
@@ -275,9 +281,291 @@
     font-size: 0.8rem;
   }
 
-  .btn-next {
-    padding: 0.9rem;
-    font-size: 1rem;
-    width: 100%;
-  }
+   .btn-next {
+     padding: 0.9rem;
+     font-size: 1rem;
+     width: 100%;
+   }
+ }
+
+/* ── Terms of Use Modal ─────────────────────────────────────────── */
+.terms-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.terms-modal {
+  background: white;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  animation: modalPop 0.25s ease;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.94) translateY(12px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.terms-modal-header {
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.terms-modal-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.terms-modal-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #f0f9ff;
+  color: #04A2D7;
+  padding: 0.2rem 0.6rem;
+  border-radius: 50px;
+}
+
+.terms-modal-role-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 50px;
+  background: #f7fafc;
+  color: #718096;
+  border: 1px solid #e2e8f0;
+}
+
+.terms-modal-role-badge.mentee {
+  background: #eef6ff;
+  color: #2563eb;
+  border-color: #c8dcf5;
+}
+
+.terms-modal-role-badge.mentor {
+  background: #fff5f0;
+  color: #e74c3c;
+  border-color: #fcc8b8;
+}
+
+.terms-modal-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.terms-modal-date {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin: 0.25rem 0 0;
+}
+
+.terms-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.terms-modal-close:hover {
+  background: #f5f5f5;
+  color: #555;
+}
+
+.terms-modal-body {
+  overflow-y: auto;
+  padding: 1.25rem 1.75rem;
+}
+
+.terms-modal-intro {
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+
+.terms-modal-section {
+  display: flex;
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #e8e8e8;
+}
+
+.terms-modal-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.terms-modal-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #04A2D7;
+  background: #eef6ff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.terms-modal-content h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.35rem;
+}
+
+.terms-modal-content p {
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.terms-modal-check {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+}
+
+.terms-modal-check li {
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.5;
+  padding-left: 1.25rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+
+.terms-modal-check li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #21AA3A;
+  font-weight: 700;
+}
+
+.terms-modal-cross {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+}
+
+.terms-modal-cross li {
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.5;
+  padding-left: 1.25rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+
+.terms-modal-cross li::before {
+  content: '✕';
+  position: absolute;
+  left: 0;
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+.terms-modal-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem 1.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.terms-modal-btn-cancel {
+  flex: 0 0 40%;
+  padding: 0.7rem;
+  background: #f7fafc;
+  color: #555;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.terms-modal-btn-cancel:hover {
+  background: #e8e8e8;
+}
+
+.terms-modal-btn-accept {
+  flex: 0 0 55%;
+  padding: 0.7rem;
+  background: #04A2D7;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background 0.15s;
+}
+
+.terms-modal-btn-accept:hover {
+  background: #0390c0;
+}
+
+.terms-modal-btn-accept:disabled {
+  background: #a0c8d8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.terms-modal-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+  padding: 0.5rem 1.75rem 0.5rem 5rem;
+  margin: 0 -1.75rem;
+  width: calc(100% + 3.5rem);
+}
+
+.terms-modal-checkbox-label input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: 18px;
+  height: 18px;
+  accent-color: #04A2D7;
+  cursor: pointer;
 }
