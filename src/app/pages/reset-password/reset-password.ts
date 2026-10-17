@@ -37,15 +37,15 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
     this.authSub = data.subscription;
 
     // Fallback: if a session already exists (token already processed), allow reset.
-    const { data: sessionData } = await this.supabase.getClient().auth.getSession();
-    if (sessionData.session) {
+    const { data: { session: sessionData } } = await this.supabase.getClient().auth.getSession();
+    if (sessionData) {
       this.sessionReady = true;
     }
 
     // Give the client a moment to process the URL hash before flagging invalid.
     setTimeout(async () => {
-      const { data: check } = await this.supabase.getClient().auth.getSession();
-      if (!check.session) {
+      const { data: { session: check } } = await this.supabase.getClient().auth.getSession();
+      if (!check) {
         this.linkInvalid = true;
       }
     }, 2500);

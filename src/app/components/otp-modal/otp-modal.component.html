@@ -1,0 +1,96 @@
+@if (show) {
+  <div class="otp-overlay" (click)="onClose()">
+    <div class="otp-modal" (click)="$event.stopPropagation()">
+      <!-- Close Button -->
+      <button type="button" class="otp-close" (click)="onClose()" aria-label="Close">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Header -->
+      <div class="otp-header">
+        <div class="otp-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2 class="otp-title">Verify Your Email</h2>
+        <p class="otp-subtitle">
+          We've sent a 6-digit verification code to<br>
+          <strong>{{ email }}</strong>
+        </p>
+      </div>
+
+      <!-- OTP Input -->
+      <div class="otp-inputs">
+        @for (digit of otp; track $index) {
+          <input
+            [id]="'otp-' + $index"
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]"
+            class="otp-input"
+            [class.otp-input-error]="error"
+            [value]="otp[$index]"
+            (input)="onInput($index, $event)"
+            (keydown)="onKeyDown($index, $event)"
+            (paste)="onPaste($index, $event)"
+            [disabled]="verifying"
+            autocomplete="off"
+          >
+        }
+      </div>
+
+      <!-- Error Message -->
+      @if (error) {
+        <p class="otp-error">{{ error }}</p>
+      }
+
+      <!-- Verify Button -->
+      <button
+        type="button"
+        class="otp-verify-btn"
+        [disabled]="verifying || otp.join('').length !== 6"
+        (click)="onVerify()"
+      >
+        @if (verifying) {
+          <span class="otp-spinner"></span>
+          Verifying...
+        } @else {
+          Verify Email
+        }
+      </button>
+
+      <!-- Resend Section -->
+      <div class="otp-resend">
+        @if (!canResend) {
+          <p class="otp-resend-text">
+            Didn't receive the code? Resend in <strong>{{ countdown }}s</strong>
+          </p>
+        } @else {
+          <button
+            type="button"
+            class="otp-resend-btn"
+            (click)="onResend()"
+            [disabled]="resending"
+          >
+            @if (resending) {
+              <span class="otp-spinner-small"></span>
+              Sending...
+            } @else {
+              Resend Code
+            }
+          </button>
+        }
+      </div>
+
+      <!-- Help Text -->
+      <p class="otp-help">
+        Check your spam folder if you don't see the email
+      </p>
+    </div>
+  </div>
+}

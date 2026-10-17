@@ -528,8 +528,8 @@ export class SupabaseService {
     publicUrl?: string;
     error?: string;
   }> {
-    const { data: sessionData } = await this.client.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
+    const { data: { session } } = await this.client.auth.getSession();
+    const accessToken = session?.access_token;
 
     if (!accessToken) {
       return { clean: false, error: 'No access token — sign in again.' };
@@ -589,8 +589,8 @@ export class SupabaseService {
     url: string,
     type: 'profile_picture' | 'certification' | 'valid_id'
   ): Promise<{ status: string; scores?: any; error?: string }> {
-    const { data: sessionData } = await this.client.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
+    const { data: { session } } = await this.client.auth.getSession();
+    const accessToken = session?.access_token;
 
     if (!accessToken) {
       return { status: 'unscanned', error: 'No access token — sign in again.' };
@@ -912,8 +912,8 @@ export class SupabaseService {
 
   // ── Account Deletion ────────────────────────────────────────────────────────
   async deleteUserAccount(userId: string): Promise<{ success: boolean; error?: string }> {
-    const { data: sessionData } = await this.client.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
+    const { data: { session } } = await this.client.auth.getSession();
+    const accessToken = session?.access_token;
 
     if (!accessToken) {
       return { success: false, error: 'No access token' };

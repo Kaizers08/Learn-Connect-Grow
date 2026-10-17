@@ -33,8 +33,8 @@ export class AuthCallbackComponent implements OnInit {
 
     await this.supabase.ensureAuthReady();
 
-    const { data } = await this.supabase.getClient().auth.getSession();
-    if (!data.session) {
+    const { data: { session } } = await this.supabase.getClient().auth.getSession();
+    if (!session) {
       await this.router.navigateByUrl('/login', { replaceUrl: true });
       return;
     }
@@ -46,7 +46,7 @@ export class AuthCallbackComponent implements OnInit {
 
     // If name not collected yet, try to get it from Google user_metadata automatically
     if (!meta.nameCollected) {
-      const rawMeta = data.session.user.user_metadata ?? {};
+      const rawMeta = session.user.user_metadata ?? {};
 
       // Google provides name in `full_name` or `name`
       const googleName: string = rawMeta['full_name'] || rawMeta['name'] || '';

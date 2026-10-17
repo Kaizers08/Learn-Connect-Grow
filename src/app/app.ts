@@ -22,8 +22,8 @@ export class App implements OnInit {
 
     if (!hadOAuthCallback) return;
 
-    const { data } = await this.supabase.getClient().auth.getSession();
-    if (!data.session) return;
+    const { data: { session } } = await this.supabase.getClient().auth.getSession();
+    if (!session) return;
 
     const target = await this.supabase.resolvePostAuthPath();
     const meta = await this.supabase.getCurrentUserMeta();
