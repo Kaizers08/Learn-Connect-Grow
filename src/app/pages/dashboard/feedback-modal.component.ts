@@ -62,6 +62,7 @@ import { FormsModule } from '@angular/forms';
               <label class="fm-label">Your Feedback (Optional)</label>
               <textarea 
                 class="fm-textarea"
+                [class.fm-textarea-error]="errorMessage"
                 placeholder="Share your experience with this mentor... (max 1000 characters)"
                 [(ngModel)]="feedbackText"
                 (input)="validateFeedback()"
@@ -255,6 +256,10 @@ import { FormsModule } from '@angular/forms';
       border-color: #04A2D7;
     }
 
+    .fm-textarea-error {
+      border-color: #c33 !important;
+    }
+
     .fm-char-count {
       font-size: 12px;
       color: #999;
@@ -359,9 +364,48 @@ export class FeedbackModalComponent {
   validateFeedback() {
     if (this.feedbackText.length > 1000) {
       this.errorMessage = 'Feedback cannot exceed 1000 characters';
-    } else {
-      this.errorMessage = '';
+      return;
     }
+    
+    // Check for inappropriate words
+    const inappropriateWords = this.checkForInappropriateWords(this.feedbackText);
+    if (inappropriateWords) {
+      this.errorMessage = 'Your feedback contains inappropriate language. Please keep your feedback respectful and professional.';
+      return;
+    }
+    
+    this.errorMessage = '';
+  }
+
+  private checkForInappropriateWords(text: string): boolean {
+    // List of inappropriate words in English and Tagalog
+    const bannedWords = [
+      // English profanity
+      'fuck', 'shit', 'bitch', 'ass', 'asshole', 'damn', 'hell', 
+      'bastard', 'crap', 'dick', 'piss', 'slut', 'whore', 'douche',
+      'stupid', 'idiot', 'moron', 'dumb', 'retard', 'loser', 'suck',
+      'trash', 'garbage', 'worthless', 'useless', 'pathetic', 'terrible',
+      'horrible', 'awful', 'worst', 'hate',
+      // Tagalog profanity
+      'bobo', 'tanga', 'gago', 'gaga', 'putang', 'puta', 'tangina',
+      'ulol', 'tarantado', 'hayop', 'peste', 'leche', 'kupal',
+      'hinayupak', 'pokpok', 'siraulo', 'timang', 'engot', 'hangal',
+      'inutil', 'walang kwenta', 'basura', 'demonyo', 'gunggong',
+      'tutang', 'taena', 'pakshet', 'bwisit', 'yawa', 'punyeta'
+    ];
+
+    const lowerText = text.toLowerCase();
+    
+    // Check for exact matches and variations (with spaces, special chars)
+    for (const word of bannedWords) {
+      // Match word boundaries to avoid false positives
+      const regex = new RegExp(`\\b${word}\\b|${word.split('').join('[^a-z]*')}`, 'i');
+      if (regex.test(lowerText)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   submit() {
@@ -374,6 +418,12 @@ export class FeedbackModalComponent {
 
     if (this.feedbackText.length > 1000) {
       this.errorMessage = 'Feedback cannot exceed 1000 characters';
+      return;
+    }
+
+    // Check for inappropriate words before submitting
+    if (this.checkForInappropriateWords(this.feedbackText)) {
+      this.errorMessage = 'Your feedback contains inappropriate language. Please keep your feedback respectful and professional.';
       return;
     }
 
